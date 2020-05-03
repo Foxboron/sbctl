@@ -1,3 +1,4 @@
 tags
 releases/*
 sbctl
+docs/*.8
