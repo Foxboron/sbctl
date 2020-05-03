@@ -233,6 +233,7 @@ func main() {
 	rootCmd.AddCommand(generateBundlesCmd())
 	rootCmd.AddCommand(removeBundleCmd())
 	rootCmd.AddCommand(listBundlesCmd())
+	rootCmd.AddCommand(removeFileCmd())
 	if err := rootCmd.Execute(); err != nil {
 		os.Exit(1)
 	}
