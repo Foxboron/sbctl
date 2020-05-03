@@ -1,0 +1,113 @@
+sbctl(8)
+========
+
+Name
+----
+sbctl - Secure Boot manager
+
+
+Synopsis
+--------
+'sbctl' <command>
+
+
+Description
+-----------
+'sbctl' aims to provide a full integrated secure boot experience.
+
+
+EFI signing commands
+--------------------
+
+**status**::
+        Shows the current secure boot status of the system. It checks if you are
+        currently booted in UEFI with Secure Boot, and wheter or not Setup Mode
+        has been enabled.
+
+**create-keys**::
+        Creates a set of signing keys used to sign EFI binaries. Currently it
+        will create the following keys:
+        * Platform Key
+        * Key Exchange key
+        * Signature Database Key
+
+**enroll-keys**::
+        It will first attempt to use `sbkeysync` to live enroll the
+        required keys. This requires Setup Mode to be active. 
+
+**sign** <FILE>...::
+        Signs a EFI binary with the created key. The file will be checked for
+        valid signatures to avoid duplicates.
+
+**sign-all**::
+        Signs all enrolled EFI binaries.
+
+**remove-file** <FILE>::
+        Removes the file from the signing database.
+
+**verify**::
+        Looks for EFI binaries with the mime type application/x-dosexec and
+        checks if they have been signed with the Signature Database Key.
+
+
+**help** <FILE>...::
+        Displays a help message.
+
+EFI binary commands
+------------------
+
+**bundle** [FLAG] <NAME> <VMLINUZ PATH> <INITRAMFS PATH>::
+        Creates a bundle that should produce EFI binaries. This is usefull if
+        you want to sign your initramfs along with your kernel.
+
+        * -i|--intel <PATH> - Include Intel microcode
+        * -a|--amd <PATH> - Include AMD microcode
+
+**remove-bundle** <NAME>::
+        Removes a bundle from the list.
+
+**generate-bundles**::
+        This command generates all bundles and puts them into
+        **$ESP/Linux/linux-$bundlename.efi**. These are not signed and it's
+        expected that you enroll them yourself.
+
+**list-bundles**::
+        List all registed bundles to generate.
+
+Environment Variables
+---------------------
+**ESP**::
+        Overrides the ESP location used for enrolling keys, and finding EFI
+        binaries to sign. Defaults to /boot
+
+**EFI_ROLLER_ROOT**::
+        Override the default efi-roller location. Defaults to /var/lib/efi-roller
+
+
+Files
+----
+**/var/lib/efi-roller**::
+        Default storage directory.
+
+**/var/lib/efi-roller/GUID**::
+        Owner identification. This is a randomly generated UUID.
+
+**/var/lib/efi-roller/files.db**::
+        Contains a list of EFI binaries to be signed by the generated key.
+
+**/var/lib/efi-roller/bundles.db**::
+        Contains a list of EFI bundles to be generated.
+
+**/var/lib/efi-roller/keys/db/DB.{auth,cer,crt,esl,key}**::
+        Contains the Signature Database key used for signing EFI binaries.
+
+**/var/lib/efi-roller/keys/kek/KEK.{auth,cer,crt,esl,key}**::
+        Contains the Key Exchange Key.
+
+**/var/lib/efi-roller/keys/pk/PK.{auth,cer,crt,esl,key}**::
+        Contains the Platform Key.
+
+
+See Also
+--------
+linkman:sbsign[1]

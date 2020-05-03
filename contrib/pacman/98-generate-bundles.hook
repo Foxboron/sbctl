@@ -1,0 +1,12 @@
+[Trigger]
+Type = File
+Operation = Install
+Operation = Upgrade
+Operation = Remove
+Target = boot/*
+Target = usr/lib/modules/*/vmlinuz
+
+[Action]
+Description = Generating EFI Stub bundles...
+When = PostTransaction
+Exec = /usr/bin/sbctl generate-bundles

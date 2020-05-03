@@ -1,0 +1,13 @@
+[Trigger]
+Type = File
+Operation = Install
+Operation = Upgrade
+Operation = Remove
+Target = boot/*
+Target = boot/EFI/*
+Target = usr/lib/modules/*/vmlinuz
+
+[Action]
+Description = Signing EFI binaries...
+When = PostTransaction
+Exec = /usr/bin/sbctl sign-all
