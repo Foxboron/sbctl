@@ -39,8 +39,11 @@ EFI signing commands
         Signs a EFI binary with the created key. The file will be checked for
         valid signatures to avoid duplicates.
 
-        * -o|--output <PATH> - Output filename. Default replaces the file.
-        * -s|--save - Save file to the database.
+        *-o* 'PATH', *--output* 'PATH';;
+                Output filename. Default replaces the file.
+
+        *-s*, *--save*;;
+                Save file to the database.
 
 **sign-all**::
         Signs all enrolled EFI binaries.
@@ -64,24 +67,44 @@ EFI binary commands
         Creates a bundle that should produce EFI binaries. This is usefull if
         you want to sign your initramfs along with your kernel.
 
-        * -a|--amducode <PATH> - AMD microcode location
-        * -c|--cmdline <PATH> - Cmdline location (default "/proc/cmdline")
-        * -e|--efi-stub <PATH> - EFI Stub location (default "/usr/lib/systemd/boot/efi/linuxx64.efi.stub")
-        * -p|--esp <PATH> - ESP location (default "/efi")
-        * -h|--help - help for bundle
-        * -f|--initramfs <PATH> - Initramfs location (default "/efi/initramfs-linux.img")
-        * -i|--intelucode <PATH> - Intel microcode location
-        * -k|--kernel-img <PATH> - Kernel image location (default "/efi/vmlinuz-linux")
-        * -o|--os-release <PATH> - OS Release file location (default "/usr/lib/os-release")
-        * -s|--save - save bundle to the database
-        * -l|--splash-img <PATH> Boot splash image location
+                *-a* 'PATH', *--amducode* 'PATH';;
+                        AMD microcode location.
+
+                *-c* 'PATH', *--cmdline* 'PATH';;
+                        Cmdline location. (default "/proc/cmdline")
+
+                *-e* 'PATH', *--efi-stub* 'PATH';;
+                        EFI Stub location. (default "/usr/lib/systemd/boot/efi/linuxx64.efi.stub")
+
+                *-p* 'PATH', *--esp* 'PATH';;
+                        ESP location. (default "/efi")
+
+                *-h*, *--help*;;
+                        Help for bundle.
+
+                *-f* 'PATH', *--initramfs* 'PATH';;
+                        Initramfs location. (default "/efi/initramfs-linux.img")
+
+                *-i* 'PATH', *--intelucode* 'PATH';;
+                        Intel microcode location.
+
+                *-k* 'PATH', *--kernel-img* 'PATH';;
+                        Kernel image location. (default "/efi/vmlinuz-linux")
+
+                *-o* 'PATH', *--os-release* 'PATH';;
+                        OS Release file location. (default "/usr/lib/os-release")
+
+                *-s*, *--save*;;
+                        Save bundle to the database.
+
+                *-l* 'PATH', *--splash-img* 'PATH';;
+                        Boot splash image location.
 
 **generate-bundles**::
-        This command generates all bundles and puts them into
-        **$ESP/Linux/linux-$bundlename.efi**. These are not signed and it's
-        expected that you enroll them yourself.
+        This command generates all bundles.
 
-        * -s|--sign - sign all the generated bundles
+        *-s*, *--sign*;;
+                Sign all the generated bundles.
 
 **remove-bundle** <NAME>::
         Removes a bundle from the list.
