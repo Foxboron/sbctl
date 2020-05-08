@@ -85,14 +85,6 @@ func SaveKey(k []byte, path string) {
 
 }
 
-func CreateUUID() []byte {
-	out, err := exec.Command("uuidgen").Output()
-	if err != nil {
-		log.Fatal(err)
-	}
-	return bytes.TrimSuffix(out, []byte("\n"))
-}
-
 func KeyToSiglist(UUID []byte, input string) []byte {
 	msg.Printf("Create EFI signature list %s.esl...", input)
 	args := fmt.Sprintf("--owner %s --type x509 --output %s.esl %s", UUID, input, input)
@@ -202,9 +194,15 @@ func CheckIfKeysInitialized(output string) bool {
 	return true
 }
 
-func InitializeSecureBootKeys(output string) {
-	os.MkdirAll(output, os.ModePerm)
+func CreateUUID() []byte {
+	out, err := exec.Command("uuidgen").Output()
+	if err != nil {
+		log.Fatal(err)
+	}
+	return bytes.TrimSuffix(out, []byte("\n"))
+}
 
+func CreateGUID(output string) []byte {
 	var uuid []byte
 	guidPath := filepath.Join(output, "GUID")
 	if _, err := os.Stat(guidPath); os.IsNotExist(err) {
@@ -221,6 +219,12 @@ func InitializeSecureBootKeys(output string) {
 		}
 		msg2.Printf("Using UUID %s...", uuid)
 	}
+	return uuid
+}
+
+func InitializeSecureBootKeys(output string) {
+	os.MkdirAll(output, os.ModePerm)
+	uuid := CreateGUID(output)
 	// Create the directories we need and keys
 	for _, key := range SecureBootKeys {
 		path := filepath.Join(output, "keys", key.Key)
