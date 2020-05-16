@@ -88,7 +88,6 @@ func SaveKey(k []byte, path string) {
 func KeyToSiglist(UUID []byte, input string) []byte {
 	msg.Printf("Create EFI signature list %s.esl...", input)
 	args := fmt.Sprintf("--owner %s --type x509 --output %s.esl %s", UUID, input, input)
-	fmt.Println(args)
 	out, err := exec.Command("/usr/bin/sbsiglist", strings.Split(args, " ")...).Output()
 	if err != nil {
 		log.Fatalf("Failed creating signature list: %s", err)
@@ -99,7 +98,6 @@ func KeyToSiglist(UUID []byte, input string) []byte {
 func SignEFIVariable(key, cert, varname, vardatafile, output string) []byte {
 	msg.Printf("Signing %s with %s...", vardatafile, key)
 	args := fmt.Sprintf("--key %s --cert %s --output %s %s %s", key, cert, output, varname, vardatafile)
-	fmt.Println(args)
 	out, err := exec.Command("/usr/bin/sbvarsign", strings.Split(args, " ")...).Output()
 	if err != nil {
 		log.Fatalf("Failed signing EFI variable: %s", err)
@@ -146,7 +144,7 @@ func SignFile(key, cert, file, output string) []byte {
 		msg.Printf("%s has been signed...", file)
 		return []byte{}
 	}
-	msg.Printf("Signing %s...", file)
+	msg2.Printf("Signing %s...", file)
 	args := fmt.Sprintf("--key %s --cert %s --output %s %s", key, cert, output, file)
 	out, err := exec.Command("sbsign", strings.Split(args, " ")...).Output()
 	if err != nil {
