@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/foxboron/sbctl"
 	"github.com/spf13/cobra"
@@ -215,8 +216,34 @@ func removeBundleCmd() *cobra.Command {
 	}
 }
 
+func completionBashCmd() *cobra.Command {
+	var completionCmd = &cobra.Command{
+		Use:    "bash",
+		Hidden: true,
+		Run: func(cmd *cobra.Command, args []string) {
+			rootCmd.GenBashCompletion(os.Stdout)
+		},
+	}
+	return completionCmd
+}
+
+func completionZshCmd() *cobra.Command {
+	var completionCmd = &cobra.Command{
+		Use:    "zsh",
+		Hidden: true,
+		Run: func(cmd *cobra.Command, args []string) {
+			rootCmd.GenZshCompletion(os.Stdout)
+		},
+	}
+	return completionCmd
+}
+
 func main() {
-	rootCmd.PersistentPreRun = func(_ *cobra.Command, args []string) {
+	rootCmd.PersistentPreRun = func(c *cobra.Command, args []string) {
+		if strings.Contains(c.CommandPath(), "completion zsh") ||
+			strings.Contains(c.CommandPath(), "completion bash") {
+			return
+		}
 		if os.Geteuid() != 0 {
 			fmt.Println("Needs to be executed as root")
 			os.Exit(1)
@@ -234,6 +261,11 @@ func main() {
 	rootCmd.AddCommand(removeBundleCmd())
 	rootCmd.AddCommand(listBundlesCmd())
 	rootCmd.AddCommand(removeFileCmd())
+
+	completionCmd := &cobra.Command{Use: "completion"}
+	completionCmd.AddCommand(completionBashCmd())
+	completionCmd.AddCommand(completionZshCmd())
+	rootCmd.AddCommand(completionCmd)
 	if err := rootCmd.Execute(); err != nil {
 		os.Exit(1)
 	}
