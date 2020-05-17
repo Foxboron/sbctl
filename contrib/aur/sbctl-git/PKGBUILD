@@ -1,7 +1,7 @@
 # Maintainer: Morten Linderud <foxboron@archlinux.org>
 
 pkgname=sbctl-git
-pkgver=r10.gb7504de
+pkgver=r14.gf8f4aa8
 pkgrel=1
 pkgdesc="Secure Boot key manager"
 arch=("x86_64")
@@ -30,5 +30,7 @@ build(){
 
 package(){
     cd "${pkgname%-git}"
-    make PREFIX="$pkgdir/usr" install
+    make PROGNM="sbctl-git" PREFIX="$pkgdir/usr" install
+    ./sbctl completion bash | install -Dm644 /dev/stdin "$pkgdir/usr/share/bash-completion/completions/sbctl"
+    ./sbctl completion zsh | install -Dm644 /dev/stdin "$pkgdir/usr/share/zsh/site-functions/_sbctl"
 }
