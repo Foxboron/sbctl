@@ -1,0 +1,17 @@
+pkgbase = sbctl-git
+	pkgdesc = 💻 Secure Boot key manager
+	pkgver = r10.gb7504de
+	pkgrel = 1
+	url = https://github.com/Foxboron/sbctl
+	arch = x86_64
+	license = MIT
+	makedepends = go
+	makedepends = git
+	makedepends = asciidoc
+	depends = sbsigntools
+	source = git+https://github.com/Foxboron/sbctl.git?signed
+	validpgpkeys = C100346676634E80C940FB9E9C02FF419FECBE16
+	sha256sums = SKIP
+
+pkgname = sbctl-git
+
