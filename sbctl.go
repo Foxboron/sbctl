@@ -102,7 +102,9 @@ func ListFiles() {
 	files := ReadFileDatabase(DBPath)
 	for path, s := range files {
 		msg.Printf("File: %s", path)
-		msg2.Printf("Output: %s", s.OutputFile)
+		if path != s.OutputFile {
+			msg2.Printf("Output: %s", s.OutputFile)
+		}
 	}
 }
 
