@@ -3,7 +3,7 @@
 pkgname=sbctl-git
 pkgver=r10.gb7504de
 pkgrel=1
-pkgdesc="💻 Secure Boot key manager"
+pkgdesc="Secure Boot key manager"
 arch=("x86_64")
 url="https://github.com/Foxboron/sbctl"
 license=("MIT")
