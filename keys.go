@@ -117,7 +117,7 @@ func SBKeySync(dir string) bool {
 			return exitError.ExitCode() == 0
 		}
 	}
-	stdout := string(out.Bytes())
+	stdout := out.String()
 	for _, line := range strings.Split(stdout, "\n") {
 		if strings.Contains(line, "Operation not permitted") {
 			fmt.Println(stdout)
