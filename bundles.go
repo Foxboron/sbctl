@@ -105,7 +105,7 @@ func FormatBundle(name string, bundle *Bundle) {
 	msg2.Printf("Kernel Image: %s", bundle.KernelImage)
 	msg2.Printf("Initramfs Image: %s", bundle.Initramfs)
 	msg2.Printf("Cmdline: %s", bundle.Cmdline)
-	msg2.Printf("OS Relase: %s", bundle.OSRelease)
+	msg2.Printf("OS Release: %s", bundle.OSRelease)
 	msg2.Printf("EFI Stub Image: %s", bundle.EFIStub)
 	msg2.Printf("ESP Location: %s", bundle.ESP)
 	if bundle.Splash != "" {
