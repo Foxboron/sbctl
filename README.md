@@ -1,7 +1,7 @@
 sbctl - Secure Boot Manager
 ===========================
 
-The goal of the project is to have one consisten UI to manage secure boot keys.
+The goal of the project is to have one consistent UI to manage secure boot keys.
 
 # Features
 * Manages secure boot keys
@@ -86,16 +86,16 @@ $ sbctl verify
   -> WARNING: /efi/EFI/arch/fwupdx64.efi is not signed
   -> WARNING: /efi/EFI/systemd/systemd-bootx64.efi is not signed
 
-$ sbctl sign -s /efi/EFI/BOOT/BOOTX64.EFI 
+$ sbctl sign -s /efi/EFI/BOOT/BOOTX64.EFI
 ==> Signing /efi/EFI/BOOT/BOOTX64.EFI...
 
-$ sbctl sign -s /efi/EFI/arch/fwupdx64.efi 
+$ sbctl sign -s /efi/EFI/arch/fwupdx64.efi
 ==> Signing /efi/EFI/arch/fwupdx64.efi...
 
 $ sbctl sign -s /efi/EFI/systemd/systemd-bootx64.efi
 ==> Signing /efi/EFI/systemd/systemd-bootx64.efi...
 
-$ sbctl sign -s /usr/lib/fwupd/efi/fwupdx64.efi -o /usr/lib/fwupd/efi/fwupdx64.efi.signed 
+$ sbctl sign -s /usr/lib/fwupd/efi/fwupdx64.efi -o /usr/lib/fwupd/efi/fwupdx64.efi.signed
 ==> Signing /usr/lib/fwupd/efi/fwupdx64.efi...
 
 $ sbctl verify
@@ -127,14 +127,14 @@ $ sbctl bundle -s -i /boot/intel-ucode.img \
       -l /usr/share/systemd/bootctl/splash-arch.bmp \
       -k /boot/vmlinuz-linux \
       -f /boot/initramfs-linux.img \
-      /boot/EFI/Linux/linux-linux.efi 
+      /boot/EFI/Linux/linux-linux.efi
 ==> Wrote EFI bundle /boot/EFI/Linux/linux-linux.efi
 ==> Bundle: /boot/EFI/Linux/linux-linux.efi
   -> Intel Microcode: /boot/intel-ucode.img
   -> Kernel Image: /boot/vmlinuz-linux
   -> Initramfs Image: /boot/initramfs-linux.img
   -> Cmdline: /proc/cmdline
-  -> OS Relase: /usr/lib/os-release
+  -> OS Release: /usr/lib/os-release
   -> EFI Stub Image: /usr/lib/systemd/boot/efi/linuxx64.efi.stub
   -> ESP Location: /efi
   -> Splash Image: /usr/share/systemd/bootctl/splash-arch.bmp
@@ -146,7 +146,7 @@ $ sbctl list-bundles
   -> Kernel Image: /boot/vmlinuz-linux
   -> Initramfs Image: /boot/initramfs-linux.img
   -> Cmdline: /proc/cmdline
-  -> OS Relase: /usr/lib/os-release
+  -> OS Release: /usr/lib/os-release
   -> EFI Stub Image: /usr/lib/systemd/boot/efi/linuxx64.efi.stub
   -> ESP Location: /efi
   -> Splash Image: /usr/share/systemd/bootctl/splash-arch.bmp

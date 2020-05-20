@@ -21,7 +21,7 @@ EFI signing commands
 
 **status**::
         Shows the current secure boot status of the system. It checks if you are
-        currently booted in UEFI with Secure Boot, and wheter or not Setup Mode
+        currently booted in UEFI with Secure Boot, and whether or not Setup Mode
         has been enabled.
 
 **create-keys**::
@@ -64,7 +64,7 @@ EFI binary commands
 ------------------
 
 **bundle** [FLAGS] <NAME>::
-        Creates a bundle that should produce EFI binaries. This is usefull if
+        Creates a bundle that should produce EFI binaries. This is useful if
         you want to sign your initramfs along with your kernel.
 
                 *-a* 'PATH', *--amducode* 'PATH';;
@@ -110,7 +110,7 @@ EFI binary commands
         Removes a bundle from the list.
 
 **list-bundles**::
-        List all registed bundles to generate.
+        List all registered bundles to generate.
 
 
 Files
