@@ -4,7 +4,7 @@ Operation = Install
 Operation = Upgrade
 Operation = Remove
 Target = boot/*
-Target = boot/EFI/*
+Target = efi/*
 Target = usr/lib/modules/*/vmlinuz
 
 [Action]
