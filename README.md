@@ -12,7 +12,7 @@ The goal of the project is to have one consistent UI to manage secure boot keys.
 
 # Roadmap
 
-* Convert to use [goefi](https://github.com/Foxboron/goefi) instead of relying on `sbsigntoosl`
+* Convert to use [goefi](https://github.com/Foxboron/goefi) instead of relying on `sbsigntools`
 * Key rotation
 * Customize keys
 * Secure the keys
