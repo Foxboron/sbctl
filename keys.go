@@ -15,6 +15,8 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+
+	"github.com/google/uuid"
 )
 
 var RSAKeySize = 4096
@@ -193,11 +195,11 @@ func CheckIfKeysInitialized(output string) bool {
 }
 
 func CreateUUID() []byte {
-	out, err := exec.Command("uuidgen").Output()
+	id, err := uuid.NewRandom()
 	if err != nil {
 		log.Fatal(err)
 	}
-	return bytes.TrimSuffix(out, []byte("\n"))
+	return id
 }
 
 func CreateGUID(output string) []byte {
