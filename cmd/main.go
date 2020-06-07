@@ -57,16 +57,23 @@ func signCmd() *cobra.Command {
 }
 
 func signAllCmd() *cobra.Command {
-	return &cobra.Command{
+	var generate bool
+	cmd := &cobra.Command{
 		Use:   "sign-all",
 		Short: "Sign all enrolled files with secure boot keys",
 		Run: func(cmd *cobra.Command, args []string) {
+			if generate {
+				sbctl.GenerateAllBundles()
+			}
 			files := sbctl.ReadFileDatabase(sbctl.DBPath)
 			for _, entry := range files {
 				sbctl.SignFile(sbctl.DBKey, sbctl.DBCert, entry.File, entry.OutputFile)
 			}
 		},
 	}
+	f := cmd.Flags()
+	f.BoolVarP(&generate, "generate", "g", false, "run all generate-* sub-commands before signing")
+	return cmd
 }
 
 func removeFileCmd() *cobra.Command {
