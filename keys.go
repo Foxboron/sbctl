@@ -199,7 +199,7 @@ func CreateUUID() []byte {
 	if err != nil {
 		log.Fatal(err)
 	}
-	return id
+	return []byte(id.String())
 }
 
 func CreateGUID(output string) []byte {
