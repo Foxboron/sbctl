@@ -41,24 +41,37 @@ func GetESP() string {
 }
 
 func VerifyESP() {
+	// Cache files we have looked at.
+	checked := make(map[string]bool)
+
 	espPath := GetESP()
 	files := ReadFileDatabase(DBPath)
 	msg.Printf("Verifying file database and EFI images in %s...", espPath)
+
 	for _, file := range files {
+		normalized := strings.Join(strings.Split(file.OutputFile, "/")[2:], "/")
+		checked[normalized] = true
 		if VerifyFile(DBCert, file.OutputFile) {
 			msg2.Printf("%s is signed\n", file.OutputFile)
 		} else {
 			warning2.Printf("%s is not signed\n", file.OutputFile)
 		}
 	}
+
 	err := filepath.Walk(espPath, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
-
 		if fi, _ := os.Stat(path); fi.IsDir() {
 			return nil
 		}
+
+		// Don't check files we have checked
+		normalized := strings.Join(strings.Split(path, "/")[2:], "/")
+		if ok := checked[normalized]; ok {
+			return nil
+		}
+
 		r, _ := os.Open(path)
 		defer r.Close()
 
