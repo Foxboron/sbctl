@@ -55,17 +55,23 @@ func VerifyESP() {
 		if err != nil {
 			return err
 		}
-		out, err := exec.Command("file", "-b", "--mime-type", path).Output()
-		if err != nil {
-			log.Fatal(err)
-		}
-		out = bytes.TrimSuffix(out, []byte("\n"))
-		if string(out) != "application/x-dosexec" {
+
+		if fi, _ := os.Stat(path); fi.IsDir() {
 			return nil
 		}
-		if _, ok := files[path]; ok {
+		r, _ := os.Open(path)
+		defer r.Close()
+
+		// We are looking for MS-DOS executables.
+		// They contain "MZ" as the two first bytes
+		var header [2]byte
+		if _, err = io.ReadFull(r, header[:]); err != nil {
 			return nil
 		}
+		if !bytes.Equal(header[:], []byte{0x4d, 0x5a}) {
+			return nil
+		}
+
 		if VerifyFile(DBCert, path) {
 			msg2.Printf("%s is signed\n", path)
 		} else {
