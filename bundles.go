@@ -57,8 +57,27 @@ func WriteBundleDatabase(dbpath string, bundles Bundles) {
 	}
 }
 
+func GetEfistub() string {
+	candidates := []string{
+		"/lib/systemd/boot/efi/linuxx64.efi.stub",
+		"/lib/gummiboot/linuxx64.efi.stub",
+	}
+	for _, f := range candidates {
+		if _, err := os.Stat(f); err == nil {
+			return f
+		}
+	}
+	return ""
+}
+
 func NewBundle() *Bundle {
 	esp := GetESP()
+
+	stub := GetEfistub()
+	if stub == "" {
+		panic("No EFISTUB file found. Please install systemd-boot or gummiboot!")
+	}
+
 	return &Bundle{
 		Output:         "",
 		IntelMicrocode: "",
@@ -68,7 +87,7 @@ func NewBundle() *Bundle {
 		Cmdline:        "/proc/cmdline",
 		Splash:         "",
 		OSRelease:      "/usr/lib/os-release",
-		EFIStub:        "/usr/lib/systemd/boot/efi/linuxx64.efi.stub",
+		EFIStub:        stub,
 		ESP:            esp,
 	}
 }
