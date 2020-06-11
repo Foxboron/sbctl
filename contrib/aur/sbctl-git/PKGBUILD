@@ -24,7 +24,7 @@ build(){
     export CGO_CFLAGS="${CFLAGS}"
     export CGO_CPPFLAGS="${CPPFLAGS}"
     export CGO_CXXFLAGS="${CXXFLAGS}"
-    export GOFLAGS="-buildmode=pie -trimpath -mod=readonly -modcacherw"
+    export GOFLAGS="-buildmode=pie -trimpath -modcacherw"
     make
 }
 
