@@ -26,6 +26,8 @@ var (
 	KeysPath     = filepath.Join(DatabasePath, "keys")
 	PKKey        = filepath.Join(KeysPath, "PK", "PK.key")
 	PKCert       = filepath.Join(KeysPath, "PK", "PK.pem")
+	KEKKey       = filepath.Join(KeysPath, "KEK", "KEK.key")
+	KEKCert      = filepath.Join(KeysPath, "KEK", "KEK.pem")
 	DBKey        = filepath.Join(KeysPath, "db", "db.key")
 	DBCert       = filepath.Join(KeysPath, "db", "db.pem")
 )
