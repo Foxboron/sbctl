@@ -245,10 +245,23 @@ func completionZshCmd() *cobra.Command {
 	return completionCmd
 }
 
+func completionFishCmd() *cobra.Command {
+	var completionCmd = &cobra.Command{
+		Use:    "fish",
+		Hidden: true,
+		Run: func(cmd *cobra.Command, args []string) {
+			rootCmd.GenFishCompletion(os.Stdout, true)
+		},
+	}
+	return completionCmd
+}
+
 func main() {
 	rootCmd.PersistentPreRun = func(c *cobra.Command, args []string) {
 		if strings.Contains(c.CommandPath(), "completion zsh") ||
-			strings.Contains(c.CommandPath(), "completion bash") {
+			strings.Contains(c.CommandPath(), "completion bash") ||
+			strings.Contains(c.CommandPath(), "completion fish") ||
+			strings.Contains(c.CommandPath(), "__complete") {
 			return
 		}
 		if os.Geteuid() != 0 {
@@ -272,6 +285,7 @@ func main() {
 	completionCmd := &cobra.Command{Use: "completion"}
 	completionCmd.AddCommand(completionBashCmd())
 	completionCmd.AddCommand(completionZshCmd())
+	completionCmd.AddCommand(completionFishCmd())
 	rootCmd.AddCommand(completionCmd)
 	if err := rootCmd.Execute(); err != nil {
 		os.Exit(1)
