@@ -33,4 +33,5 @@ package(){
     make PROGNM="sbctl-git" PREFIX="$pkgdir/usr" install
     ./sbctl completion bash | install -Dm644 /dev/stdin "$pkgdir/usr/share/bash-completion/completions/sbctl"
     ./sbctl completion zsh | install -Dm644 /dev/stdin "$pkgdir/usr/share/zsh/site-functions/_sbctl"
+    ./sbctl completion fish | install -Dm644 /dev/stdin "$pkgdir/usr/share/fish/vendor_completions.d/sbctl.fish"
 }
