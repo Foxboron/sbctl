@@ -1,5 +1,5 @@
 [Trigger]
-Type = File
+Type = Path
 Operation = Install
 Operation = Upgrade
 Operation = Remove
@@ -8,6 +8,6 @@ Target = efi/*
 Target = usr/lib/modules/*/vmlinuz
 
 [Action]
-Description = Generating EFI Stub bundles...
+Description = Signing EFI binaries...
 When = PostTransaction
-Exec = /usr/bin/sbctl generate-bundles
+Exec = /usr/bin/sbctl sign-all -g
