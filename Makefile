@@ -19,7 +19,7 @@ docs/sbctl.%: docs/sbctl.%.txt docs/asciidoc.conf
 	a2x --no-xmllint --asciidoc-opts="-f docs/asciidoc.conf" -d manpage -f manpage -D docs $<
 
 sbctl: $(SOURCES)
-	go build -o $@ ./cmd/...
+	go build ./cmd/$@
 
 install: man
 	install -Dm755 sbctl -t $(DESTDIR)$(BINDIR)
