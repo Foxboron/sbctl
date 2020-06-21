@@ -1,7 +1,7 @@
 # Maintainer: Morten Linderud <foxboron@archlinux.org>
 
 pkgname=sbctl-git
-pkgver=r36.gd30a0ce
+pkgver=r37.g833e3e4
 pkgrel=1
 pkgdesc="Secure Boot key manager"
 arch=("x86_64")
