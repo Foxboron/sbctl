@@ -35,10 +35,11 @@ Available Commands:
   list-bundles     List stored bundles
   list-files       List enrolled files
   remove-bundle    Remove bundle from database
+  remove-file      Remove file from database
   sign             Sign a file with secure boot keys
   sign-all         Sign all enrolled files with secure boot keys
   status           Show current boot status
-  verify-esp       Find and check if files in the ESP are signed or not
+  verify           Find and check if files in the ESP are signed or not
 
 Flags:
   -h, --help   help for sbctl
@@ -110,13 +111,9 @@ $ sbctl verify
 
 $ sbctl list-files
 ==> File: /efi/EFI/BOOT/BOOTX64.EFI
-  -> Output: /efi/EFI/BOOT/BOOTX64.EFI
 ==> File: /efi/EFI/arch/fwupdx64.efi
-  -> Output: /efi/EFI/arch/fwupdx64.efi
 ==> File: /efi/EFI/systemd/systemd-bootx64.efi
-  -> Output: /efi/EFI/systemd/systemd-bootx64.efi
 ==> File: /efi/vmlinuz-linux
-  -> Output: /efi/vmlinuz-linux
 ==> File: /usr/lib/fwupd/efi/fwupdx64.efi
   -> Output: /usr/lib/fwupd/efi/fwupdx64.efi.signed
 ```
