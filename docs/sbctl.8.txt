@@ -48,6 +48,9 @@ EFI signing commands
 **sign-all**::
         Signs all enrolled EFI binaries.
 
+**list-files**::
+        Lists all enrolled EFI binaries.
+
 **remove-file** <FILE>::
         Removes the file from the signing database.
 
