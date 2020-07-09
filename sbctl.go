@@ -104,6 +104,11 @@ func Sign(file, output string, enroll bool) {
 	}
 	if output == "" {
 		output = file
+	} else {
+		output, err = filepath.Abs(output)
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 	files := ReadFileDatabase(DBPath)
 	if entry, ok := files[file]; ok {

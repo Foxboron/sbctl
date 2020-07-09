@@ -47,7 +47,22 @@ func signCmd() *cobra.Command {
 			if len(args) < 1 {
 				log.Fatalf("Requires a file to sign...\n")
 			}
-			sbctl.Sign(args[0], output, save)
+
+			// Ensure we have absolute paths
+			file, err := filepath.Abs(args[0])
+			if err != nil {
+				log.Fatal(err)
+			}
+			if output == "" {
+				output = file
+			} else {
+				output, err = filepath.Abs(output)
+				if err != nil {
+					log.Fatal(err)
+				}
+			}
+
+			sbctl.Sign(file, output, save)
 		},
 	}
 	f := cmd.Flags()
@@ -150,7 +165,11 @@ func bundleCmd() *cobra.Command {
 				}
 			}
 			bundle := sbctl.NewBundle()
-			bundle.Output = args[0]
+			output, err := filepath.Abs(args[0])
+			if err != nil {
+				log.Fatal(err)
+			}
+			bundle.Output = output
 			bundle.IntelMicrocode = intelucode
 			bundle.AMDMicrocode = amducode
 			bundle.KernelImage = kernelImg
