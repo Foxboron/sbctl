@@ -142,12 +142,13 @@ func VerifyFile(cert, file string) bool {
 	return true
 }
 
-func SignFile(key, cert, file, output string) []byte {
+func SignFile(key, cert, file, output, checksum string) []byte {
 	// Lets check if we have signed it already...
-	if VerifyFile(cert, file) {
+	if VerifyFile(cert, file) || ChecksumFile(file) == checksum {
 		msg.Printf("%s has been signed...", file)
 		return []byte{}
 	}
+
 	msg2.Printf("Signing %s...", file)
 	args := fmt.Sprintf("--key %s --cert %s --output %s %s", key, cert, output, file)
 	out, err := exec.Command("sbsign", strings.Split(args, " ")...).Output()

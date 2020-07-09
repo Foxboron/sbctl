@@ -82,7 +82,7 @@ func signAllCmd() *cobra.Command {
 			}
 			files := sbctl.ReadFileDatabase(sbctl.DBPath)
 			for _, entry := range files {
-				sbctl.SignFile(sbctl.DBKey, sbctl.DBCert, entry.File, entry.OutputFile)
+				sbctl.SignFile(sbctl.DBKey, sbctl.DBCert, entry.File, entry.OutputFile, entry.Checksum)
 			}
 		},
 	}
