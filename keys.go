@@ -143,6 +143,13 @@ func VerifyFile(cert, file string) bool {
 }
 
 func SignFile(key, cert, file, output, checksum string) []byte {
+
+	// Check file exists before we do anything
+	if _, err := os.Stat(file); os.IsNotExist(err) {
+		warning2.Printf("%s does not exist!", file)
+		os.Exit(1)
+	}
+
 	// Lets check if we have signed it already...
 	if VerifyFile(cert, file) || ChecksumFile(file) == checksum {
 		msg.Printf("%s has been signed...", file)
