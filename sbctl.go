@@ -113,6 +113,10 @@ func Sign(file, output string, enroll bool) {
 	files := ReadFileDatabase(DBPath)
 	if entry, ok := files[file]; ok {
 		SignFile(DBKey, DBCert, entry.File, entry.OutputFile, entry.Checksum)
+		checksum := ChecksumFile(file)
+		entry.Checksum = checksum
+		files[file] = entry
+		WriteFileDatabase(DBPath, files)
 	} else {
 		SignFile(DBKey, DBCert, file, output, "")
 	}

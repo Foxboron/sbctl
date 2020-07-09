@@ -83,6 +83,13 @@ func signAllCmd() *cobra.Command {
 			files := sbctl.ReadFileDatabase(sbctl.DBPath)
 			for _, entry := range files {
 				sbctl.SignFile(sbctl.DBKey, sbctl.DBCert, entry.File, entry.OutputFile, entry.Checksum)
+
+				// Update checksum after we signed it
+				checksum := sbctl.ChecksumFile(entry.File)
+				entry.Checksum = checksum
+				files[entry.File] = entry
+				sbctl.WriteFileDatabase(sbctl.DBPath, files)
+
 			}
 		},
 	}
