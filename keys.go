@@ -150,8 +150,8 @@ func SignFile(key, cert, file, output, checksum string) []byte {
 		os.Exit(1)
 	}
 
-	// Lets check if we have signed it already...
-	if VerifyFile(cert, file) || ChecksumFile(file) == checksum {
+	// Let's check if we have signed it already AND the original file hasn't changed
+	if VerifyFile(cert, output) && ChecksumFile(file) == checksum {
 		msg.Printf("%s has been signed...", file)
 		return []byte{}
 	}
