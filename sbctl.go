@@ -51,7 +51,11 @@ func VerifyESP() {
 	for _, file := range files {
 		normalized := strings.Join(strings.Split(file.OutputFile, "/")[2:], "/")
 		checked[normalized] = true
-		if VerifyFile(DBCert, file.OutputFile) {
+
+		// Check output file exists before checking if it's signed
+		if _, err := os.Stat(file.OutputFile); os.IsNotExist(err) {
+			warning2.Printf("%s does not exist\n", file.OutputFile)
+		} else if VerifyFile(DBCert, file.OutputFile) {
 			msg2.Printf("%s is signed\n", file.OutputFile)
 		} else {
 			warning2.Printf("%s is not signed\n", file.OutputFile)
