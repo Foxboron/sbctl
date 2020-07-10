@@ -7,6 +7,7 @@ import (
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/pem"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -142,27 +143,31 @@ func VerifyFile(cert, file string) bool {
 	return true
 }
 
-func SignFile(key, cert, file, output, checksum string) []byte {
+func SignFile(key, cert, file, output, checksum string) error {
 
 	// Check file exists before we do anything
 	if _, err := os.Stat(file); os.IsNotExist(err) {
-		warning2.Printf("%s does not exist!", file)
-		os.Exit(1)
+		msg := fmt.Sprintf("%s does not exist!", file)
+		err2.Printf(msg)
+		return errors.New(msg)
 	}
 
 	// Let's check if we have signed it already AND the original file hasn't changed
 	if VerifyFile(cert, output) && ChecksumFile(file) == checksum {
 		msg.Printf("%s has been signed...", file)
-		return []byte{}
+		return nil
 	}
 
 	msg2.Printf("Signing %s...", file)
 	args := fmt.Sprintf("--key %s --cert %s --output %s %s", key, cert, output, file)
-	out, err := exec.Command("sbsign", strings.Split(args, " ")...).Output()
+	_, err := exec.Command("sbsign", strings.Split(args, " ")...).Output()
 	if err != nil {
-		log.Fatalf("Failed signing file: %s", err)
+		msg := fmt.Sprintf("Failed signing file: %s", err)
+		err2.Printf(msg)
+		return errors.New(msg)
 	}
-	return out
+
+	return nil
 }
 
 var SecureBootKeys = []struct {
