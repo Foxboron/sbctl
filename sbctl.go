@@ -2,6 +2,7 @@ package sbctl
 
 import (
 	"bytes"
+	"errors"
 	"io"
 	"io/ioutil"
 	"log"
@@ -101,11 +102,12 @@ func VerifyESP() {
 	}
 }
 
-func Sign(file, output string, enroll bool) {
+func Sign(file, output string, enroll bool) error {
 	file, err := filepath.Abs(file)
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	if output == "" {
 		output = file
 	} else {
@@ -114,21 +116,35 @@ func Sign(file, output string, enroll bool) {
 			log.Fatal(err)
 		}
 	}
+
+	err = nil
+
 	files := ReadFileDatabase(DBPath)
 	if entry, ok := files[file]; ok {
-		SignFile(DBKey, DBCert, entry.File, entry.OutputFile, entry.Checksum)
+		err = SignFile(DBKey, DBCert, entry.File, entry.OutputFile, entry.Checksum)
+		// return early if signing fails
+		if err != nil {
+			return err
+		}
 		checksum := ChecksumFile(file)
 		entry.Checksum = checksum
 		files[file] = entry
 		WriteFileDatabase(DBPath, files)
 	} else {
-		SignFile(DBKey, DBCert, file, output, "")
+		err = SignFile(DBKey, DBCert, file, output, "")
+		// return early if signing fails
+		if err != nil {
+			return err
+		}
 	}
+
 	if enroll {
 		checksum := ChecksumFile(file)
 		files[file] = &SigningEntry{File: file, OutputFile: output, Checksum: checksum}
 		WriteFileDatabase(DBPath, files)
 	}
+
+	return err
 }
 
 func ListFiles() {
@@ -205,7 +221,7 @@ func CombineFiles(microcode, initramfs string) *os.File {
 	return tmpFile
 }
 
-func CreateBundle(bundle Bundle) {
+func CreateBundle(bundle Bundle) bool {
 	var microcode string
 
 	if bundle.IntelMicrocode != "" {
@@ -218,15 +234,27 @@ func CreateBundle(bundle Bundle) {
 	defer os.Remove(tmpFile.Name())
 	bundle.Initramfs = tmpFile.Name()
 
-	GenerateBundle(&bundle)
+	return GenerateBundle(&bundle)
 }
 
-func GenerateAllBundles() {
+func GenerateAllBundles() error {
 	msg.Println("Generating EFI bundles....")
 	bundles := ReadBundleDatabase(BundleDBPath)
+	out := true
 	for _, bundle := range bundles {
-		CreateBundle(*bundle)
+		if !CreateBundle(*bundle) {
+			out = false
+			err2.Printf("failed to write bundle %s!", bundle.Output)
+		}
 	}
+
+	if !out {
+		msg := "Error generating EFI bundles"
+		err2.Println(msg)
+		return errors.New(msg)
+	}
+
+	return nil
 }
 
 func ListBundles() {
