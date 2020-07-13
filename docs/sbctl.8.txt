@@ -48,6 +48,9 @@ EFI signing commands
 **sign-all**::
         Signs all enrolled EFI binaries.
 
+**list-files**::
+        Lists all enrolled EFI binaries.
+
 **remove-file** <FILE>::
         Removes the file from the signing database.
 
@@ -111,6 +114,12 @@ EFI binary commands
 
 **list-bundles**::
         List all registered bundles to generate.
+
+
+Notes
+-----
+All commands that take path arguments convert them into absolute paths when
+saving them to the database.
 
 
 Files
