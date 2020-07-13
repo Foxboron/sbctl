@@ -2,6 +2,7 @@ package sbctl
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
@@ -196,7 +197,7 @@ func SyncKeys() {
 	}
 }
 
-func CombineFiles(microcode, initramfs string) *os.File {
+func CombineFiles(microcode, initramfs string) (*os.File, error) {
 	tmpFile, e := ioutil.TempFile("/var/tmp", "initramfs-")
 	if e != nil {
 		err.Println("Cannot create temporary file", e)
@@ -210,17 +211,18 @@ func CombineFiles(microcode, initramfs string) *os.File {
 
 	_, e = io.Copy(tmpFile, one)
 	if e != nil {
-		log.Fatalln("failed to append microcode file to output:", err)
+		return nil, PrintGenerateError(fmt.Sprintf("failed to append microcode file to output:", err), err2)
 	}
 
 	_, e = io.Copy(tmpFile, two)
 	if e != nil {
-		log.Fatalln("failed to append initramfs file to output:", err)
+		return nil, PrintGenerateError(fmt.Sprintf("failed to append initramfs file to output:", err), err2)
 	}
-	return tmpFile
+
+	return tmpFile, nil
 }
 
-func CreateBundle(bundle Bundle) bool {
+func CreateBundle(bundle Bundle) error {
 	var microcode string
 
 	if bundle.IntelMicrocode != "" {
@@ -229,11 +231,19 @@ func CreateBundle(bundle Bundle) bool {
 		microcode = bundle.AMDMicrocode
 	}
 
-	tmpFile := CombineFiles(microcode, bundle.Initramfs)
+	tmpFile, err := CombineFiles(microcode, bundle.Initramfs)
+	if err != nil {
+		return err
+	}
 	defer os.Remove(tmpFile.Name())
 	bundle.Initramfs = tmpFile.Name()
 
-	return GenerateBundle(&bundle)
+	out := GenerateBundle(&bundle)
+	if !out {
+		return PrintGenerateError(fmt.Sprintf("failed to generate bundle %s!", bundle.Output), err2)
+	}
+
+	return nil
 }
 
 func GenerateAllBundles() error {
@@ -241,9 +251,9 @@ func GenerateAllBundles() error {
 	bundles := ReadBundleDatabase(BundleDBPath)
 	out := true
 	for _, bundle := range bundles {
-		if !CreateBundle(*bundle) {
+		err := CreateBundle(*bundle)
+		if err != nil {
 			out = false
-			err2.Printf("failed to write bundle %s!", bundle.Output)
 		}
 	}
 
