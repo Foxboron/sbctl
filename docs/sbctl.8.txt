@@ -116,6 +116,12 @@ EFI binary commands
         List all registered bundles to generate.
 
 
+Notes
+-----
+All commands that take path arguments convert them into absolute paths when
+saving them to the database.
+
+
 Files
 ----
 **/usr/share/secureboot**::
