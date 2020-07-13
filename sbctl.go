@@ -2,7 +2,6 @@ package sbctl
 
 import (
 	"bytes"
-	"errors"
 	"io"
 	"io/ioutil"
 	"log"
@@ -249,9 +248,7 @@ func GenerateAllBundles() error {
 	}
 
 	if !out {
-		msg := "Error generating EFI bundles"
-		err2.Println(msg)
-		return errors.New(msg)
+		return PrintGenerateError("Error generating EFI bundles", err)
 	}
 
 	return nil
