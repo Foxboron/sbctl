@@ -2,7 +2,6 @@ package sbctl
 
 import (
 	"bytes"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
@@ -211,12 +210,12 @@ func CombineFiles(microcode, initramfs string) (*os.File, error) {
 
 	_, e = io.Copy(tmpFile, one)
 	if e != nil {
-		return nil, PrintGenerateError(fmt.Sprintf("failed to append microcode file to output:", err), err2)
+		return nil, PrintGenerateError(err2, "failed to append microcode file to output:", err)
 	}
 
 	_, e = io.Copy(tmpFile, two)
 	if e != nil {
-		return nil, PrintGenerateError(fmt.Sprintf("failed to append initramfs file to output:", err), err2)
+		return nil, PrintGenerateError(err2, "failed to append initramfs file to output:", err)
 	}
 
 	return tmpFile, nil
@@ -240,7 +239,7 @@ func CreateBundle(bundle Bundle) error {
 
 	out := GenerateBundle(&bundle)
 	if !out {
-		return PrintGenerateError(fmt.Sprintf("failed to generate bundle %s!", bundle.Output), err2)
+		return PrintGenerateError(err2, "failed to generate bundle %s!", bundle.Output)
 	}
 
 	return nil
@@ -258,7 +257,7 @@ func GenerateAllBundles() error {
 	}
 
 	if !out {
-		return PrintGenerateError("Error generating EFI bundles", err)
+		return PrintGenerateError(err, "Error generating EFI bundles")
 	}
 
 	return nil

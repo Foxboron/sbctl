@@ -146,7 +146,7 @@ func SignFile(key, cert, file, output, checksum string) error {
 
 	// Check file exists before we do anything
 	if _, err := os.Stat(file); os.IsNotExist(err) {
-		return PrintGenerateError(fmt.Sprintf("%s does not exist!", file), err2)
+		return PrintGenerateError(err2, "%s does not exist!", file)
 	}
 
 	// Let's check if we have signed it already AND the original file hasn't changed
@@ -159,7 +159,7 @@ func SignFile(key, cert, file, output, checksum string) error {
 	args := fmt.Sprintf("--key %s --cert %s --output %s %s", key, cert, output, file)
 	_, err := exec.Command("sbsign", strings.Split(args, " ")...).Output()
 	if err != nil {
-		return PrintGenerateError(fmt.Sprintf("Failed signing file: %s", err), err2)
+		return PrintGenerateError(err2, "Failed signing file: %s", err)
 	}
 
 	return nil
