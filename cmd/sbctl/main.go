@@ -107,6 +107,10 @@ func removeFileCmd() *cobra.Command {
 				log.Fatal("Need to specify file")
 			}
 			files := sbctl.ReadFileDatabase(sbctl.DBPath)
+			if _, ok := files[args[0]]; !ok {
+				log.Printf("File %s doesn't exist in database!\n", args[0])
+				os.Exit(1)
+			}
 			delete(files, args[0])
 			sbctl.WriteFileDatabase(sbctl.DBPath, files)
 		},
@@ -243,6 +247,11 @@ func removeBundleCmd() *cobra.Command {
 				log.Fatal("Need to specify file")
 			}
 			bundles := sbctl.ReadBundleDatabase(sbctl.BundleDBPath)
+
+			if _, ok := bundles[args[0]]; !ok {
+				log.Printf("Bundle %s doesn't exist in database!\n", args[0])
+				os.Exit(1)
+			}
 			delete(bundles, args[0])
 			sbctl.WriteBundleDatabase(sbctl.BundleDBPath, bundles)
 		},
