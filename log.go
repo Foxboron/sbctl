@@ -19,23 +19,25 @@ var (
 	err2     *log.Logger
 )
 
+var (
+	red    = GetColor("setaf 1")
+	green  = GetColor("setaf 2")
+	yellow = GetColor("setaf 3")
+	blue   = GetColor("setaf 4")
+	bold   = GetColor("bold")
+	off    = GetColor("sgr0")
+
+	// I didn't bother figure out how we get this to the end of the log format
+	// So we just clear the terminal stuff at the start of each log line
+	prefix = off
+)
+
 func GetColor(args string) string {
 	out, _ := exec.Command("tput", strings.Split(args, " ")...).Output()
 	return string(bytes.TrimSuffix(out, []byte("\n")))
 }
 
 func init() {
-	var (
-		red    = GetColor("setaf 1")
-		green  = GetColor("setaf 2")
-		yellow = GetColor("setaf 3")
-		blue   = GetColor("setaf 4")
-		bold   = GetColor("bold")
-		off    = GetColor("sgr0")
-		// I didn't bother figure out how we get this to the end of the log format
-		// So we just clear the terminal stuff at the start of each log line
-		prefix = fmt.Sprintf("%s", off)
-	)
 	plainfmt := fmt.Sprintf("%s%s ", prefix, bold)
 	plain = log.New(os.Stdout, plainfmt, 0)
 
