@@ -37,6 +37,10 @@ func GetColor(args string) string {
 	return string(bytes.TrimSuffix(out, []byte("\n")))
 }
 
+func ColorsOff() {
+	fmt.Print(off)
+}
+
 func init() {
 	plainfmt := fmt.Sprintf("%s%s ", prefix, bold)
 	plain = log.New(os.Stdout, plainfmt, 0)
