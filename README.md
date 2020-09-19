@@ -50,27 +50,27 @@ Use "sbctl [command] --help" for more information about a command.
 ## Key creation and enrollment
 
 ```
-$ sbctl status
+# sbctl status
 ==> WARNING: Setup Mode: Enabled
 ==> WARNING: Secure Boot: Disabled
 
-$ sbctl create-keys
+# sbctl create-keys
 ==> Creating secure boot keys...
   -> Using UUID d6e9af79-c6b5-4b43-b893-dbb7e6570142...
 ==> Signing /usr/share/secureboot/keys/PK/PK.der.esl with /usr/share/secureboot/keys/PK/PK.key...
 ==> Signing /usr/share/secureboot/keys/KEK/KEK.der.esl with /usr/share/secureboot/keys/PK/PK.key...
 ==> Signing /usr/share/secureboot/keys/db/db.der.esl with /usr/share/secureboot/keys/KEK/KEK.key...
 
-$ sbctl enroll-keys
+# sbctl enroll-keys
 ==> Syncing /usr/share/secureboot/keys to EFI variables...
 ==> Synced keys!
 
-$ sbctl status
+# sbctl status
 ==> Setup Mode: Disabled
 ==> WARNING: Secure Boot: Disabled
 
 # Reboot!
-$ sbctl status
+# sbctl status
 ==> Setup Mode: Disabled
 ==> Secure Boot: Enabled
 ```
@@ -78,7 +78,7 @@ $ sbctl status
 
 ## Signatures
 ```
-$ sbctl verify
+# sbctl verify
 ==> Verifying file database and EFI images in /efi...
   -> WARNING: /boot/vmlinuz-linux is not signed
   -> WARNING: /efi/EFI/BOOT/BOOTX64.EFI is not signed
@@ -87,19 +87,19 @@ $ sbctl verify
   -> WARNING: /efi/EFI/arch/fwupdx64.efi is not signed
   -> WARNING: /efi/EFI/systemd/systemd-bootx64.efi is not signed
 
-$ sbctl sign -s /efi/EFI/BOOT/BOOTX64.EFI
+# sbctl sign -s /efi/EFI/BOOT/BOOTX64.EFI
 ==> Signing /efi/EFI/BOOT/BOOTX64.EFI...
 
-$ sbctl sign -s /efi/EFI/arch/fwupdx64.efi
+# sbctl sign -s /efi/EFI/arch/fwupdx64.efi
 ==> Signing /efi/EFI/arch/fwupdx64.efi...
 
-$ sbctl sign -s /efi/EFI/systemd/systemd-bootx64.efi
+# sbctl sign -s /efi/EFI/systemd/systemd-bootx64.efi
 ==> Signing /efi/EFI/systemd/systemd-bootx64.efi...
 
-$ sbctl sign -s /usr/lib/fwupd/efi/fwupdx64.efi -o /usr/lib/fwupd/efi/fwupdx64.efi.signed
+# sbctl sign -s /usr/lib/fwupd/efi/fwupdx64.efi -o /usr/lib/fwupd/efi/fwupdx64.efi.signed
 ==> Signing /usr/lib/fwupd/efi/fwupdx64.efi...
 
-$ sbctl verify
+# sbctl verify
 ==> Verifying file database and EFI images in /efi...
   -> /usr/lib/fwupd/efi/fwupdx64.efi.signed is signed
   -> /efi/EFI/BOOT/BOOTX64.EFI is signed
@@ -109,7 +109,7 @@ $ sbctl verify
   -> WARNING: /efi/EFI/BOOT/KeyTool-signed.efi is not signed
   -> WARNING: /efi/EFI/Linux/linux-linux.efi is not signed
 
-$ sbctl list-files
+# sbctl list-files
 ==> File: /efi/EFI/BOOT/BOOTX64.EFI
 ==> File: /efi/EFI/arch/fwupdx64.efi
 ==> File: /efi/EFI/systemd/systemd-bootx64.efi
@@ -120,7 +120,7 @@ $ sbctl list-files
 
 ## Generate EFI Stub
 ```
-$ sbctl bundle -s -i /boot/intel-ucode.img \
+# sbctl bundle -s -i /boot/intel-ucode.img \
       -l /usr/share/systemd/bootctl/splash-arch.bmp \
       -k /boot/vmlinuz-linux \
       -f /boot/initramfs-linux.img \
@@ -137,7 +137,7 @@ $ sbctl bundle -s -i /boot/intel-ucode.img \
   -> Splash Image: /usr/share/systemd/bootctl/splash-arch.bmp
   -> Output: /boot/EFI/Linux/linux-linux.efi
 
-$ sbctl list-bundles
+# sbctl list-bundles
 ==> Bundle: /boot/EFI/Linux/linux-linux.efi
   -> Intel Microcode: /boot/intel-ucode.img
   -> Kernel Image: /boot/vmlinuz-linux
@@ -149,8 +149,7 @@ $ sbctl list-bundles
   -> Splash Image: /usr/share/systemd/bootctl/splash-arch.bmp
   -> Output: /boot/EFI/Linux/linux-linux.efi
 
-$ sbctl generate-bundles
+# sbctl generate-bundles
 ==> Generating EFI bundles....
 ==> Wrote EFI bundle /boot/EFI/Linux/linux-linux.efi
 ```
-
