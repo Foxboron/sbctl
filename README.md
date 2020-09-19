@@ -69,7 +69,7 @@ Use "sbctl [command] --help" for more information about a command.
 ==> Setup Mode: Disabled
 ==> WARNING: Secure Boot: Disabled
 
-# Reboot!
+// Reboot!
 # sbctl status
 ==> Setup Mode: Disabled
 ==> Secure Boot: Enabled
