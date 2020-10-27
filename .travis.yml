@@ -1,0 +1,17 @@
+language: go
+arch: amd64 
+os: linux
+dist: focal
+go:
+- 1.15.x
+go_import_path: github.com/Foxboron
+cache:
+  directories:
+    - $GOPATH/pkg/mod
+script:
+- go test -v ./...
+branches:
+  only:
+  - master
+notifications:
+  email: false

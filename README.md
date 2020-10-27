@@ -1,5 +1,4 @@
-sbctl - Secure Boot Manager
-===========================
+# sbctl - Secure Boot Manager [![Build Status](https://travis-ci.org/Foxboron/sbctl.svg?&branch=master)](https://travis-ci.com/Foxboron/sbctl)
 
 The goal of the project is to have one consistent UI to manage secure boot keys.
 
