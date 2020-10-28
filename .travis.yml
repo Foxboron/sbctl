@@ -9,7 +9,8 @@ cache:
   directories:
     - $GOPATH/pkg/mod
 script:
-- go test -v ./...
+- make lint || travis_terminate 1
+- make test || travis_terminate 1
 branches:
   only:
   - master

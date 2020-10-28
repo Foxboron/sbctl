@@ -47,3 +47,13 @@ push-aur:
 clean:
 	rm -f $(MANS)
 	rm -f sbctl
+
+.PHONY: lint
+lint:
+	cat tools.go | grep _ | awk '{print $2}' | xargs -tI % go install %
+	go vet ./...
+	staticcheck ./...
+
+.PHONY: test
+test:
+	go test -v ./...
