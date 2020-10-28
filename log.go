@@ -31,6 +31,10 @@ var (
 	prefix = off
 )
 
+var (
+	rootMsg = "It might be necessary to run this tool as root"
+)
+
 func GetColor(args string) string {
 	out, _ := exec.Command("tput", strings.Split(args, " ")...).Output()
 	return string(bytes.TrimSuffix(out, []byte("\n")))

@@ -40,14 +40,18 @@ func GetESP() string {
 	return ""
 }
 
-func VerifyESP() {
+func VerifyESP() error {
+	espPath := GetESP()
+	files, err := ReadFileDatabase(DBPath)
+	if err != nil {
+		warning.Printf("Couldn't read file database: %s", err)
+		msg.Printf("Verifying EFI images in %s...", espPath)
+	} else {
+		msg.Printf("Verifying file database and EFI images in %s...", espPath)
+	}
+
 	// Cache files we have looked at.
 	checked := make(map[string]bool)
-
-	espPath := GetESP()
-	files := ReadFileDatabase(DBPath)
-	msg.Printf("Verifying file database and EFI images in %s...", espPath)
-
 	for _, file := range files {
 		normalized := strings.Join(strings.Split(file.OutputFile, "/")[2:], "/")
 		checked[normalized] = true
@@ -62,7 +66,7 @@ func VerifyESP() {
 		}
 	}
 
-	err := filepath.Walk(espPath, func(path string, info os.FileInfo, err error) error {
+	err = filepath.Walk(espPath, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
@@ -99,6 +103,8 @@ func VerifyESP() {
 	if err != nil {
 		log.Println(err)
 	}
+
+	return nil
 }
 
 func Sign(file, output string, enroll bool) error {
@@ -118,7 +124,10 @@ func Sign(file, output string, enroll bool) error {
 
 	err = nil
 
-	files := ReadFileDatabase(DBPath)
+	files, err := ReadFileDatabase(DBPath)
+	if err != nil {
+		return err
+	}
 	if entry, ok := files[file]; ok {
 		err = SignFile(DBKey, DBCert, entry.File, entry.OutputFile, entry.Checksum)
 		// return early if signing fails
@@ -147,7 +156,11 @@ func Sign(file, output string, enroll bool) error {
 }
 
 func ListFiles() {
-	files := ReadFileDatabase(DBPath)
+	files, err := ReadFileDatabase(DBPath)
+	if err != nil {
+		err2.Printf("Couldn't open database: %s", DBPath)
+		return
+	}
 	for path, s := range files {
 		msg.Printf("File: %s", path)
 		if path != s.OutputFile {

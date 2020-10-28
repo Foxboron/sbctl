@@ -17,6 +17,7 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
+	"golang.org/x/sys/unix"
 )
 
 var RSAKeySize = 4096
@@ -30,6 +31,8 @@ var (
 	KEKCert      = filepath.Join(KeysPath, "KEK", "KEK.pem")
 	DBKey        = filepath.Join(KeysPath, "db", "db.key")
 	DBCert       = filepath.Join(KeysPath, "db", "db.pem")
+
+	DBPath = filepath.Join(DatabasePath, "files.db")
 )
 
 func CreateKey(path, name string) []byte {
@@ -153,6 +156,12 @@ func SignFile(key, cert, file, output, checksum string) error {
 	if VerifyFile(cert, output) && ChecksumFile(file) == checksum {
 		msg.Printf("%s has been signed...", file)
 		return nil
+	}
+
+	// Let's also check if we can access the key
+	if err := unix.Access(key, unix.R_OK); err != nil {
+		err2.Printf("Couldn't access %s", key)
+		return err
 	}
 
 	msg2.Printf("Signing %s...", file)
