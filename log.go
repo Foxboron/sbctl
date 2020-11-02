@@ -10,7 +10,6 @@ import (
 )
 
 var (
-	plain    *log.Logger
 	msg      *log.Logger
 	msg2     *log.Logger
 	warning  *log.Logger
@@ -42,9 +41,6 @@ func ColorsOff() {
 }
 
 func init() {
-	plainfmt := fmt.Sprintf("%s%s ", prefix, bold)
-	plain = log.New(os.Stdout, plainfmt, 0)
-
 	msgfmt := fmt.Sprintf("%s%s%s==>%s%s ", prefix, bold, green, off, bold)
 	msg = log.New(os.Stdout, msgfmt, 0)
 
