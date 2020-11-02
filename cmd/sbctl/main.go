@@ -83,7 +83,7 @@ func signAllCmd() *cobra.Command {
 			outSign := false
 
 			if generate {
-				outBundle = sbctl.GenerateAllBundles()
+				outBundle = sbctl.GenerateAllBundles(true)
 			}
 
 			files := sbctl.ReadFileDatabase(sbctl.DBPath)
@@ -234,7 +234,7 @@ func generateBundlesCmd() *cobra.Command {
 		Use:   "generate-bundles",
 		Short: "Generate all EFI stub bundles",
 		Run: func(cmd *cobra.Command, args []string) {
-			sbctl.GenerateAllBundles()
+			sbctl.GenerateAllBundles(sign)
 		},
 	}
 	f := cmd.Flags()
