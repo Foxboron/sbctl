@@ -14,5 +14,4 @@ jobs:
           install: true
 
       - name: Build
-        run: |
-          docker build .
+        run: docker build .
