@@ -2,15 +2,11 @@ FROM golang:1.15-buster
 WORKDIR $GOPATH/src/github.com/Foxboron/sbctl
 COPY . .
 
-# Install dependencies
-RUN go get honnef.co/go/tools/cmd/staticcheck@2020.1.6
-
-# Run code linters
-RUN go vet ./...
-RUN staticcheck ./...
+# Install dependencies and run code linters
+RUN make lint
 
 # Run test suite
-RUN go test -v ./...
+RUN make test
 
 # Build binaries
-RUN go install
+RUN make sbctl

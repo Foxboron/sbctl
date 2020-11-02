@@ -47,3 +47,17 @@ push-aur:
 clean:
 	rm -f $(MANS)
 	rm -f sbctl
+
+.PHONY: deps
+deps:
+	go get honnef.co/go/tools/cmd/staticcheck@2020.1.6
+
+
+.PHONY: lint
+lint: deps
+	go vet ./...
+	staticcheck ./...
+
+.PHONY: test
+test:
+	go test -v ./...
