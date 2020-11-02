@@ -52,7 +52,6 @@ clean:
 deps:
 	go get honnef.co/go/tools/cmd/staticcheck@2020.1.6
 
-
 .PHONY: lint
 lint: deps
 	go vet ./...
