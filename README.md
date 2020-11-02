@@ -1,4 +1,4 @@
-# sbctl - Secure Boot Manager ![build](https://github.com/syscll/sbctl/workflows/Build%20&%20Test/badge.svg)
+# sbctl - Secure Boot Manager ![build](https://github.com/syscll/sbctl/workflows/build/badge.svg)
 
 The goal of the project is to have one consistent UI to manage secure boot keys.
 
