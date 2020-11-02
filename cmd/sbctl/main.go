@@ -79,18 +79,18 @@ func signAllCmd() *cobra.Command {
 		Use:   "sign-all",
 		Short: "Sign all enrolled files with secure boot keys",
 		Run: func(cmd *cobra.Command, args []string) {
-			var out_bundle error = nil
-			out_sign := false
+			var outBundle error
+			outSign := false
 
 			if generate {
-				out_bundle = sbctl.GenerateAllBundles()
+				outBundle = sbctl.GenerateAllBundles()
 			}
 
 			files := sbctl.ReadFileDatabase(sbctl.DBPath)
 			for _, entry := range files {
 
 				if sbctl.SignFile(sbctl.DBKey, sbctl.DBCert, entry.File, entry.OutputFile, entry.Checksum) != nil {
-					out_sign = true
+					outSign = true
 					continue
 				}
 
@@ -102,7 +102,7 @@ func signAllCmd() *cobra.Command {
 
 			}
 
-			if out_bundle != nil || out_sign {
+			if outBundle != nil || outSign {
 				log.Fatalln("Errors were encountered, see above")
 			}
 		},
