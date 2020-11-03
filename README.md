@@ -1,4 +1,4 @@
-# sbctl - Secure Boot Manager ![build](https://github.com/Foxboron/sbctl/workflows/build/badge.svg)
+# sbctl - Secure Boot Manager [![Build Status](https://github.com/Foxboron/sbctl/workflows/build/badge.svg)](https://github.com/Foxboron/sbctl/actions)
 
 The goal of the project is to have one consistent UI to manage secure boot keys.
 
