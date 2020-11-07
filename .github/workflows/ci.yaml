@@ -10,7 +10,7 @@ jobs:
          - uses: actions/checkout@v1
          - run: make
          - run: make test
-         - run: make deps lint
+         - run: GOBIN=/usr/bin make deps lint
    void:
       runs-on: ubuntu-latest
       container: voidlinux/voidlinux-musl
@@ -21,4 +21,4 @@ jobs:
          - uses: actions/checkout@v1
          - run: make
          - run: make test
-         - run: make deps lint
+         - run: GOBIN=/usr/bin make deps lint
