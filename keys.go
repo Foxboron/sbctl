@@ -17,6 +17,8 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
+	"github.com/foxboron/goefi/efi/signature"
+	"github.com/foxboron/goefi/efi/util"
 )
 
 var RSAKeySize = 4096
@@ -91,12 +93,13 @@ func SaveKey(k []byte, path string) {
 
 func KeyToSiglist(UUID []byte, input string) []byte {
 	msg.Printf("Create EFI signature list %s.esl...", input)
-	args := fmt.Sprintf("--owner %s --type x509 --output %s.esl %s", UUID, input, input)
-	out, err := exec.Command("/usr/bin/sbsiglist", strings.Split(args, " ")...).Output()
-	if err != nil {
-		log.Fatalf("Failed creating signature list: %s", err)
-	}
-	return out
+	guid := util.StringToGUID(string(UUID))
+	inputBuf, _ := ioutil.ReadFile(input)
+	c := signature.NewSignatureList(inputBuf, *guid, signature.CERT_X509)
+	buf := new(bytes.Buffer)
+	signature.WriteSignatureList(buf, *c)
+	ioutil.WriteFile(fmt.Sprintf("%s.esl", input), buf.Bytes(), 0644)
+	return buf.Bytes()
 }
 
 func SignEFIVariable(key, cert, varname, vardatafile, output string) []byte {
