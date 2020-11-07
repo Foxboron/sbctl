@@ -55,7 +55,6 @@ deps:
 .PHONY: lint
 lint: deps
 	go vet ./...
-	test -z $(shell go fmt ./...)
 	staticcheck ./...
 
 .PHONY: test
