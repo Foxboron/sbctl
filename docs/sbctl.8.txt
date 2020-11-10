@@ -48,6 +48,9 @@ EFI signing commands
 **sign-all**::
         Signs all enrolled EFI binaries.
 
+        *-g*, *--generate*;;
+                Generate all bundles before signing.
+
 **list-files**::
         Lists all enrolled EFI binaries.
 
