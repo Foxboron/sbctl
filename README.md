@@ -17,6 +17,10 @@ The goal of the project is to have one consistent UI to manage secure boot keys.
 * Customize keys
 * Secure the keys
 
+# Support and development channel
+
+`#sbctl` on the [freenode](https://webchat.freenode.net/#sbctl) IRC network.
+
 # Usage
 
 ```
