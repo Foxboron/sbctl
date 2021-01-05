@@ -10,7 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/foxboron/goefi/efi/attributes"
+	"github.com/foxboron/go-uefi/efi/attributes"
 )
 
 // Functions that doesn't fit anywhere else
