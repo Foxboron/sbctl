@@ -4,8 +4,6 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"log"
-	"os"
-	"path/filepath"
 )
 
 type SigningEntry struct {
@@ -17,39 +15,9 @@ type SigningEntry struct {
 type SigningEntries map[string]*SigningEntry
 
 func ReadFileDatabase(dbpath string) (SigningEntries, error) {
-	// Try to access or create dbpath itself
-	f, err := ioutil.ReadFile(dbpath)
+	f, err := ReadOrCreateFile(dbpath)
 	if err != nil {
-		// Errors will mainly happen due to permissions or non-existing file
-		if os.IsNotExist(err) {
-			// First, guarantee the directory's existence
-			// os.MkdirAll simply returns nil if the directory already exists
-			dbpathDir := filepath.Dir(dbpath)
-			if err = os.MkdirAll(dbpathDir, os.ModePerm); err != nil {
-				if os.IsPermission(err) {
-					warning.Printf(rootMsg)
-				}
-				return nil, err
-			}
-
-			file, err := os.Create(dbpath)
-			if err != nil {
-				if os.IsPermission(err) {
-					warning.Printf(rootMsg)
-				}
-				return nil, err
-			}
-			file.Close()
-
-			// Create zero-length f, which is equivalent to what would be read from empty file
-			f = make([]byte, 0)
-		} else {
-			if os.IsPermission(err) {
-				warning.Printf(rootMsg)
-			}
-
-			return nil, err
-		}
+		return nil, err
 	}
 
 	files := make(SigningEntries)
