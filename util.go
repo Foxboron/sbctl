@@ -18,10 +18,10 @@ func PrintGenerateError(logger *log.Logger, msg string, args ...interface{}) err
 func ChecksumFile(file string) string {
 	hasher := sha256.New()
 	s, err := ioutil.ReadFile(file)
-	hasher.Write(s)
 	if err != nil {
 		log.Fatal(err)
 	}
+	hasher.Write(s)
 
 	return hex.EncodeToString(hasher.Sum(nil))
 }
