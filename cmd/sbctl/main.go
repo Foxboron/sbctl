@@ -200,6 +200,16 @@ func bundleCmd() *cobra.Command {
 			if err != nil {
 				log.Fatal(err)
 			}
+			// Fail early if user wants to save bundle but doesn't have permissions
+			var bundles sbctl.Bundles
+			if save {
+				// "err" needs to have been declared before this, otherwise it's necessary
+				// to use ":=", which shadows the "bundles" variable
+				bundles, err = sbctl.ReadBundleDatabase(sbctl.BundleDBPath)
+				if err != nil {
+					log.Fatalln(err)
+				}
+			}
 			bundle.Output = output
 			bundle.IntelMicrocode = intelucode
 			bundle.AMDMicrocode = amducode
@@ -212,7 +222,6 @@ func bundleCmd() *cobra.Command {
 			bundle.ESP = espPath
 			sbctl.CreateBundle(*bundle)
 			if save {
-				bundles := sbctl.ReadBundleDatabase(sbctl.BundleDBPath)
 				bundles[bundle.Output] = bundle
 				sbctl.WriteBundleDatabase(sbctl.BundleDBPath, bundles)
 				sbctl.FormatBundle(bundle.Output, bundle)
@@ -266,7 +275,10 @@ func removeBundleCmd() *cobra.Command {
 			if len(args) < 1 {
 				log.Fatal("Need to specify file")
 			}
-			bundles := sbctl.ReadBundleDatabase(sbctl.BundleDBPath)
+			bundles, err := sbctl.ReadBundleDatabase(sbctl.BundleDBPath)
+			if err != nil {
+				log.Fatalln(err)
+			}
 
 			if _, ok := bundles[args[0]]; !ok {
 				log.Printf("Bundle %s doesn't exist in database!\n", args[0])

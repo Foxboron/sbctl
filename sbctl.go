@@ -260,7 +260,10 @@ func CreateBundle(bundle Bundle) error {
 
 func GenerateAllBundles(sign bool) error {
 	msg.Println("Generating EFI bundles....")
-	bundles := ReadBundleDatabase(BundleDBPath)
+	bundles, err := ReadBundleDatabase(BundleDBPath)
+	if err != nil {
+		return err
+	}
 	out_create := true
 	out_sign := true
 	for _, bundle := range bundles {
@@ -291,7 +294,10 @@ func GenerateAllBundles(sign bool) error {
 }
 
 func ListBundles() {
-	bundles := ReadBundleDatabase(BundleDBPath)
+	bundles, err := ReadBundleDatabase(BundleDBPath)
+	if err != nil {
+		log.Fatalln(err)
+	}
 	for key, bundle := range bundles {
 		FormatBundle(key, bundle)
 	}

@@ -28,22 +28,14 @@ type Bundles map[string]*Bundle
 
 var BundleDBPath = filepath.Join(DatabasePath, "bundles.db")
 
-func ReadBundleDatabase(dbpath string) Bundles {
-	bundles := make(Bundles)
-	os.MkdirAll(DatabasePath, os.ModePerm)
-	if _, err := os.Stat(BundleDBPath); os.IsNotExist(err) {
-		file, err := os.Create(BundleDBPath)
-		if err != nil {
-			log.Fatal(err)
-		}
-		file.Close()
-	}
-	f, err := ioutil.ReadFile(dbpath)
+func ReadBundleDatabase(dbpath string) (Bundles, error) {
+	f, err := ReadOrCreateFile(dbpath)
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
+	bundles := make(Bundles)
 	json.Unmarshal(f, &bundles)
-	return bundles
+	return bundles, nil
 }
 
 func WriteBundleDatabase(dbpath string, bundles Bundles) {
