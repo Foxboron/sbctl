@@ -189,7 +189,7 @@ func CreateKeys() {
 func SyncKeys() {
 	synced := SBKeySync(KeysPath)
 	if !synced {
-		err.Println("Couldn't sync keys")
+		err1.Println("Couldn't sync keys")
 		os.Exit(1)
 	} else {
 		msg.Println("Synced keys!")
@@ -197,9 +197,9 @@ func SyncKeys() {
 }
 
 func CombineFiles(microcode, initramfs string) (*os.File, error) {
-	tmpFile, e := ioutil.TempFile("/var/tmp", "initramfs-")
-	if e != nil {
-		err.Println("Cannot create temporary file", e)
+	tmpFile, err := ioutil.TempFile("/var/tmp", "initramfs-")
+	if err != nil {
+		err1.Println("Cannot create temporary file", err)
 	}
 
 	one, _ := os.Open(microcode)
@@ -208,13 +208,13 @@ func CombineFiles(microcode, initramfs string) (*os.File, error) {
 	two, _ := os.Open(initramfs)
 	defer two.Close()
 
-	_, e = io.Copy(tmpFile, one)
-	if e != nil {
+	_, err = io.Copy(tmpFile, one)
+	if err != nil {
 		return nil, PrintGenerateError(err2, "failed to append microcode file to output:", err)
 	}
 
-	_, e = io.Copy(tmpFile, two)
-	if e != nil {
+	_, err = io.Copy(tmpFile, two)
+	if err != nil {
 		return nil, PrintGenerateError(err2, "failed to append initramfs file to output:", err)
 	}
 
@@ -267,11 +267,11 @@ func GenerateAllBundles(sign bool) error {
 	}
 
 	if !out_create {
-		return PrintGenerateError(err, "Error generating EFI bundles")
+		return PrintGenerateError(err1, "Error generating EFI bundles")
 	}
 
 	if !out_sign {
-		return PrintGenerateError(err, "Error signing EFI bundles")
+		return PrintGenerateError(err1, "Error signing EFI bundles")
 	}
 
 	return nil
