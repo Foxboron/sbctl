@@ -40,14 +40,18 @@ func GetESP() string {
 	return ""
 }
 
-func VerifyESP() {
+func VerifyESP() error {
+	espPath := GetESP()
+	files, err := ReadFileDatabase(DBPath)
+	if err != nil {
+		warning.Printf("Couldn't read file database: %s", err)
+		msg.Printf("Verifying EFI images in %s...", espPath)
+	} else {
+		msg.Printf("Verifying file database and EFI images in %s...", espPath)
+	}
+
 	// Cache files we have looked at.
 	checked := make(map[string]bool)
-
-	espPath := GetESP()
-	files := ReadFileDatabase(DBPath)
-	msg.Printf("Verifying file database and EFI images in %s...", espPath)
-
 	for _, file := range files {
 		normalized := strings.Join(strings.Split(file.OutputFile, "/")[2:], "/")
 		checked[normalized] = true
@@ -62,7 +66,7 @@ func VerifyESP() {
 		}
 	}
 
-	err := filepath.Walk(espPath, func(path string, info os.FileInfo, err error) error {
+	err = filepath.Walk(espPath, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
@@ -99,6 +103,8 @@ func VerifyESP() {
 	if err != nil {
 		log.Println(err)
 	}
+
+	return nil
 }
 
 func Sign(file, output string, enroll bool) error {
@@ -118,7 +124,10 @@ func Sign(file, output string, enroll bool) error {
 
 	err = nil
 
-	files := ReadFileDatabase(DBPath)
+	files, err := ReadFileDatabase(DBPath)
+	if err != nil {
+		return err
+	}
 	if entry, ok := files[file]; ok {
 		err = SignFile(DBKey, DBCert, entry.File, entry.OutputFile, entry.Checksum)
 		// return early if signing fails
@@ -147,7 +156,11 @@ func Sign(file, output string, enroll bool) error {
 }
 
 func ListFiles() {
-	files := ReadFileDatabase(DBPath)
+	files, err := ReadFileDatabase(DBPath)
+	if err != nil {
+		err2.Printf("Couldn't open database: %s", DBPath)
+		return
+	}
 	for path, s := range files {
 		msg.Printf("File: %s", path)
 		if path != s.OutputFile {
@@ -189,7 +202,7 @@ func CreateKeys() {
 func SyncKeys() {
 	synced := SBKeySync(KeysPath)
 	if !synced {
-		err.Println("Couldn't sync keys")
+		err1.Println("Couldn't sync keys")
 		os.Exit(1)
 	} else {
 		msg.Println("Synced keys!")
@@ -197,9 +210,9 @@ func SyncKeys() {
 }
 
 func CombineFiles(microcode, initramfs string) (*os.File, error) {
-	tmpFile, e := ioutil.TempFile("/var/tmp", "initramfs-")
-	if e != nil {
-		err.Println("Cannot create temporary file", e)
+	tmpFile, err := ioutil.TempFile("/var/tmp", "initramfs-")
+	if err != nil {
+		err1.Println("Cannot create temporary file", err)
 	}
 
 	one, _ := os.Open(microcode)
@@ -208,13 +221,13 @@ func CombineFiles(microcode, initramfs string) (*os.File, error) {
 	two, _ := os.Open(initramfs)
 	defer two.Close()
 
-	_, e = io.Copy(tmpFile, one)
-	if e != nil {
+	_, err = io.Copy(tmpFile, one)
+	if err != nil {
 		return nil, PrintGenerateError(err2, "failed to append microcode file to output:", err)
 	}
 
-	_, e = io.Copy(tmpFile, two)
-	if e != nil {
+	_, err = io.Copy(tmpFile, two)
+	if err != nil {
 		return nil, PrintGenerateError(err2, "failed to append initramfs file to output:", err)
 	}
 
@@ -247,7 +260,10 @@ func CreateBundle(bundle Bundle) error {
 
 func GenerateAllBundles(sign bool) error {
 	msg.Println("Generating EFI bundles....")
-	bundles := ReadBundleDatabase(BundleDBPath)
+	bundles, err := ReadBundleDatabase(BundleDBPath)
+	if err != nil {
+		return err
+	}
 	out_create := true
 	out_sign := true
 	for _, bundle := range bundles {
@@ -267,18 +283,21 @@ func GenerateAllBundles(sign bool) error {
 	}
 
 	if !out_create {
-		return PrintGenerateError(err, "Error generating EFI bundles")
+		return PrintGenerateError(err1, "Error generating EFI bundles")
 	}
 
 	if !out_sign {
-		return PrintGenerateError(err, "Error signing EFI bundles")
+		return PrintGenerateError(err1, "Error signing EFI bundles")
 	}
 
 	return nil
 }
 
 func ListBundles() {
-	bundles := ReadBundleDatabase(BundleDBPath)
+	bundles, err := ReadBundleDatabase(BundleDBPath)
+	if err != nil {
+		log.Fatalln(err)
+	}
 	for key, bundle := range bundles {
 		FormatBundle(key, bundle)
 	}

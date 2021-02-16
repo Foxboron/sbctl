@@ -1,11 +1,9 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/foxboron/sbctl"
 	"github.com/spf13/cobra"
@@ -86,7 +84,10 @@ func signAllCmd() *cobra.Command {
 				outBundle = sbctl.GenerateAllBundles(true)
 			}
 
-			files := sbctl.ReadFileDatabase(sbctl.DBPath)
+			files, err := sbctl.ReadFileDatabase(sbctl.DBPath)
+			if err != nil {
+				log.Fatalln(err)
+			}
 			for _, entry := range files {
 
 				if sbctl.SignFile(sbctl.DBKey, sbctl.DBCert, entry.File, entry.OutputFile, entry.Checksum) != nil {
@@ -120,7 +121,10 @@ func removeFileCmd() *cobra.Command {
 			if len(args) < 1 {
 				log.Fatal("Need to specify file")
 			}
-			files := sbctl.ReadFileDatabase(sbctl.DBPath)
+			files, err := sbctl.ReadFileDatabase(sbctl.DBPath)
+			if err != nil {
+				log.Fatalln(err)
+			}
 			if _, ok := files[args[0]]; !ok {
 				log.Printf("File %s doesn't exist in database!\n", args[0])
 				os.Exit(1)
@@ -146,7 +150,9 @@ func verifyCmd() *cobra.Command {
 		Use:   "verify",
 		Short: "Find and check if files in the ESP are signed or not",
 		Run: func(cmd *cobra.Command, args []string) {
-			sbctl.VerifyESP()
+			if err := sbctl.VerifyESP(); err != nil {
+				log.Fatalln(err)
+			}
 		},
 	}
 }
@@ -194,6 +200,16 @@ func bundleCmd() *cobra.Command {
 			if err != nil {
 				log.Fatal(err)
 			}
+			// Fail early if user wants to save bundle but doesn't have permissions
+			var bundles sbctl.Bundles
+			if save {
+				// "err" needs to have been declared before this, otherwise it's necessary
+				// to use ":=", which shadows the "bundles" variable
+				bundles, err = sbctl.ReadBundleDatabase(sbctl.BundleDBPath)
+				if err != nil {
+					log.Fatalln(err)
+				}
+			}
 			bundle.Output = output
 			bundle.IntelMicrocode = intelucode
 			bundle.AMDMicrocode = amducode
@@ -206,7 +222,6 @@ func bundleCmd() *cobra.Command {
 			bundle.ESP = espPath
 			sbctl.CreateBundle(*bundle)
 			if save {
-				bundles := sbctl.ReadBundleDatabase(sbctl.BundleDBPath)
 				bundles[bundle.Output] = bundle
 				sbctl.WriteBundleDatabase(sbctl.BundleDBPath, bundles)
 				sbctl.FormatBundle(bundle.Output, bundle)
@@ -260,7 +275,10 @@ func removeBundleCmd() *cobra.Command {
 			if len(args) < 1 {
 				log.Fatal("Need to specify file")
 			}
-			bundles := sbctl.ReadBundleDatabase(sbctl.BundleDBPath)
+			bundles, err := sbctl.ReadBundleDatabase(sbctl.BundleDBPath)
+			if err != nil {
+				log.Fatalln(err)
+			}
 
 			if _, ok := bundles[args[0]]; !ok {
 				log.Printf("Bundle %s doesn't exist in database!\n", args[0])
@@ -306,18 +324,6 @@ func completionFishCmd() *cobra.Command {
 }
 
 func main() {
-	rootCmd.PersistentPreRun = func(c *cobra.Command, args []string) {
-		if strings.Contains(c.CommandPath(), "completion zsh") ||
-			strings.Contains(c.CommandPath(), "completion bash") ||
-			strings.Contains(c.CommandPath(), "completion fish") ||
-			strings.Contains(c.CommandPath(), "__complete") {
-			return
-		}
-		if os.Geteuid() != 0 {
-			fmt.Println("Needs to be executed as root")
-			os.Exit(1)
-		}
-	}
 	rootCmd.AddCommand(createKeysCmd())
 	rootCmd.AddCommand(enrollKeysCmd())
 	rootCmd.AddCommand(signCmd())

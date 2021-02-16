@@ -4,8 +4,6 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"log"
-	"os"
-	"path/filepath"
 )
 
 type SigningEntry struct {
@@ -16,24 +14,16 @@ type SigningEntry struct {
 
 type SigningEntries map[string]*SigningEntry
 
-var DBPath = filepath.Join(DatabasePath, "files.db")
-
-func ReadFileDatabase(dbpath string) SigningEntries {
-	files := make(SigningEntries)
-	os.MkdirAll(DatabasePath, os.ModePerm)
-	if _, err := os.Stat(DBPath); os.IsNotExist(err) {
-		file, err := os.Create(DBPath)
-		if err != nil {
-			log.Fatal(err)
-		}
-		file.Close()
-	}
-	f, err := ioutil.ReadFile(dbpath)
+func ReadFileDatabase(dbpath string) (SigningEntries, error) {
+	f, err := ReadOrCreateFile(dbpath)
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
+
+	files := make(SigningEntries)
 	json.Unmarshal(f, &files)
-	return files
+
+	return files, nil
 }
 
 func WriteFileDatabase(dbpath string, files SigningEntries) {

@@ -14,7 +14,7 @@ var (
 	msg2     *log.Logger
 	warning  *log.Logger
 	warning2 *log.Logger
-	err      *log.Logger
+	err1     *log.Logger
 	err2     *log.Logger
 )
 
@@ -29,6 +29,10 @@ var (
 	// I didn't bother figure out how we get this to the end of the log format
 	// So we just clear the terminal stuff at the start of each log line
 	prefix = off
+)
+
+var (
+	rootMsg = "It might be necessary to run this tool as root"
 )
 
 func GetColor(args string) string {
@@ -54,7 +58,7 @@ func init() {
 	warning2 = log.New(os.Stderr, warning2fmt, 0)
 
 	errfmt := fmt.Sprintf("%s%s%s==> ERROR:%s%s ", prefix, bold, red, off, bold)
-	err = log.New(os.Stderr, errfmt, 0)
+	err1 = log.New(os.Stderr, errfmt, 0)
 
 	err2fmt := fmt.Sprintf("%s%s%s  -> ERROR:%s%s ", prefix, bold, red, off, bold)
 	err2 = log.New(os.Stderr, err2fmt, 0)
