@@ -44,8 +44,8 @@ func VerifyESP() error {
 	espPath := GetESP()
 	files, err := ReadFileDatabase(DBPath)
 	if err != nil {
-		warning.Printf("Couldn't read file database: %s", err)
-		msg.Printf("Verifying EFI images in %s...", espPath)
+		err1.Printf("Couldn't read file database: %s", err)
+		return err
 	} else {
 		msg.Printf("Verifying file database and EFI images in %s...", espPath)
 	}
@@ -126,6 +126,7 @@ func Sign(file, output string, enroll bool) error {
 
 	files, err := ReadFileDatabase(DBPath)
 	if err != nil {
+		err2.Printf("Couldn't open database: %s", DBPath)
 		return err
 	}
 	if entry, ok := files[file]; ok {
@@ -262,6 +263,7 @@ func GenerateAllBundles(sign bool) error {
 	msg.Println("Generating EFI bundles....")
 	bundles, err := ReadBundleDatabase(BundleDBPath)
 	if err != nil {
+		err2.Printf("Couldn't open database: %s", BundleDBPath)
 		return err
 	}
 	out_create := true
@@ -296,7 +298,8 @@ func GenerateAllBundles(sign bool) error {
 func ListBundles() {
 	bundles, err := ReadBundleDatabase(BundleDBPath)
 	if err != nil {
-		log.Fatalln(err)
+		err2.Printf("Couldn't open database: %s", BundleDBPath)
+		os.Exit(1)
 	}
 	for key, bundle := range bundles {
 		FormatBundle(key, bundle)

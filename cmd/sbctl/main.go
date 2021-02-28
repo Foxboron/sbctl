@@ -151,7 +151,8 @@ func verifyCmd() *cobra.Command {
 		Short: "Find and check if files in the ESP are signed or not",
 		Run: func(cmd *cobra.Command, args []string) {
 			if err := sbctl.VerifyESP(); err != nil {
-				log.Fatalln(err)
+				// Really need to sort out the low level error handling
+				os.Exit(1)
 			}
 		},
 	}
