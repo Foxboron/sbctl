@@ -224,12 +224,12 @@ func CombineFiles(microcode, initramfs string) (*os.File, error) {
 
 	_, err = io.Copy(tmpFile, one)
 	if err != nil {
-		return nil, PrintGenerateError(err2, "failed to append microcode file to output:", err)
+		return nil, PrintGenerateError(err2, "failed to append microcode file to output: %s", err)
 	}
 
 	_, err = io.Copy(tmpFile, two)
 	if err != nil {
-		return nil, PrintGenerateError(err2, "failed to append initramfs file to output:", err)
+		return nil, PrintGenerateError(err2, "failed to append initramfs file to output: %s", err)
 	}
 
 	return tmpFile, nil
