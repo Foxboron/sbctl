@@ -237,19 +237,24 @@ func CombineFiles(microcode, initramfs string) (*os.File, error) {
 
 func CreateBundle(bundle Bundle) error {
 	var microcode string
+	make_bundle := false
 
 	if bundle.IntelMicrocode != "" {
 		microcode = bundle.IntelMicrocode
+		make_bundle = true
 	} else if bundle.AMDMicrocode != "" {
 		microcode = bundle.AMDMicrocode
+		make_bundle = true
 	}
 
-	tmpFile, err := CombineFiles(microcode, bundle.Initramfs)
-	if err != nil {
-		return err
+	if make_bundle {
+		tmpFile, err := CombineFiles(microcode, bundle.Initramfs)
+		if err != nil {
+			return err
+		}
+		defer os.Remove(tmpFile.Name())
+		bundle.Initramfs = tmpFile.Name()
 	}
-	defer os.Remove(tmpFile.Name())
-	bundle.Initramfs = tmpFile.Name()
 
 	out := GenerateBundle(&bundle)
 	if !out {
