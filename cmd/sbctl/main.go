@@ -221,7 +221,11 @@ func bundleCmd() *cobra.Command {
 			bundle.OSRelease = osRelease
 			bundle.EFIStub = efiStub
 			bundle.ESP = espPath
-			sbctl.CreateBundle(*bundle)
+			err := sbctl.CreateBundle(*bundle)
+			if err != nil {
+				log.Fatalln(err)
+				os.Exit(1)
+			}
 			if save {
 				bundles[bundle.Output] = bundle
 				sbctl.WriteBundleDatabase(sbctl.BundleDBPath, bundles)
