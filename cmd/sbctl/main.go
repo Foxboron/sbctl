@@ -221,7 +221,7 @@ func bundleCmd() *cobra.Command {
 			bundle.OSRelease = osRelease
 			bundle.EFIStub = efiStub
 			bundle.ESP = espPath
-			err := sbctl.CreateBundle(*bundle)
+			err = sbctl.CreateBundle(*bundle)
 			if err != nil {
 				log.Fatalln(err)
 				os.Exit(1)
