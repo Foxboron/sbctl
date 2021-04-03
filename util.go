@@ -66,3 +66,18 @@ func ReadOrCreateFile(filePath string) ([]byte, error) {
 
 	return f, nil
 }
+
+func IsImmutable(file string) (bool, error) {
+	f, err := os.Open(file)
+	if err != nil {
+		return false, err
+	}
+	attr, err := GetAttr(f)
+	if err != nil {
+		log.Fatal(err)
+	}
+	if (attr & FS_IMMUTABLE_FL) != 0 {
+		return false, nil
+	}
+	return true, nil
+}
