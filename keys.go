@@ -130,6 +130,10 @@ func SBKeySync(dir string) bool {
 			fmt.Println(stdout)
 			return false
 		}
+		if strings.Contains(line, "Permission denied") {
+			fmt.Println(stdout)
+			return false
+		}
 	}
 	return true
 }
