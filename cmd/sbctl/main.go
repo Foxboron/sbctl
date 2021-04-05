@@ -221,8 +221,7 @@ func bundleCmd() *cobra.Command {
 			bundle.OSRelease = osRelease
 			bundle.EFIStub = efiStub
 			bundle.ESP = espPath
-			err = sbctl.CreateBundle(*bundle)
-			if err != nil {
+			if err = sbctl.CreateBundle(*bundle); err != nil {
 				log.Fatalln(err)
 				os.Exit(1)
 			}
@@ -241,7 +240,7 @@ func bundleCmd() *cobra.Command {
 	f.StringVarP(&osRelease, "os-release", "o", "/usr/lib/os-release", "OS Release file location")
 	f.StringVarP(&efiStub, "efi-stub", "e", "/usr/lib/systemd/boot/efi/linuxx64.efi.stub", "EFI Stub location")
 	f.StringVarP(&kernelImg, "kernel-img", "k", filepath.Join(esp, "vmlinuz-linux"), "Kernel image location")
-	f.StringVarP(&cmdline, "cmdline", "c", "/proc/cmdline", "Cmdline location")
+	f.StringVarP(&cmdline, "cmdline", "c", "/etc/kernel/cmdline", "Cmdline location")
 	f.StringVarP(&initramfs, "initramfs", "f", filepath.Join(esp, "initramfs-linux.img"), "Initramfs location")
 	f.StringVarP(&espPath, "esp", "p", esp, "ESP location")
 	f.BoolVarP(&save, "save", "s", false, "save bundle to the database")
