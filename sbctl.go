@@ -2,6 +2,7 @@ package sbctl
 
 import (
 	"bytes"
+	"errors"
 	"io"
 	"io/ioutil"
 	"log"
@@ -57,8 +58,10 @@ func VerifyESP() error {
 		checked[normalized] = true
 
 		// Check output file exists before checking if it's signed
-		if _, err := os.Stat(file.OutputFile); os.IsNotExist(err) {
-			warning2.Printf("%s does not exist\n", file.OutputFile)
+		if _, err := os.Open(file.OutputFile); errors.Is(err, os.ErrNotExist) {
+			err2.Printf("%s does not exist\n", file.OutputFile)
+		} else if errors.Is(err, os.ErrPermission) {
+			err2.Printf("%s permission denied. Can't read file\n", file.OutputFile)
 		} else if VerifyFile(DBCert, file.OutputFile) {
 			msg2.Printf("%s is signed\n", file.OutputFile)
 		} else {
