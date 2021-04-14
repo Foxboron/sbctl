@@ -76,7 +76,7 @@ func NewBundle() *Bundle {
 		AMDMicrocode:   "",
 		KernelImage:    filepath.Join(esp, "vmlinuz-linux"),
 		Initramfs:      filepath.Join(esp, "initramfs-linux.img"),
-		Cmdline:        "/proc/cmdline",
+		Cmdline:        "/etc/kernel/cmdline",
 		Splash:         "",
 		OSRelease:      "/usr/lib/os-release",
 		EFIStub:        stub,
