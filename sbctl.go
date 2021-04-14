@@ -200,7 +200,29 @@ func CreateKeys() {
 	}
 }
 
+var efivarFSFiles = []string{
+	"/sys/firmware/efi/efivars/PK-8be4df61-93ca-11d2-aa0d-00e098032b8c",
+	"/sys/firmware/efi/efivars/KEK-8be4df61-93ca-11d2-aa0d-00e098032b8c",
+	"/sys/firmware/efi/efivars/db-d719b2cb-3d3a-4596-a3bc-dad00e67656f",
+}
+
 func SyncKeys() {
+	errImmuable := false
+	for _, file := range efivarFSFiles {
+		b, err := IsImmutable(file)
+		if err != nil {
+			err1.Printf("Couldn't read file: %s\n", file)
+			os.Exit(1)
+		}
+		if !b {
+			err1.Printf("File is immutable: %s\n", file)
+			errImmuable = true
+		}
+	}
+	if errImmuable {
+		err1.Println("You need to chattr -i files in efivarfs")
+		os.Exit(1)
+	}
 	synced := SBKeySync(KeysPath)
 	if !synced {
 		err1.Println("Couldn't sync keys")
