@@ -6,6 +6,8 @@ Operation = Remove
 Target = boot/*
 Target = efi/*
 Target = usr/lib/modules/*/vmlinuz
+Target = usr/lib/initcpio/*
+Target = usr/lib/**/efi/*.efi*
 
 [Action]
 Description = Signing EFI binaries...
