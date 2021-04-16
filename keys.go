@@ -15,6 +15,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	"golang.org/x/sys/unix"
@@ -45,8 +46,12 @@ func CreateKey(path, name string) []byte {
 		SerialNumber:       serialNumber,
 		PublicKeyAlgorithm: x509.RSA,
 		SignatureAlgorithm: x509.SHA256WithRSA,
+		NotBefore:          time.Now(),
+		NotAfter:           time.Now().AddDate(5, 0, 0),
+		KeyUsage:           x509.KeyUsageDigitalSignature,
 		Subject: pkix.Name{
-			Country: []string{name},
+			Country:    []string{name},
+			CommonName: name,
 		},
 	}
 	priv, err := rsa.GenerateKey(rand.Reader, RSAKeySize)
