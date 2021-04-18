@@ -69,7 +69,9 @@ func ReadOrCreateFile(filePath string) ([]byte, error) {
 
 func IsImmutable(file string) (bool, error) {
 	f, err := os.Open(file)
-	if err != nil {
+	if errors.Is(err, os.ErrNotExist) {
+		return false, nil
+	} else if err != nil {
 		return false, err
 	}
 	attr, err := GetAttr(f)
