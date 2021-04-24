@@ -34,5 +34,5 @@ package(){
     ./sbctl completion bash | install -Dm644 /dev/stdin "$pkgdir/usr/share/bash-completion/completions/sbctl"
     ./sbctl completion zsh | install -Dm644 /dev/stdin "$pkgdir/usr/share/zsh/site-functions/_sbctl"
     ./sbctl completion fish | install -Dm644 /dev/stdin "$pkgdir/usr/share/fish/vendor_completions.d/sbctl.fish"
-    install -Dm644 ./contrib/pacman/99-sbctl.hook "${pkgdir}/usr/share/libalpm/hooks/99-sbctl.hook"
+    install -Dm644 ./contrib/pacman/ZZ-sbctl.hook "${pkgdir}/usr/share/libalpm/hooks/99-sbctl.hook"
 }
