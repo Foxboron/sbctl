@@ -1,6 +1,6 @@
 pkgbase = sbctl-git
 	pkgdesc = Secure Boot key manager
-	pkgver = r37.g833e3e4
+	pkgver = r100.g59ec7a8
 	pkgrel = 1
 	url = https://github.com/Foxboron/sbctl
 	arch = x86_64
