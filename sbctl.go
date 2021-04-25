@@ -217,7 +217,7 @@ func SyncKeys() {
 			err1.Printf("Couldn't read file: %s\n", file)
 			os.Exit(1)
 		}
-		if !b {
+		if b {
 			err1.Printf("File is immutable: %s\n", file)
 			errImmuable = true
 		}
