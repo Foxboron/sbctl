@@ -7,6 +7,7 @@ import (
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/pem"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -23,8 +24,36 @@ import (
 
 var RSAKeySize = 4096
 
+func getDatabasePath() string {
+	etcDatabasePath := "/etc/secureboot"
+	usrDataBasePath := "/usr/share/secureboot"
+
+	_, err := os.Stat(etcDatabasePath)
+	if err == nil {
+		// Etc database path exists. Use it.
+		return etcDatabasePath
+	} else if errors.Is(err, os.ErrNotExist) {
+		// Ignore not exists error
+	} else {
+		log.Fatalf("Unknown error happended while quering /etc database path: %v", err)
+	}
+
+	_, err = os.Stat(usrDataBasePath)
+	if err == nil {
+		// Usr database path exists. Use it.
+		return usrDataBasePath
+	} else if errors.Is(err, os.ErrNotExist) {
+		// Ignore not exists error
+	} else {
+		log.Fatalf("Unknown error happended while quering /usr database path: %v", err)
+	}
+
+	// Neither /usr nor /etc exitsts. Default to /etc
+	return etcDatabasePath
+}
+
 var (
-	DatabasePath = "/usr/share/secureboot/"
+	DatabasePath = getDatabasePath()
 	KeysPath     = filepath.Join(DatabasePath, "keys")
 	PKKey        = filepath.Join(KeysPath, "PK", "PK.key")
 	PKCert       = filepath.Join(KeysPath, "PK", "PK.pem")
