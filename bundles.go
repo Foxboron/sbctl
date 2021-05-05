@@ -98,6 +98,7 @@ func GenerateBundle(bundle *Bundle) bool {
 	args = append(args, bundle.EFIStub, bundle.Output)
 	cmd := exec.Command("objcopy", args...)
 	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
 		if exitError, ok := err.(*exec.ExitError); ok {
 			return exitError.ExitCode() == 0
