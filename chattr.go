@@ -1,35 +1,8 @@
-// -*- Mode: Go; indent-tabs-mode: t -*-
-
-/*
- * Copyright (C) 2016 Canonical Ltd
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 3 as
- * published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- *
- */
-
 package sbctl
 
 import (
+	"golang.org/x/sys/unix"
 	"os"
-	"syscall"
-	"unsafe"
-)
-
-const (
-	// There is a logic to these but I don't care to implement it all.
-	// If you do, chase them from linux/fs.h
-	_FS_IOC_GETFLAGS = uintptr(0x80086601)
-	_FS_IOC_SETFLAGS = uintptr(0x40086602)
 )
 
 const (
@@ -60,24 +33,17 @@ const (
 	FS_RESERVED_FL     = 0x80000000 /* reserved for ext2 lib */
 )
 
-func ioctl(f *os.File, request uintptr, attrp *int32) error {
-	argp := uintptr(unsafe.Pointer(attrp))
-	_, _, errno := syscall.Syscall(syscall.SYS_IOCTL, f.Fd(), request, argp)
-	if errno != 0 {
-		return os.NewSyscallError("ioctl", errno)
-	}
-
-	return nil
-}
+/* The code below won't work correctly if this tool is built
+ * for a 64-bit big endian platform.
+ * See https://github.com/golang/go/issues/45585 for context. */
 
 // GetAttr retrieves the attributes of a file on a linux filesystem
 func GetAttr(f *os.File) (int32, error) {
-	attr := int32(-1)
-	err := ioctl(f, _FS_IOC_GETFLAGS, &attr)
-	return attr, err
+	attr_int, err := unix.IoctlGetInt(int(f.Fd()), unix.FS_IOC_GETFLAGS)
+	return int32(attr_int), err
 }
 
 // SetAttr sets the attributes of a file on a linux filesystem to the given value
 func SetAttr(f *os.File, attr int32) error {
-	return ioctl(f, _FS_IOC_SETFLAGS, &attr)
+	return unix.IoctlSetPointerInt(int(f.Fd()), unix.FS_IOC_SETFLAGS, int(attr))
 }
