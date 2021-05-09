@@ -99,8 +99,12 @@ func SaveKey(k []byte, path string) {
 
 func KeyToSiglist(UUID []byte, input string) []byte {
 	msg.Printf("Create EFI signature list %s.esl...", input)
-	args := fmt.Sprintf("--owner %s --type x509 --output %s.esl %s", UUID, input, input)
-	out, err := exec.Command("/usr/bin/sbsiglist", strings.Split(args, " ")...).Output()
+	out, err := exec.Command(
+		"sbsiglist",
+		"--owner", string(UUID),
+		"--type", "x509",
+		"--output", fmt.Sprintf("%s.esl", input), input,
+	).Output()
 	if err != nil {
 		log.Fatalf("Failed creating signature list: %s", err)
 	}
@@ -109,8 +113,7 @@ func KeyToSiglist(UUID []byte, input string) []byte {
 
 func SignEFIVariable(key, cert, varname, vardatafile, output string) []byte {
 	msg.Printf("Signing %s with %s...", vardatafile, key)
-	args := fmt.Sprintf("--key %s --cert %s --output %s %s %s", key, cert, output, varname, vardatafile)
-	out, err := exec.Command("/usr/bin/sbvarsign", strings.Split(args, " ")...).Output()
+	out, err := exec.Command("sbvarsign", "--key", key, "--cert", cert, "--output", output, varname, vardatafile).Output()
 	if err != nil {
 		log.Fatalf("Failed signing EFI variable: %s", err)
 	}
@@ -119,8 +122,7 @@ func SignEFIVariable(key, cert, varname, vardatafile, output string) []byte {
 
 func SBKeySync(dir string) bool {
 	msg.Printf("Syncing %s to EFI variables...", dir)
-	args := fmt.Sprintf("--pk --verbose --keystore %s", dir)
-	cmd := exec.Command("sbkeysync", strings.Split(args, " ")...)
+	cmd := exec.Command("sbkeysync", "--pk", "--verbose", "--keystore", dir)
 	var out bytes.Buffer
 	cmd.Stdout = &out
 	cmd.Stderr = &out
@@ -144,8 +146,7 @@ func SBKeySync(dir string) bool {
 }
 
 func VerifyFile(cert, file string) bool {
-	args := fmt.Sprintf("--cert %s %s", cert, file)
-	cmd := exec.Command("sbverify", strings.Split(args, " ")...)
+	cmd := exec.Command("sbverify", "--cert", cert, file)
 	if err := cmd.Run(); err != nil {
 		if exitError, ok := err.(*exec.ExitError); ok {
 			return exitError.ExitCode() == 0
@@ -174,8 +175,7 @@ func SignFile(key, cert, file, output, checksum string) error {
 	}
 
 	msg2.Printf("Signing %s...", file)
-	args := fmt.Sprintf("--key %s --cert %s --output %s %s", key, cert, output, file)
-	_, err := exec.Command("sbsign", strings.Split(args, " ")...).Output()
+	_, err := exec.Command("sbsign", "--key", key, "--cert", cert, "--output", output, file).Output()
 	if err != nil {
 		return PrintGenerateError(err2, "Failed signing file: %s", err)
 	}

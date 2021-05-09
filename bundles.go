@@ -8,7 +8,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"strings"
 )
 
 type Bundle struct {
@@ -85,17 +84,21 @@ func NewBundle() *Bundle {
 }
 
 func GenerateBundle(bundle *Bundle) bool {
-	args := ""
-	args += fmt.Sprintf("--add-section .osrel=%s --change-section-vma .osrel=0x20000 ", bundle.OSRelease)
-	args += fmt.Sprintf("--add-section .cmdline=%s --change-section-vma .cmdline=0x30000 ", bundle.Cmdline)
-	if bundle.Splash != "" {
-		args += fmt.Sprintf("--add-section .splash=%s --change-section-vma .splash=0x40000 ", bundle.Splash)
+	args := []string{
+		"--add-section", fmt.Sprintf(".osrel=%s", bundle.OSRelease), "--change-section-vma", ".osrel=0x20000",
+		"--add-section", fmt.Sprintf(".cmdline=%s", bundle.Cmdline), "--change-section-vma", ".cmdline=0x30000",
+		"--add-section", fmt.Sprintf(".linux=%s", bundle.KernelImage), "--change-section-vma", ".linux=0x2000000",
+		"--add-section", fmt.Sprintf(".initrd=%s", bundle.Initramfs), "--change-section-vma", ".initrd=0x3000000",
 	}
-	args += fmt.Sprintf("--add-section .linux=%s --change-section-vma .linux=0x2000000 ", bundle.KernelImage)
-	args += fmt.Sprintf("--add-section .initrd=%s --change-section-vma .initrd=0x3000000 ", bundle.Initramfs)
-	args += fmt.Sprintf("%s %s", bundle.EFIStub, bundle.Output)
-	cmd := exec.Command("objcopy", strings.Split(args, " ")...)
+
+	if bundle.Splash != "" {
+		args = append(args, "--add-section", fmt.Sprintf(".splash=%s", bundle.Splash), "--change-section-vma", ".splash=0x40000")
+	}
+
+	args = append(args, bundle.EFIStub, bundle.Output)
+	cmd := exec.Command("objcopy", args...)
 	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
 		if exitError, ok := err.(*exec.ExitError); ok {
 			return exitError.ExitCode() == 0
