@@ -2,6 +2,7 @@ package sbctl
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -100,6 +101,10 @@ func GenerateBundle(bundle *Bundle) bool {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
+		if errors.Is(err, exec.ErrNotFound) {
+			err2.Printf(err.Error())
+			return false
+		}
 		if exitError, ok := err.(*exec.ExitError); ok {
 			return exitError.ExitCode() == 0
 		}
