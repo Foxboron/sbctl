@@ -12,7 +12,7 @@ import (
 )
 
 func PrintGenerateError(logger *log.Logger, msg string, args ...interface{}) error {
-	msg = fmt.Sprintf(msg, args)
+	msg = fmt.Sprintf(msg, args...)
 	logger.Println(msg)
 	return errors.New(msg)
 }
