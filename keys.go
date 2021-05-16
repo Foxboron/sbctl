@@ -16,6 +16,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/foxboron/sbctl/logging"
 	"github.com/google/uuid"
 	"golang.org/x/sys/unix"
 )
@@ -97,7 +98,7 @@ func SaveKey(k []byte, path string) {
 }
 
 func KeyToSiglist(UUID []byte, input string) []byte {
-	msg.Printf("Create EFI signature list %s.esl...", input)
+	logging.Print("Create EFI signature list %s.esl...", input)
 	out, err := exec.Command(
 		"sbsiglist",
 		"--owner", string(UUID),
@@ -110,17 +111,17 @@ func KeyToSiglist(UUID []byte, input string) []byte {
 	return out
 }
 
-func SignEFIVariable(key, cert, varname, vardatafile, output string) []byte {
-	msg.Printf("Signing %s with %s...", vardatafile, key)
+func SignEFIVariable(key, cert, varname, vardatafile, output string) ([]byte, error) {
+	logging.Print("Signing %s with %s...", vardatafile, key)
 	out, err := exec.Command("sbvarsign", "--key", key, "--cert", cert, "--output", output, varname, vardatafile).Output()
 	if err != nil {
-		log.Fatalf("Failed signing EFI variable: %s", err)
+		return nil, fmt.Errorf("failed signing EFI variable: %v", err)
 	}
-	return out
+	return out, nil
 }
 
 func SBKeySync(dir string) bool {
-	msg.Printf("Syncing %s to EFI variables...", dir)
+	logging.Print("Syncing %s to EFI variables...", dir)
 	cmd := exec.Command("sbkeysync", "--pk", "--verbose", "--keystore", dir)
 	var out bytes.Buffer
 	cmd.Stdout = &out
@@ -158,27 +159,25 @@ func SignFile(key, cert, file, output, checksum string) error {
 
 	// Check file exists before we do anything
 	if _, err := os.Stat(file); os.IsNotExist(err) {
-		return PrintGenerateError(err2, "%s does not exist!", file)
+		return fmt.Errorf("%s does not exist!", file)
 	}
 
 	// Let's check if we have signed it already AND the original file hasn't changed
 	if VerifyFile(cert, output) && ChecksumFile(file) == checksum {
-		msg.Printf("%s has been signed...", file)
+		logging.Print("have already signed %s\n", file)
 		return nil
 	}
 
 	// Let's also check if we can access the key
 	if err := unix.Access(key, unix.R_OK); err != nil {
-		err2.Printf("Couldn't access %s", key)
-		return err
+		return fmt.Errorf("couldn't access %s", key)
 	}
 
-	msg2.Printf("Signing %s...", file)
+	logging.Ok("signing %s", file)
 	_, err := exec.Command("sbsign", "--key", key, "--cert", cert, "--output", output, file).Output()
 	if err != nil {
-		return PrintGenerateError(err2, "Failed signing file: %s", err)
+		return fmt.Errorf("Failed signing file: %w", err)
 	}
-
 	return nil
 }
 
@@ -229,29 +228,33 @@ func CreateUUID() []byte {
 	return []byte(id.String())
 }
 
-func CreateGUID(output string) []byte {
+func CreateGUID(output string) ([]byte, error) {
 	var uuid []byte
 	guidPath := filepath.Join(output, "GUID")
 	if _, err := os.Stat(guidPath); os.IsNotExist(err) {
 		uuid = CreateUUID()
-		msg2.Printf("Created UUID %s...", uuid)
+		logging.Print("Created UUID %s...", uuid)
 		err := os.WriteFile(guidPath, uuid, 0600)
 		if err != nil {
-			log.Fatal(err)
+			return nil, err
 		}
+		logging.Ok("")
 	} else {
 		uuid, err = os.ReadFile(guidPath)
 		if err != nil {
-			log.Fatal(err)
+			return nil, err
 		}
-		msg2.Printf("Using UUID %s...", uuid)
+		logging.Print("Using UUID %s...", uuid)
 	}
-	return uuid
+	return uuid, nil
 }
 
-func InitializeSecureBootKeys(output string) {
+func InitializeSecureBootKeys(output string) error {
 	os.MkdirAll(output, os.ModePerm)
-	uuid := CreateGUID(output)
+	uuid, err := CreateGUID(output)
+	if err != nil {
+		return err
+	}
 	// Create the directories we need and keys
 	for _, key := range SecureBootKeys {
 		path := filepath.Join(output, "keys", key.Key)
@@ -267,4 +270,5 @@ func InitializeSecureBootKeys(output string) {
 		signingCertificate := fmt.Sprintf("%s.pem", signingkeyPath)
 		SignEFIVariable(signingKey, signingCertificate, key.Key, fmt.Sprintf("%s.der.esl", keyPath), fmt.Sprintf("%s.auth", keyPath))
 	}
+	return nil
 }

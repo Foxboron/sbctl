@@ -95,11 +95,9 @@ func VerifyESP() error {
 	espPath := GetESP()
 	files, err := ReadFileDatabase(DBPath)
 	if err != nil {
-		err1.Printf("Couldn't read file database: %s", err)
 		return err
-	} else {
-		msg.Printf("Verifying file database and EFI images in %s...", espPath)
 	}
+	logging.Print("Verifying file database and EFI images in %s...\n", espPath)
 
 	// Cache files we have looked at.
 	checked := make(map[string]bool)
@@ -109,13 +107,13 @@ func VerifyESP() error {
 
 		// Check output file exists before checking if it's signed
 		if _, err := os.Open(file.OutputFile); errors.Is(err, os.ErrNotExist) {
-			err2.Printf("%s does not exist\n", file.OutputFile)
+			logging.Warn("%s does not exist", file.OutputFile)
 		} else if errors.Is(err, os.ErrPermission) {
-			err2.Printf("%s permission denied. Can't read file\n", file.OutputFile)
+			logging.Warn("%s permission denied. Can't read file\n", file.OutputFile)
 		} else if VerifyFile(DBCert, file.OutputFile) {
-			msg2.Printf("%s is signed\n", file.OutputFile)
+			logging.Ok("%s is signed", file.OutputFile)
 		} else {
-			warning2.Printf("%s is not signed\n", file.OutputFile)
+			logging.Error("%s is not signed", file.OutputFile)
 		}
 	}
 
@@ -147,9 +145,9 @@ func VerifyESP() error {
 		}
 
 		if VerifyFile(DBCert, path) {
-			msg2.Printf("%s is signed\n", path)
+			logging.Ok("%s is signed\n", path)
 		} else {
-			warning2.Printf("%s is not signed\n", path)
+			logging.Error("%s is not signed\n", path)
 		}
 		return nil
 	})
@@ -179,8 +177,7 @@ func Sign(file, output string, enroll bool) error {
 
 	files, err := ReadFileDatabase(DBPath)
 	if err != nil {
-		err2.Printf("Couldn't open database: %s", DBPath)
-		return err
+		return fmt.Errorf("Couldn't open database: %s", DBPath)
 	}
 	if entry, ok := files[file]; ok {
 		err = SignFile(DBKey, DBCert, entry.File, entry.OutputFile, entry.Checksum)
@@ -255,13 +252,17 @@ func CheckStatus() (map[string]bool, error) {
 	return ret, nil
 }
 
-func CreateKeys() {
+func CreateKeys() error {
 	if !CheckIfKeysInitialized(KeysPath) {
-		msg.Printf("Creating secure boot keys...")
-		InitializeSecureBootKeys(DatabasePath)
+		logging.Print("Creating secure boot keys...")
+		err := InitializeSecureBootKeys(DatabasePath)
+		if err != nil {
+			return fmt.Errorf("couldn't initialize secure boot: %w", err)
+		}
 	} else {
-		msg.Printf("Secure boot keys has been created")
+		logging.Ok("Secure boot keys has already been created!")
 	}
+	return nil
 }
 
 var efivarFSFiles = []string{
@@ -270,36 +271,34 @@ var efivarFSFiles = []string{
 	"/sys/firmware/efi/efivars/db-d719b2cb-3d3a-4596-a3bc-dad00e67656f",
 }
 
-func SyncKeys() {
+func SyncKeys() error {
 	errImmuable := false
 	for _, file := range efivarFSFiles {
 		b, err := IsImmutable(file)
 		if err != nil {
-			err1.Printf("Couldn't read file: %s\n", file)
-			os.Exit(1)
+			return fmt.Errorf("Couldn't read file: %s\n", file)
 		}
 		if b {
-			err1.Printf("File is immutable: %s\n", file)
+			logging.Warn("File is immutable: %s\n", file)
 			errImmuable = true
 		}
 	}
 	if errImmuable {
-		err1.Println("You need to chattr -i files in efivarfs")
-		os.Exit(1)
+		return fmt.Errorf("You need to chattr -i files in efivarfs")
 	}
 	synced := SBKeySync(KeysPath)
 	if !synced {
-		err1.Println("Couldn't sync keys")
-		os.Exit(1)
+		return errors.New("Couldn't sync keys")
 	} else {
-		msg.Println("Synced keys!")
+		logging.Ok("Synced keys!")
 	}
+	return nil
 }
 
 func CombineFiles(microcode, initramfs string) (*os.File, error) {
 	tmpFile, err := os.CreateTemp("/var/tmp", "initramfs-")
 	if err != nil {
-		err1.Println("Cannot create temporary file", err)
+		return nil, err
 	}
 
 	one, _ := os.Open(microcode)
@@ -310,12 +309,12 @@ func CombineFiles(microcode, initramfs string) (*os.File, error) {
 
 	_, err = io.Copy(tmpFile, one)
 	if err != nil {
-		return nil, PrintGenerateError(err2, "failed to append microcode file to output: %s", err)
+		return nil, fmt.Errorf("failed to append microcode file to output: %w", err)
 	}
 
 	_, err = io.Copy(tmpFile, two)
 	if err != nil {
-		return nil, PrintGenerateError(err2, "failed to append initramfs file to output: %s", err)
+		return nil, fmt.Errorf("failed to append initramfs file to output: %w", err)
 	}
 
 	return tmpFile, nil
@@ -342,20 +341,22 @@ func CreateBundle(bundle Bundle) error {
 		bundle.Initramfs = tmpFile.Name()
 	}
 
-	out := GenerateBundle(&bundle)
+	out, err := GenerateBundle(&bundle)
+	if err != nil {
+		logging.Warn(err.Error())
+	}
 	if !out {
-		return PrintGenerateError(err2, "failed to generate bundle %s!", bundle.Output)
+		return fmt.Errorf("failed to generate bundle %s!", bundle.Output)
 	}
 
 	return nil
 }
 
 func GenerateAllBundles(sign bool) error {
-	msg.Println("Generating EFI bundles....")
+	logging.Println("Generating EFI bundles....")
 	bundles, err := ReadBundleDatabase(BundleDBPath)
 	if err != nil {
-		err2.Printf("Couldn't open database: %s", BundleDBPath)
-		return err
+		return fmt.Errorf("Couldn't open database: %s", BundleDBPath)
 	}
 	out_create := true
 	out_sign := true
@@ -376,11 +377,11 @@ func GenerateAllBundles(sign bool) error {
 	}
 
 	if !out_create {
-		return PrintGenerateError(err1, "Error generating EFI bundles")
+		return errors.New("Error generating EFI bundles")
 	}
 
 	if !out_sign {
-		return PrintGenerateError(err1, "Error signing EFI bundles")
+		return errors.New("Error signing EFI bundles")
 	}
 
 	return nil
@@ -389,7 +390,7 @@ func GenerateAllBundles(sign bool) error {
 func ListBundles() (Bundles, error) {
 	bundles, err := ReadBundleDatabase(BundleDBPath)
 	if err != nil {
-		return nil, fmt.Errorf("couldn't open database %s: %v", BundleDBPath, err)
+		return nil, fmt.Errorf("couldn't open database: %v", err)
 	}
 	logging.Println("Enrolled bundles:\n")
 	for key, bundle := range bundles {
