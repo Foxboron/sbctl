@@ -357,17 +357,25 @@ func completionFishCmd() *cobra.Command {
 }
 
 func main() {
-	rootCmd.AddCommand(createKeysCmd())
-	rootCmd.AddCommand(enrollKeysCmd())
-	rootCmd.AddCommand(signCmd())
-	rootCmd.AddCommand(signAllCmd())
-	rootCmd.AddCommand(statusCmd())
-	rootCmd.AddCommand(verifyCmd())
-	rootCmd.AddCommand(bundleCmd())
-	rootCmd.AddCommand(generateBundlesCmd())
-	rootCmd.AddCommand(removeBundleCmd())
-	rootCmd.AddCommand(listBundlesCmd())
-	rootCmd.AddCommand(removeFileCmd())
+	cmds := []*cobra.Command{
+		createKeysCmd(),
+		enrollKeysCmd(),
+		signCmd(),
+		signAllCmd(),
+		statusCmd(),
+		verifyCmd(),
+		bundleCmd(),
+		generateBundlesCmd(),
+		removeBundleCmd(),
+		listBundlesCmd(),
+		removeFileCmd(),
+	}
+	for _, c := range cmds {
+		c.PostRun = func(c *cobra.Command, args []string) {
+			sbctl.ColorsOff()
+		}
+		rootCmd.AddCommand(c)
+	}
 
 	completionCmd := &cobra.Command{Use: "completion"}
 	completionCmd.AddCommand(completionBashCmd())
@@ -391,5 +399,4 @@ func main() {
 		}
 		os.Exit(1)
 	}
-	sbctl.ColorsOff()
 }
