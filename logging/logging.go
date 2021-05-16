@@ -49,26 +49,48 @@ func Print(msg string, a ...interface{}) {
 	PrintWithFile(os.Stdout, msg, a...)
 }
 
+func Println(msg string) {
+	PrintWithFile(os.Stdout, msg+"\n")
+}
+
+func Okf(m string, a ...interface{}) string {
+	return fmt.Sprintf("%s %s\n", ok, fmt.Sprintf(m, a...))
+}
+
 // Print ok string to stdout
 func Ok(m string, a ...interface{}) {
-	Print(fmt.Sprintf("%s %s\n", ok, fmt.Sprintf(m, a...)))
+	Print(Okf(m, a...))
+}
+
+func Errorf(m string, a ...interface{}) string {
+	return fmt.Sprintf("%s %s\n", err, fmt.Sprintf(m, a...))
 }
 
 func Error(m string, a ...interface{}) {
-	Print(fmt.Sprintf("%s %s\n", err, fmt.Sprintf(m, a...)))
+	Print(Errorf(m, a...))
+}
+
+func Unknownf(m string, a ...interface{}) string {
+	return fmt.Sprintf("%s %s\n", unkwn, fmt.Sprintf(m, a...))
 }
 
 func Unknown(m string, a ...interface{}) {
-	Print(fmt.Sprintf("%s %s\n", unkwn, fmt.Sprintf(m, a...)))
+	Print(Unknownf(m, a...))
 }
 
+func Warnf(m string, a ...interface{}) string {
+	return fmt.Sprintf("%s %s\n", warn, fmt.Sprintf(m, a...))
+}
 func Warn(m string, a ...interface{}) {
-	Print(fmt.Sprintf("%s %s\n", warn, fmt.Sprintf(m, a...)))
+	Print(Warnf(m, a...))
+}
+
+func Fatalf(m string, a ...interface{}) string {
+	return color.New(color.FgRed, color.Bold).Sprintf("%s %s\n", UnkwnSym, fmt.Sprintf(m, a...))
 }
 
 func Fatal(err error) {
-	m := color.New(color.FgRed, color.Bold).Sprintf("%s %s", UnkwnSym, err.Error())
-	PrintWithFile(os.Stderr, m)
+	PrintWithFile(os.Stderr, Fatalf(err.Error()))
 }
 
 func init() {
