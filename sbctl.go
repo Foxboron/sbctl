@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"errors"
 	"io"
-	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
@@ -236,7 +235,7 @@ func SyncKeys() {
 }
 
 func CombineFiles(microcode, initramfs string) (*os.File, error) {
-	tmpFile, err := ioutil.TempFile("/var/tmp", "initramfs-")
+	tmpFile, err := os.CreateTemp("/var/tmp", "initramfs-")
 	if err != nil {
 		err1.Println("Cannot create temporary file", err)
 	}

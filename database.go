@@ -2,8 +2,8 @@ package sbctl
 
 import (
 	"encoding/json"
-	"io/ioutil"
 	"log"
+	"os"
 )
 
 type SigningEntry struct {
@@ -31,7 +31,7 @@ func WriteFileDatabase(dbpath string, files SigningEntries) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	err = ioutil.WriteFile(dbpath, data, 0644)
+	err = os.WriteFile(dbpath, data, 0644)
 	if err != nil {
 		log.Fatal(err)
 	}
