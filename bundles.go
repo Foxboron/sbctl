@@ -8,6 +8,9 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
+
+	"github.com/foxboron/sbctl/logging"
 )
 
 type Bundle struct {
@@ -108,26 +111,34 @@ func GenerateBundle(bundle *Bundle) bool {
 			return exitError.ExitCode() == 0
 		}
 	}
-	msg.Printf("Wrote EFI bundle %s", bundle.Output)
+	logging.Print("Wrote EFI bundle %s\n", bundle.Output)
 	return true
 }
 
 func FormatBundle(name string, bundle *Bundle) {
-	msg.Printf("Bundle: %s", name)
+	logging.Println(name)
+	logging.Print("\tSigned:\t\t")
+	if VerifyFile(DBCert, name) {
+		logging.Ok("Signed")
+	} else {
+		logging.Error("Not Signed")
+	}
+	esp := GetESP()
+	logging.Print("\tESP Location:\t%s\n", esp)
+	logging.Print("\tOutput:\t\t└─%s\n", strings.TrimPrefix(bundle.Output, esp))
+	logging.Print("\tEFI Stub Image:\t  └─%s\n", bundle.EFIStub)
+	if bundle.Splash != "" {
+		logging.Print("\tSplash Image:\t    ├─%s\n", bundle.Splash)
+	}
+	logging.Print("\tCmdline:\t    ├─%s\n", bundle.Cmdline)
+	logging.Print("\tOS Release:\t    ├─%s\n", bundle.OSRelease)
+	logging.Print("\tKernel Image:\t    ├─%s\n", bundle.KernelImage)
+	logging.Print("\tInitramfs Image:    └─%s\n", bundle.Initramfs)
 	if bundle.AMDMicrocode != "" {
-		msg2.Printf("AMD Microcode: %s", bundle.AMDMicrocode)
+		logging.Print("\tAMD Microcode:        └─%s\n", bundle.AMDMicrocode)
 	}
 	if bundle.IntelMicrocode != "" {
-		msg2.Printf("Intel Microcode: %s", bundle.IntelMicrocode)
+		logging.Print("\tIntel Microcode:      └─%s\n", bundle.IntelMicrocode)
 	}
-	msg2.Printf("Kernel Image: %s", bundle.KernelImage)
-	msg2.Printf("Initramfs Image: %s", bundle.Initramfs)
-	msg2.Printf("Cmdline: %s", bundle.Cmdline)
-	msg2.Printf("OS Release: %s", bundle.OSRelease)
-	msg2.Printf("EFI Stub Image: %s", bundle.EFIStub)
-	msg2.Printf("ESP Location: %s", bundle.ESP)
-	if bundle.Splash != "" {
-		msg2.Printf("Splash Image: %s", bundle.Splash)
-	}
-	msg2.Printf("Output: %s", bundle.Output)
+	logging.Println("")
 }
