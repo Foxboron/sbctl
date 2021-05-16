@@ -2,7 +2,6 @@ package main
 
 import (
 	"errors"
-	"log"
 	"os"
 	"path/filepath"
 
@@ -46,8 +45,8 @@ func createKeysCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "create-keys",
 		Short: "Create a set of secure boot signing keys",
-		Run: func(cmd *cobra.Command, args []string) {
-			sbctl.CreateKeys()
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return sbctl.CreateKeys()
 		},
 	}
 }
@@ -56,8 +55,8 @@ func enrollKeysCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "enroll-keys",
 		Short: "Enroll the current keys to EFI",
-		Run: func(cmd *cobra.Command, args []string) {
-			sbctl.SyncKeys()
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return sbctl.SyncKeys()
 		},
 	}
 }
@@ -69,28 +68,30 @@ func signCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "sign",
 		Short: "Sign a file with secure boot keys",
-		Run: func(cmd *cobra.Command, args []string) {
+		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) < 1 {
-				log.Fatalf("Requires a file to sign...\n")
+				logging.Print("Requires a file to sign\n")
+				os.Exit(1)
 			}
 
 			// Ensure we have absolute paths
 			file, err := filepath.Abs(args[0])
 			if err != nil {
-				log.Fatal(err)
+				return err
 			}
 			if output == "" {
 				output = file
 			} else {
 				output, err = filepath.Abs(output)
 				if err != nil {
-					log.Fatal(err)
+					return err
 				}
 			}
 
 			if err := sbctl.Sign(file, output, save); err != nil {
-				log.Fatalln(err)
+				return err
 			}
+			return nil
 		},
 	}
 	f := cmd.Flags()
@@ -104,22 +105,21 @@ func signAllCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "sign-all",
 		Short: "Sign all enrolled files with secure boot keys",
-		Run: func(cmd *cobra.Command, args []string) {
-			var outBundle error
-			outSign := false
-
+		RunE: func(cmd *cobra.Command, args []string) error {
 			if generate {
-				outBundle = sbctl.GenerateAllBundles(true)
+				if err := sbctl.GenerateAllBundles(true); err != nil {
+					logging.Fatal(err)
+				}
 			}
 
 			files, err := sbctl.ReadFileDatabase(sbctl.DBPath)
 			if err != nil {
-				log.Fatalln(err)
+				return err
 			}
 			for _, entry := range files {
 
-				if sbctl.SignFile(sbctl.DBKey, sbctl.DBCert, entry.File, entry.OutputFile, entry.Checksum) != nil {
-					outSign = true
+				if err := sbctl.SignFile(sbctl.DBKey, sbctl.DBCert, entry.File, entry.OutputFile, entry.Checksum); err != nil {
+					logging.Fatal(err)
 					continue
 				}
 
@@ -130,10 +130,7 @@ func signAllCmd() *cobra.Command {
 				sbctl.WriteFileDatabase(sbctl.DBPath, files)
 
 			}
-
-			if outBundle != nil || outSign {
-				log.Fatalln("Errors were encountered, see above")
-			}
+			return nil
 		},
 	}
 	f := cmd.Flags()
@@ -145,20 +142,22 @@ func removeFileCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "remove-file",
 		Short: "Remove file from database",
-		Run: func(cmd *cobra.Command, args []string) {
+		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) < 1 {
-				log.Fatal("Need to specify file")
+				logging.Println("Need to specify file")
+				os.Exit(1)
 			}
 			files, err := sbctl.ReadFileDatabase(sbctl.DBPath)
 			if err != nil {
-				log.Fatalln(err)
+				return err
 			}
 			if _, ok := files[args[0]]; !ok {
-				log.Printf("File %s doesn't exist in database!\n", args[0])
+				logging.Print("File %s doesn't exist in database!\n", args[0])
 				os.Exit(1)
 			}
 			delete(files, args[0])
 			sbctl.WriteFileDatabase(sbctl.DBPath, files)
+			return nil
 		},
 	}
 }
@@ -178,11 +177,12 @@ func verifyCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "verify",
 		Short: "Find and check if files in the ESP are signed or not",
-		Run: func(cmd *cobra.Command, args []string) {
+		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := sbctl.VerifyESP(); err != nil {
 				// Really need to sort out the low level error handling
-				os.Exit(1)
+				return err
 			}
+			return nil
 		},
 	}
 }
@@ -211,9 +211,10 @@ func bundleCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "bundle",
 		Short: "Bundle the needed files for an EFI stub image",
-		Run: func(cmd *cobra.Command, args []string) {
+		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) < 1 {
-				log.Fatalf("Requires a file to sign...\n")
+				logging.Print("Requires a file to sign...\n")
+				os.Exit(1)
 			}
 			checkFiles := []string{amducode, intelucode, splashImg, osRelease, efiStub, kernelImg, cmdline, initramfs}
 			for _, path := range checkFiles {
@@ -221,14 +222,14 @@ func bundleCmd() *cobra.Command {
 					continue
 				}
 				if _, err := os.Stat(path); os.IsNotExist(err) {
-					log.Fatalf("%s does not exist!", path)
+					logging.Print("%s does not exist!\n", path)
 					os.Exit(1)
 				}
 			}
 			bundle := sbctl.NewBundle()
 			output, err := filepath.Abs(args[0])
 			if err != nil {
-				log.Fatal(err)
+				return err
 			}
 			// Fail early if user wants to save bundle but doesn't have permissions
 			var bundles sbctl.Bundles
@@ -237,7 +238,7 @@ func bundleCmd() *cobra.Command {
 				// to use ":=", which shadows the "bundles" variable
 				bundles, err = sbctl.ReadBundleDatabase(sbctl.BundleDBPath)
 				if err != nil {
-					log.Fatalln(err)
+					return err
 				}
 			}
 			bundle.Output = output
@@ -251,14 +252,14 @@ func bundleCmd() *cobra.Command {
 			bundle.EFIStub = efiStub
 			bundle.ESP = espPath
 			if err = sbctl.CreateBundle(*bundle); err != nil {
-				log.Fatalln(err)
-				os.Exit(1)
+				return err
 			}
 			if save {
 				bundles[bundle.Output] = bundle
 				sbctl.WriteBundleDatabase(sbctl.BundleDBPath, bundles)
 				sbctl.FormatBundle(bundle.Output, bundle)
 			}
+			return nil
 		},
 	}
 	esp := sbctl.GetESP()
@@ -281,8 +282,8 @@ func generateBundlesCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "generate-bundles",
 		Short: "Generate all EFI stub bundles",
-		Run: func(cmd *cobra.Command, args []string) {
-			sbctl.GenerateAllBundles(sign)
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return sbctl.GenerateAllBundles(sign)
 		},
 	}
 	f := cmd.Flags()
@@ -294,8 +295,12 @@ func listBundlesCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "list-bundles",
 		Short: "List stored bundles",
-		Run: func(cmd *cobra.Command, args []string) {
-			sbctl.ListBundles()
+		RunE: func(cmd *cobra.Command, args []string) error {
+			_, err := sbctl.ListBundles()
+			if err != nil {
+				return err
+			}
+			return nil
 		},
 	}
 }
@@ -304,21 +309,23 @@ func removeBundleCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "remove-bundle",
 		Short: "Remove bundle from database",
-		Run: func(cmd *cobra.Command, args []string) {
+		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) < 1 {
-				log.Fatal("Need to specify file")
+				logging.Print("Need to specify file\n")
+				os.Exit(1)
 			}
 			bundles, err := sbctl.ReadBundleDatabase(sbctl.BundleDBPath)
 			if err != nil {
-				log.Fatalln(err)
+				return err
 			}
 
 			if _, ok := bundles[args[0]]; !ok {
-				log.Printf("Bundle %s doesn't exist in database!\n", args[0])
+				logging.Print("Bundle %s doesn't exist in database!\n", args[0])
 				os.Exit(1)
 			}
 			delete(bundles, args[0])
 			sbctl.WriteBundleDatabase(sbctl.BundleDBPath, bundles)
+			return nil
 		},
 	}
 }
@@ -371,9 +378,6 @@ func main() {
 		removeFileCmd(),
 	}
 	for _, c := range cmds {
-		c.PostRun = func(c *cobra.Command, args []string) {
-			sbctl.ColorsOff()
-		}
 		rootCmd.AddCommand(c)
 	}
 
