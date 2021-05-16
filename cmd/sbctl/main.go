@@ -167,8 +167,9 @@ func statusCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "status",
 		Short: "Show current boot status",
-		Run: func(cmd *cobra.Command, args []string) {
-			sbctl.CheckStatus()
+		RunE: func(cmd *cobra.Command, args []string) error {
+			_, err := sbctl.CheckStatus()
+			return err
 		},
 	}
 }

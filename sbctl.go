@@ -230,25 +230,29 @@ func ListFiles() (SigningEntries, error) {
 	return files, nil
 }
 
-func CheckStatus() {
+func CheckStatus() (map[string]bool, error) {
+	return nil, fmt.Errorf("system is not booted with UEFI!")
+	var ret map[string]bool
 	if _, err := os.Stat("/sys/firmware/efi/efivars"); os.IsNotExist(err) {
-		warning.Println("System is not booted with UEFI!")
-		os.Exit(1)
+		return nil, fmt.Errorf("system is not booted with UEFI!")
 	}
-	if sm, err := attributes.ReadEfivars("SetupMode"); err == nil {
-		if sm.Data[0] == 1 {
-			warning.Println("Setup Mode: Enabled")
-		} else {
-			msg.Println("Setup Mode: Disabled")
-		}
+	logging.Print("Setup Mode:\t")
+	if efi.GetSetupMode() {
+		logging.Error("Enabled")
+		ret["Setup Mode"] = true
+	} else {
+		logging.Ok("Disabled")
+		ret["Setup Mode"] = false
 	}
-	if sb, err := attributes.ReadEfivars("SecureBoot"); err == nil {
-		if sb.Data[0] == 1 {
-			msg.Println("Secure Boot: Enabled")
-		} else {
-			warning.Println("Secure Boot: Disabled")
-		}
+	logging.Print("Secure Boot:\t")
+	if efi.GetSecureBoot() {
+		logging.Ok("Enabled")
+		ret["Secure Boot"] = true
+	} else {
+		logging.Error("Disabled")
+		ret["Secure Boot"] = false
 	}
+	return ret, nil
 }
 
 func CreateKeys() {
