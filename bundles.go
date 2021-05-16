@@ -86,7 +86,7 @@ func NewBundle() *Bundle {
 	}
 }
 
-func GenerateBundle(bundle *Bundle) bool {
+func GenerateBundle(bundle *Bundle) (bool, error) {
 	args := []string{
 		"--add-section", fmt.Sprintf(".osrel=%s", bundle.OSRelease), "--change-section-vma", ".osrel=0x20000",
 		"--add-section", fmt.Sprintf(".cmdline=%s", bundle.Cmdline), "--change-section-vma", ".cmdline=0x30000",
@@ -104,15 +104,14 @@ func GenerateBundle(bundle *Bundle) bool {
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
 		if errors.Is(err, exec.ErrNotFound) {
-			err2.Printf(err.Error())
-			return false
+			return false, err
 		}
 		if exitError, ok := err.(*exec.ExitError); ok {
-			return exitError.ExitCode() == 0
+			return exitError.ExitCode() == 0, nil
 		}
 	}
 	logging.Print("Wrote EFI bundle %s\n", bundle.Output)
-	return true
+	return true, nil
 }
 
 func FormatBundle(name string, bundle *Bundle) {
