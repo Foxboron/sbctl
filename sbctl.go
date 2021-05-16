@@ -386,13 +386,14 @@ func GenerateAllBundles(sign bool) error {
 	return nil
 }
 
-func ListBundles() {
+func ListBundles() (Bundles, error) {
 	bundles, err := ReadBundleDatabase(BundleDBPath)
 	if err != nil {
-		err2.Printf("Couldn't open database: %s", BundleDBPath)
-		os.Exit(1)
+		return nil, fmt.Errorf("couldn't open database %s: %v", BundleDBPath, err)
 	}
+	logging.Println("Enrolled bundles:\n")
 	for key, bundle := range bundles {
 		FormatBundle(key, bundle)
 	}
+	return bundles, nil
 }
