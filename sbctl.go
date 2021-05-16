@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"log"
 	"os"
@@ -11,7 +12,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/foxboron/go-uefi/efi/attributes"
+	"github.com/foxboron/go-uefi/efi"
+	"github.com/foxboron/sbctl/logging"
 )
 
 // Functions that doesn't fit anywhere else
@@ -207,18 +209,25 @@ func Sign(file, output string, enroll bool) error {
 	return err
 }
 
-func ListFiles() {
+func ListFiles() (SigningEntries, error) {
 	files, err := ReadFileDatabase(DBPath)
 	if err != nil {
-		err2.Printf("Couldn't open database: %s", DBPath)
-		return
+		return nil, fmt.Errorf("couldn't open database %v: %w", DBPath, err)
 	}
 	for path, s := range files {
-		msg.Printf("File: %s", path)
+		logging.Println(path)
 		if path != s.OutputFile {
-			msg2.Printf("Output: %s", s.OutputFile)
+			logging.Print("Output:\t\t%s\n", s.OutputFile)
 		}
+		logging.Print("Signed:\t\t")
+		if VerifyFile(DBCert, s.OutputFile) {
+			logging.Ok("Signed")
+		} else {
+			logging.Error("Not Signed")
+		}
+		logging.Println("")
 	}
+	return files, nil
 }
 
 func CheckStatus() {
