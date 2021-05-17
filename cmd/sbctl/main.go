@@ -173,17 +173,6 @@ func removeFileCmd() *cobra.Command {
 	}
 }
 
-func statusCmd() *cobra.Command {
-	return &cobra.Command{
-		Use:   "status",
-		Short: "Show current boot status",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			_, err := sbctl.CheckStatus()
-			return err
-		},
-	}
-}
-
 func verifyCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "verify",
@@ -370,7 +359,6 @@ func main() {
 		enrollKeysCmd(),
 		signCmd(),
 		signAllCmd(),
-		statusCmd(),
 		verifyCmd(),
 		bundleCmd(),
 		generateBundlesCmd(),
@@ -399,7 +387,9 @@ func main() {
 		return ErrSilent
 	})
 	if err := rootCmd.Execute(); err != nil {
-		if !errors.Is(err, ErrSilent) {
+		if errors.Is(err, os.ErrPermission) {
+			logging.Error(fmt.Errorf("sbtl requires root to run: %w", err))
+		} else if !errors.Is(err, ErrSilent) {
 			logging.Fatal(err)
 		}
 		os.Exit(1)

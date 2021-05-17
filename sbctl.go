@@ -12,7 +12,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/foxboron/go-uefi/efi"
 	"github.com/foxboron/sbctl/logging"
 )
 
@@ -110,10 +109,10 @@ func VerifyESP() error {
 			logging.Warn("%s does not exist", file.OutputFile)
 		} else if errors.Is(err, os.ErrPermission) {
 			logging.Warn("%s permission denied. Can't read file\n", file.OutputFile)
-		} else if VerifyFile(DBCert, file.OutputFile) {
+		} else if ok, _ := VerifyFile(DBCert, file.OutputFile); ok {
 			logging.Ok("%s is signed", file.OutputFile)
 		} else {
-			logging.Error("%s is not signed", file.OutputFile)
+			logging.NotOk("%s is not signed", file.OutputFile)
 		}
 	}
 
@@ -144,10 +143,10 @@ func VerifyESP() error {
 			return nil
 		}
 
-		if VerifyFile(DBCert, path) {
+		if ok, _ := VerifyFile(DBCert, path); ok {
 			logging.Ok("%s is signed\n", path)
 		} else {
-			logging.Error("%s is not signed\n", path)
+			logging.NotOk("%s is not signed\n", path)
 		}
 		return nil
 	})
@@ -204,52 +203,6 @@ func Sign(file, output string, enroll bool) error {
 	}
 
 	return err
-}
-
-func ListFiles() (SigningEntries, error) {
-	files, err := ReadFileDatabase(DBPath)
-	if err != nil {
-		return nil, fmt.Errorf("couldn't open database %v: %w", DBPath, err)
-	}
-	for path, s := range files {
-		logging.Println(path)
-		if path != s.OutputFile {
-			logging.Print("Output:\t\t%s\n", s.OutputFile)
-		}
-		logging.Print("Signed:\t\t")
-		if VerifyFile(DBCert, s.OutputFile) {
-			logging.Ok("Signed")
-		} else {
-			logging.Error("Not Signed")
-		}
-		logging.Println("")
-	}
-	return files, nil
-}
-
-func CheckStatus() (map[string]bool, error) {
-	return nil, fmt.Errorf("system is not booted with UEFI!")
-	var ret map[string]bool
-	if _, err := os.Stat("/sys/firmware/efi/efivars"); os.IsNotExist(err) {
-		return nil, fmt.Errorf("system is not booted with UEFI!")
-	}
-	logging.Print("Setup Mode:\t")
-	if efi.GetSetupMode() {
-		logging.Error("Enabled")
-		ret["Setup Mode"] = true
-	} else {
-		logging.Ok("Disabled")
-		ret["Setup Mode"] = false
-	}
-	logging.Print("Secure Boot:\t")
-	if efi.GetSecureBoot() {
-		logging.Ok("Enabled")
-		ret["Secure Boot"] = true
-	} else {
-		logging.Error("Disabled")
-		ret["Secure Boot"] = false
-	}
-	return ret, nil
 }
 
 func CreateKeys() error {

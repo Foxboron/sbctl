@@ -145,14 +145,18 @@ func SBKeySync(dir string) bool {
 	return true
 }
 
-func VerifyFile(cert, file string) bool {
+func VerifyFile(cert, file string) (bool, error) {
+	if err := unix.Access(cert, unix.R_OK); err != nil {
+		return false, fmt.Errorf("couldn't access %s: %w", cert, err)
+	}
+
 	cmd := exec.Command("sbverify", "--cert", cert, file)
 	if err := cmd.Run(); err != nil {
 		if exitError, ok := err.(*exec.ExitError); ok {
-			return exitError.ExitCode() == 0
+			return exitError.ExitCode() == 0, nil
 		}
 	}
-	return true
+	return true, nil
 }
 
 func SignFile(key, cert, file, output, checksum string) error {
@@ -163,7 +167,12 @@ func SignFile(key, cert, file, output, checksum string) error {
 	}
 
 	// Let's check if we have signed it already AND the original file hasn't changed
-	if VerifyFile(cert, output) && ChecksumFile(file) == checksum {
+	var ok bool
+	ok, err := VerifyFile(cert, output)
+	if err != nil {
+		return err
+	}
+	if ok && ChecksumFile(file) == checksum {
 		logging.Print("have already signed %s\n", file)
 		return nil
 	}
@@ -174,7 +183,7 @@ func SignFile(key, cert, file, output, checksum string) error {
 	}
 
 	logging.Ok("signing %s", file)
-	_, err := exec.Command("sbsign", "--key", key, "--cert", cert, "--output", output, file).Output()
+	_, err = exec.Command("sbsign", "--key", key, "--cert", cert, "--output", output, file).Output()
 	if err != nil {
 		return fmt.Errorf("Failed signing file: %w", err)
 	}

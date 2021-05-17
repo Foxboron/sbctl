@@ -1,12 +1,10 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
-	"os"
 
 	"github.com/foxboron/sbctl"
-	"github.com/pkg/errors"
+	"github.com/foxboron/sbctl/logging"
 	"github.com/spf13/cobra"
 )
 
@@ -16,17 +14,40 @@ var listFilesCmd = &cobra.Command{
 	RunE:  RunList,
 }
 
-func ListJsonOut(v interface{}) error {
-	b, err := json.MarshalIndent(v, "", "  ")
-	if err != nil {
-		return errors.Wrapf(err, "could not marshal json")
-	}
-	fmt.Fprintf(os.Stdout, string(b))
-	return nil
+type JsonFile struct {
+	sbctl.SigningEntry
+	IsSigned bool `json:"is_signed"`
 }
 
 func RunList(_ *cobra.Command, args []string) error {
-	files, _ := sbctl.ListFiles()
+	files := []JsonFile{}
+	var isSigned bool
+	err := sbctl.SigningEntryIter(
+		func(s *sbctl.SigningEntry) error {
+			ok, err := sbctl.VerifyFile(sbctl.DBCert, s.OutputFile)
+			if err != nil {
+				return err
+			}
+			logging.Println(s.File)
+			logging.Print("Signed:\t\t")
+			if ok {
+				isSigned = true
+				logging.Ok("Signed")
+			} else if !ok {
+				isSigned = false
+				logging.NotOk("Not Signed")
+			}
+			if s.File != s.OutputFile {
+				logging.Print("Output File:\t%s\n", s.OutputFile)
+			}
+			fmt.Println("")
+			files = append(files, JsonFile{*s, isSigned})
+			return nil
+		},
+	)
+	if err != nil {
+		return err
+	}
 	if cmdOptions.JsonOutput {
 		JsonOut(files)
 	}

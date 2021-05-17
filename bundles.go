@@ -117,10 +117,10 @@ func GenerateBundle(bundle *Bundle) (bool, error) {
 func FormatBundle(name string, bundle *Bundle) {
 	logging.Println(name)
 	logging.Print("\tSigned:\t\t")
-	if VerifyFile(DBCert, name) {
+	if ok, _ := VerifyFile(DBCert, name); ok {
 		logging.Ok("Signed")
 	} else {
-		logging.Error("Not Signed")
+		logging.NotOk("Not Signed")
 	}
 	esp := GetESP()
 	logging.Print("\tESP Location:\t%s\n", esp)
