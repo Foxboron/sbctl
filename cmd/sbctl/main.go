@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/foxboron/sbctl"
 	"github.com/foxboron/sbctl/logging"
@@ -387,7 +388,9 @@ func main() {
 		return ErrSilent
 	})
 	if err := rootCmd.Execute(); err != nil {
-		if errors.Is(err, os.ErrPermission) {
+		if strings.HasPrefix(err.Error(), "unknown comman") {
+			logging.Println(err.Error())
+		} else if errors.Is(err, os.ErrPermission) {
 			logging.Error(fmt.Errorf("sbtl requires root to run: %w", err))
 		} else if !errors.Is(err, ErrSilent) {
 			logging.Fatal(err)
