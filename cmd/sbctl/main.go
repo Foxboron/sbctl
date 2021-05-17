@@ -1,7 +1,9 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -39,6 +41,15 @@ func baseFlags(cmd *cobra.Command) {
 			logging.PrintOff()
 		}
 	}
+}
+
+func JsonOut(v interface{}) error {
+	b, err := json.MarshalIndent(v, "", "  ")
+	if err != nil {
+		return fmt.Errorf("could not marshal json: %w", err)
+	}
+	fmt.Fprintf(os.Stdout, string(b))
+	return nil
 }
 
 func createKeysCmd() *cobra.Command {
@@ -186,16 +197,6 @@ func verifyCmd() *cobra.Command {
 		},
 	}
 }
-
-// func listFilesCmd() *cobra.Command {
-// 	return &cobra.Command{
-// 		Use:   "list-files",
-// 		Short: "List enrolled files",
-// 		Run: func(cmd *cobra.Command, args []string) {
-// 			sbctl.ListFiles()
-// 		},
-// 	}
-// }
 
 func bundleCmd() *cobra.Command {
 	var amducode string

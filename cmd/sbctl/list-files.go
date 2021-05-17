@@ -28,7 +28,7 @@ func ListJsonOut(v interface{}) error {
 func RunList(_ *cobra.Command, args []string) error {
 	files, _ := sbctl.ListFiles()
 	if cmdOptions.JsonOutput {
-		ListJsonOut(files)
+		JsonOut(files)
 	}
 	return nil
 }
