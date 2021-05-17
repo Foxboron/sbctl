@@ -9,19 +9,22 @@ import (
 
 var (
 	OkSym    = "✔"
-	ErrSym   = "✘"
+	NotOkSym = "✘"
 	WarnSym  = "‼"
 	UnkwnSym = "⁇"
+	ErrSym   = "⁇"
 )
 var (
 	OkSymText    = "[+]"
-	ErrSymText   = "[-]"
+	NotOkSymText = "[-]"
 	WarnSymText  = "[!]"
 	UnkwnSymText = "[?]"
+	ErrSymText   = "[?]"
 )
 
 var (
 	ok    string
+	notok string
 	err   string
 	warn  string
 	unkwn string
@@ -62,12 +65,13 @@ func Ok(m string, a ...interface{}) {
 	Print(Okf(m, a...))
 }
 
-func Errorf(m string, a ...interface{}) string {
-	return fmt.Sprintf("%s %s\n", err, fmt.Sprintf(m, a...))
+func NotOkf(m string, a ...interface{}) string {
+	return fmt.Sprintf("%s %s\n", notok, fmt.Sprintf(m, a...))
 }
 
-func Error(m string, a ...interface{}) {
-	Print(Errorf(m, a...))
+// Print ok string to stdout
+func NotOk(m string, a ...interface{}) {
+	Print(NotOkf(m, a...))
 }
 
 func Unknownf(m string, a ...interface{}) string {
@@ -93,15 +97,25 @@ func Fatal(err error) {
 	PrintWithFile(os.Stderr, Fatalf(err.Error()))
 }
 
+func Errorf(m string, a ...interface{}) string {
+	return color.New(color.FgRed, color.Bold).Sprintf("%s\n", fmt.Sprintf(m, a...))
+}
+
+func Error(err error) {
+	PrintWithFile(os.Stderr, Errorf(err.Error()))
+}
+
 func init() {
 	if ok := os.Getenv("EFIBOOTCTL_UNICODE"); ok == "0" {
 		OkSym = OkSymText
+		NotOkSym = NotOkSymText
 		ErrSym = ErrSymText
 		WarnSym = WarnSymText
 		UnkwnSym = UnkwnSymText
 	}
 
 	ok = color.New(color.FgGreen, color.Bold).Sprintf(OkSym)
+	notok = color.New(color.FgRed, color.Bold).Sprintf(NotOkSym)
 	err = color.New(color.FgRed, color.Bold).Sprintf(ErrSym)
 	warn = color.New(color.FgYellow, color.Bold).Sprintf(WarnSym)
 	unkwn = color.New(color.FgRed, color.Bold).Sprintf(UnkwnSym)
