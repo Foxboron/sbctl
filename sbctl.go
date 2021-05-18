@@ -265,38 +265,3 @@ func CreateBundle(bundle Bundle) error {
 
 	return nil
 }
-
-func GenerateAllBundles(sign bool) error {
-	logging.Println("Generating EFI bundles....")
-	bundles, err := ReadBundleDatabase(BundleDBPath)
-	if err != nil {
-		return fmt.Errorf("couldn't open database: %s", BundleDBPath)
-	}
-	out_create := true
-	out_sign := true
-	for _, bundle := range bundles {
-		err := CreateBundle(*bundle)
-		if err != nil {
-			out_create = false
-			continue
-		}
-
-		if sign {
-			file := bundle.Output
-			err = SignFile(DBKey, DBCert, file, file, "")
-			if err != nil {
-				out_sign = false
-			}
-		}
-	}
-
-	if !out_create {
-		return errors.New("error generating EFI bundles")
-	}
-
-	if !out_sign {
-		return errors.New("error signing EFI bundles")
-	}
-
-	return nil
-}
