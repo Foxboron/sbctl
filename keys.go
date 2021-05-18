@@ -34,6 +34,8 @@ var (
 	DBCert       = filepath.Join(KeysPath, "db", "db.pem")
 
 	DBPath = filepath.Join(DatabasePath, "files.db")
+
+	GUIDPath = filepath.Join(DatabasePath, "GUID")
 )
 
 func CreateKey(path, name string) []byte {
@@ -256,6 +258,18 @@ func CreateGUID(output string) ([]byte, error) {
 		logging.Print("Using UUID %s...", uuid)
 	}
 	return uuid, nil
+}
+
+func GetGUID() (uuid.UUID, error) {
+	b, err := os.ReadFile(GUIDPath)
+	if err != nil {
+		return [16]byte{}, err
+	}
+	u, err := uuid.ParseBytes(b)
+	if err != nil {
+		return [16]byte{}, err
+	}
+	return u, err
 }
 
 func InitializeSecureBootKeys(output string) error {
