@@ -1,6 +1,8 @@
 package main
 
 import (
+	"errors"
+
 	"github.com/foxboron/sbctl"
 	"github.com/foxboron/sbctl/logging"
 	"github.com/spf13/cobra"
@@ -15,8 +17,9 @@ var signAllCmd = &cobra.Command{
 	Short: "Sign all enrolled files with secure boot keys",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if generate {
-			if err := sbctl.GenerateAllBundles(true); err != nil {
-				logging.Fatal(err)
+			sign = true
+			if err := generateBundlesCmd.RunE(cmd, args); err != nil {
+				return err
 			}
 		}
 
@@ -26,9 +29,13 @@ var signAllCmd = &cobra.Command{
 		}
 		for _, entry := range files {
 
-			if err := sbctl.SignFile(sbctl.DBKey, sbctl.DBCert, entry.File, entry.OutputFile, entry.Checksum); err != nil {
-				logging.Fatal(err)
-				continue
+			err := sbctl.SignFile(sbctl.DBKey, sbctl.DBCert, entry.File, entry.OutputFile, entry.Checksum)
+			if errors.Is(err, sbctl.ErrAlreadySigned) {
+				logging.Print("File have already been signed %s\n", entry.OutputFile)
+			} else if err != nil {
+				return err
+			} else {
+				logging.Ok("Signed %s", entry.OutputFile)
 			}
 
 			// Update checksum after we signed it

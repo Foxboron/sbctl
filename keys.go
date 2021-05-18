@@ -7,6 +7,7 @@ import (
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/pem"
+	"errors"
 	"fmt"
 	"log"
 	"math/big"
@@ -160,30 +161,30 @@ func VerifyFile(cert, file string) (bool, error) {
 	return true, nil
 }
 
+var ErrAlreadySigned = errors.New("already signed file")
+
 func SignFile(key, cert, file, output, checksum string) error {
 
 	// Check file exists before we do anything
-	if _, err := os.Stat(file); os.IsNotExist(err) {
+	if _, err := os.Stat(file); errors.Is(err, os.ErrNotExist) {
 		return fmt.Errorf("%s does not exist", file)
 	}
 
 	// Let's check if we have signed it already AND the original file hasn't changed
-	var ok bool
 	ok, err := VerifyFile(cert, output)
 	if err != nil {
 		return err
 	}
+
 	if ok && ChecksumFile(file) == checksum {
-		logging.Print("have already signed %s\n", file)
-		return nil
+		return ErrAlreadySigned
 	}
 
 	// Let's also check if we can access the key
 	if err := unix.Access(key, unix.R_OK); err != nil {
-		return fmt.Errorf("couldn't access %s", key)
+		return fmt.Errorf("couldn't access %s: %w", key, err)
 	}
 
-	logging.Ok("Signing %s", file)
 	_, err = exec.Command("sbsign", "--key", key, "--cert", cert, "--output", output, file).Output()
 	if err != nil {
 		return fmt.Errorf("failed signing file: %w", err)
