@@ -224,7 +224,7 @@ var efivarFSFiles = []string{
 	"/sys/firmware/efi/efivars/db-d719b2cb-3d3a-4596-a3bc-dad00e67656f",
 }
 
-var ErrImmutable = errors.New("you need to chattr -i files in efivarfs")
+var ErrImmutable = errors.New("file is immutable")
 
 func SyncKeys() error {
 	errImmuable := false

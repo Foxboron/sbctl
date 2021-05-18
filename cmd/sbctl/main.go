@@ -71,7 +71,7 @@ func main() {
 		} else if errors.Is(err, os.ErrPermission) {
 			logging.Error(fmt.Errorf("sbtl requires root to run: %w", err))
 		} else if errors.Is(err, sbctl.ErrImmutable) {
-			logging.Error(err)
+			logging.Println("You need to chattr -i files in efivarfs")
 		} else if !errors.Is(err, ErrSilent) {
 			logging.Fatal(err)
 		}
