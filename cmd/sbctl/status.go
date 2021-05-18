@@ -19,7 +19,7 @@ var statusCmd = &cobra.Command{
 func RunStatus(cmd *cobra.Command, args []string) error {
 	ret := map[string]interface{}{}
 	if _, err := os.Stat("/sys/firmware/efi/efivars"); os.IsNotExist(err) {
-		return fmt.Errorf("system is not booted with UEFI!")
+		return fmt.Errorf("system is not booted with UEFI")
 	}
 	u, err := sbctl.GetGUID()
 	if err != nil {

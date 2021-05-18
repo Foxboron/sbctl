@@ -176,7 +176,7 @@ func Sign(file, output string, enroll bool) error {
 
 	files, err := ReadFileDatabase(DBPath)
 	if err != nil {
-		return fmt.Errorf("Couldn't open database: %s", DBPath)
+		return fmt.Errorf("couldn't open database: %s", DBPath)
 	}
 	if entry, ok := files[file]; ok {
 		err = SignFile(DBKey, DBCert, entry.File, entry.OutputFile, entry.Checksum)
@@ -224,14 +224,14 @@ var efivarFSFiles = []string{
 	"/sys/firmware/efi/efivars/db-d719b2cb-3d3a-4596-a3bc-dad00e67656f",
 }
 
-var ErrImmutable = errors.New("You need to chattr -i files in efivarfs")
+var ErrImmutable = errors.New("you need to chattr -i files in efivarfs")
 
 func SyncKeys() error {
 	errImmuable := false
 	for _, file := range efivarFSFiles {
 		b, err := IsImmutable(file)
 		if err != nil {
-			return fmt.Errorf("Couldn't read file: %s", file)
+			return fmt.Errorf("couldn't read file: %s", file)
 		}
 		if !b {
 			logging.Warn("File is immutable: %s", file)
@@ -243,7 +243,7 @@ func SyncKeys() error {
 	}
 	synced := SBKeySync(KeysPath)
 	if !synced {
-		return errors.New("Couldn't sync keys")
+		return errors.New("couldn't sync keys")
 	} else {
 		logging.Ok("Synced keys!")
 	}
@@ -301,7 +301,7 @@ func CreateBundle(bundle Bundle) error {
 		logging.Warn(err.Error())
 	}
 	if !out {
-		return fmt.Errorf("failed to generate bundle %s!", bundle.Output)
+		return fmt.Errorf("failed to generate bundle %s", bundle.Output)
 	}
 
 	return nil
@@ -311,7 +311,7 @@ func GenerateAllBundles(sign bool) error {
 	logging.Println("Generating EFI bundles....")
 	bundles, err := ReadBundleDatabase(BundleDBPath)
 	if err != nil {
-		return fmt.Errorf("Couldn't open database: %s", BundleDBPath)
+		return fmt.Errorf("couldn't open database: %s", BundleDBPath)
 	}
 	out_create := true
 	out_sign := true
@@ -332,11 +332,11 @@ func GenerateAllBundles(sign bool) error {
 	}
 
 	if !out_create {
-		return errors.New("Error generating EFI bundles")
+		return errors.New("error generating EFI bundles")
 	}
 
 	if !out_sign {
-		return errors.New("Error signing EFI bundles")
+		return errors.New("error signing EFI bundles")
 	}
 
 	return nil

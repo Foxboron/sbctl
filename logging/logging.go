@@ -12,20 +12,17 @@ var (
 	NotOkSym = "✘"
 	WarnSym  = "‼"
 	UnkwnSym = "⁇"
-	ErrSym   = "⁇"
 )
 var (
 	OkSymText    = "[+]"
 	NotOkSymText = "[-]"
 	WarnSymText  = "[!]"
 	UnkwnSymText = "[?]"
-	ErrSymText   = "[?]"
 )
 
 var (
 	ok    string
 	notok string
-	err   string
 	warn  string
 	unkwn string
 )
@@ -109,14 +106,12 @@ func init() {
 	if ok := os.Getenv("EFIBOOTCTL_UNICODE"); ok == "0" {
 		OkSym = OkSymText
 		NotOkSym = NotOkSymText
-		ErrSym = ErrSymText
 		WarnSym = WarnSymText
 		UnkwnSym = UnkwnSymText
 	}
 
 	ok = color.New(color.FgGreen, color.Bold).Sprintf(OkSym)
 	notok = color.New(color.FgRed, color.Bold).Sprintf(NotOkSym)
-	err = color.New(color.FgRed, color.Bold).Sprintf(ErrSym)
 	warn = color.New(color.FgYellow, color.Bold).Sprintf(WarnSym)
 	unkwn = color.New(color.FgRed, color.Bold).Sprintf(UnkwnSym)
 	PrintOn()
