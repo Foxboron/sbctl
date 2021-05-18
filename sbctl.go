@@ -209,19 +209,6 @@ func Sign(file, output string, enroll bool) error {
 	return err
 }
 
-func CreateKeys() error {
-	if !CheckIfKeysInitialized(KeysPath) {
-		logging.Print("Creating secure boot keys...")
-		err := InitializeSecureBootKeys(DatabasePath)
-		if err != nil {
-			return fmt.Errorf("couldn't initialize secure boot: %w", err)
-		}
-	} else {
-		logging.Ok("Secure boot keys has already been created!")
-	}
-	return nil
-}
-
 func CombineFiles(microcode, initramfs string) (*os.File, error) {
 	tmpFile, err := os.CreateTemp("/var/tmp", "initramfs-")
 	if err != nil {
@@ -270,7 +257,7 @@ func CreateBundle(bundle Bundle) error {
 
 	out, err := GenerateBundle(&bundle)
 	if err != nil {
-		logging.Warn(err.Error())
+		return err
 	}
 	if !out {
 		return fmt.Errorf("failed to generate bundle %s", bundle.Output)
