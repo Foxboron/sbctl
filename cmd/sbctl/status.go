@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/foxboron/go-uefi/efi"
+	"github.com/foxboron/sbctl"
 	"github.com/foxboron/sbctl/logging"
 	"github.com/spf13/cobra"
 )
@@ -16,10 +17,17 @@ var statusCmd = &cobra.Command{
 }
 
 func RunStatus(cmd *cobra.Command, args []string) error {
-	ret := map[string]bool{}
+	ret := map[string]interface{}{}
 	if _, err := os.Stat("/sys/firmware/efi/efivars"); os.IsNotExist(err) {
 		return fmt.Errorf("system is not booted with UEFI!")
 	}
+	u, err := sbctl.GetGUID()
+	if err != nil {
+		return err
+	}
+	logging.Print("Owner GUID:\t")
+	logging.Println(u.String())
+	ret["Owner GUID"] = u.String()
 	logging.Print("Setup Mode:\t")
 	if efi.GetSetupMode() {
 		logging.NotOk("Enabled")
