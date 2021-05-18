@@ -3,6 +3,7 @@ package sbctl
 import (
 	"io/ioutil"
 	"log"
+	"os"
 	"path/filepath"
 
 	"github.com/foxboron/sbctl/logging"
