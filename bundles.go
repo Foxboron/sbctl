@@ -51,6 +51,19 @@ func WriteBundleDatabase(dbpath string, bundles Bundles) {
 	}
 }
 
+func BundleIter(fn func(s *Bundle) error) error {
+	files, err := ReadBundleDatabase(BundleDBPath)
+	if err != nil {
+		return err
+	}
+	for _, s := range files {
+		if err := fn(s); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func GetEfistub() string {
 	candidates := []string{
 		"/lib/systemd/boot/efi/linuxx64.efi.stub",
