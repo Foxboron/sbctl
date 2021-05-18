@@ -68,6 +68,7 @@ var bundleCmd = &cobra.Command{
 		if err = sbctl.CreateBundle(*bundle); err != nil {
 			return err
 		}
+		logging.Print("Wrote EFI bundle %s\n", bundle.Output)
 		if saveBundle {
 			bundles[bundle.Output] = bundle
 			sbctl.WriteBundleDatabase(sbctl.BundleDBPath, bundles)

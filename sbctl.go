@@ -143,7 +143,11 @@ func VerifyESP() error {
 			return nil
 		}
 
-		if ok, _ := VerifyFile(DBCert, path); ok {
+		ok, err := VerifyFile(DBCert, path)
+		if err != nil {
+			return err
+		}
+		if ok {
 			logging.Ok("%s is signed\n", path)
 		} else {
 			logging.NotOk("%s is not signed\n", path)
@@ -214,38 +218,6 @@ func CreateKeys() error {
 		}
 	} else {
 		logging.Ok("Secure boot keys has already been created!")
-	}
-	return nil
-}
-
-var efivarFSFiles = []string{
-	"/sys/firmware/efi/efivars/PK-8be4df61-93ca-11d2-aa0d-00e098032b8c",
-	"/sys/firmware/efi/efivars/KEK-8be4df61-93ca-11d2-aa0d-00e098032b8c",
-	"/sys/firmware/efi/efivars/db-d719b2cb-3d3a-4596-a3bc-dad00e67656f",
-}
-
-var ErrImmutable = errors.New("file is immutable")
-
-func SyncKeys() error {
-	errImmuable := false
-	for _, file := range efivarFSFiles {
-		b, err := IsImmutable(file)
-		if err != nil {
-			return fmt.Errorf("couldn't read file: %s", file)
-		}
-		if !b {
-			logging.Warn("File is immutable: %s", file)
-			errImmuable = true
-		}
-	}
-	if errImmuable {
-		return ErrImmutable
-	}
-	synced := SBKeySync(KeysPath)
-	if !synced {
-		return errors.New("couldn't sync keys")
-	} else {
-		logging.Ok("Synced keys!")
 	}
 	return nil
 }

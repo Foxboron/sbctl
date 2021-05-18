@@ -52,19 +52,26 @@ func ReadOrCreateFile(filePath string) ([]byte, error) {
 	return f, nil
 }
 
-func IsImmutable(file string) (bool, error) {
+var EfivarFSFiles = []string{
+	"/sys/firmware/efi/efivars/PK-8be4df61-93ca-11d2-aa0d-00e098032b8c",
+	"/sys/firmware/efi/efivars/KEK-8be4df61-93ca-11d2-aa0d-00e098032b8c",
+	"/sys/firmware/efi/efivars/db-d719b2cb-3d3a-4596-a3bc-dad00e67656f",
+}
+
+var ErrImmutable = errors.New("file is immutable")
+var ErrNotImmutable = errors.New("file is not immutable")
+
+func IsImmutable(file string) error {
 	f, err := os.Open(file)
-	if errors.Is(err, os.ErrNotExist) {
-		return false, nil
-	} else if err != nil {
-		return false, err
+	if err != nil {
+		return err
 	}
 	attr, err := GetAttr(f)
 	if err != nil {
-		return false, err
+		return err
 	}
 	if (attr & FS_IMMUTABLE_FL) != 0 {
-		return false, nil
+		return ErrImmutable
 	}
-	return true, nil
+	return ErrNotImmutable
 }
