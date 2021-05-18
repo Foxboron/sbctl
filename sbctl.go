@@ -224,20 +224,22 @@ var efivarFSFiles = []string{
 	"/sys/firmware/efi/efivars/db-d719b2cb-3d3a-4596-a3bc-dad00e67656f",
 }
 
+var ErrImmutable = errors.New("You need to chattr -i files in efivarfs")
+
 func SyncKeys() error {
 	errImmuable := false
 	for _, file := range efivarFSFiles {
 		b, err := IsImmutable(file)
 		if err != nil {
-			return fmt.Errorf("Couldn't read file: %s\n", file)
+			return fmt.Errorf("Couldn't read file: %s", file)
 		}
-		if b {
-			logging.Warn("File is immutable: %s\n", file)
+		if !b {
+			logging.Warn("File is immutable: %s", file)
 			errImmuable = true
 		}
 	}
 	if errImmuable {
-		return fmt.Errorf("You need to chattr -i files in efivarfs")
+		return ErrImmutable
 	}
 	synced := SBKeySync(KeysPath)
 	if !synced {
