@@ -1,18 +1,13 @@
 package sbctl
 
 import (
-	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
-	"strings"
-
-	"github.com/foxboron/sbctl/logging"
 )
 
 // Functions that doesn't fit anywhere else
@@ -88,77 +83,6 @@ func GetESP() string {
 	}
 
 	return ""
-}
-
-func VerifyESP() error {
-	espPath := GetESP()
-	files, err := ReadFileDatabase(DBPath)
-	if err != nil {
-		return err
-	}
-	logging.Print("Verifying file database and EFI images in %s...\n", espPath)
-
-	// Cache files we have looked at.
-	checked := make(map[string]bool)
-	for _, file := range files {
-		normalized := strings.Join(strings.Split(file.OutputFile, "/")[2:], "/")
-		checked[normalized] = true
-
-		// Check output file exists before checking if it's signed
-		if _, err := os.Open(file.OutputFile); errors.Is(err, os.ErrNotExist) {
-			logging.Warn("%s does not exist", file.OutputFile)
-		} else if errors.Is(err, os.ErrPermission) {
-			logging.Warn("%s permission denied. Can't read file\n", file.OutputFile)
-		} else if ok, _ := VerifyFile(DBCert, file.OutputFile); ok {
-			logging.Ok("%s is signed", file.OutputFile)
-		} else {
-			logging.NotOk("%s is not signed", file.OutputFile)
-		}
-	}
-
-	err = filepath.Walk(espPath, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-		if fi, _ := os.Stat(path); fi.IsDir() {
-			return nil
-		}
-
-		// Don't check files we have checked
-		normalized := strings.Join(strings.Split(path, "/")[2:], "/")
-		if ok := checked[normalized]; ok {
-			return nil
-		}
-
-		r, _ := os.Open(path)
-		defer r.Close()
-
-		// We are looking for MS-DOS executables.
-		// They contain "MZ" as the two first bytes
-		var header [2]byte
-		if _, err = io.ReadFull(r, header[:]); err != nil {
-			return nil
-		}
-		if !bytes.Equal(header[:], []byte{0x4d, 0x5a}) {
-			return nil
-		}
-
-		ok, err := VerifyFile(DBCert, path)
-		if err != nil {
-			return err
-		}
-		if ok {
-			logging.Ok("%s is signed\n", path)
-		} else {
-			logging.NotOk("%s is not signed\n", path)
-		}
-		return nil
-	})
-	if err != nil {
-		log.Println(err)
-	}
-
-	return nil
 }
 
 func Sign(file, output string, enroll bool) error {
