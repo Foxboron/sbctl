@@ -1,12 +1,15 @@
 package sbctl
 
 import (
+	"bytes"
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
+	"io"
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 func ChecksumFile(file string) string {
@@ -74,4 +77,37 @@ func IsImmutable(file string) error {
 		return ErrImmutable
 	}
 	return ErrNotImmutable
+}
+
+func CheckMSDos(path string) (bool, error) {
+	r, err := os.Open(path)
+	if err != nil {
+		return false, err
+	}
+	defer r.Close()
+
+	// We are looking for MS-DOS executables.
+	// They contain "MZ" as the two first bytes
+	var header [2]byte
+	if _, err = io.ReadFull(r, header[:]); err != nil {
+		return false, err
+	}
+	if !bytes.Equal(header[:], []byte{0x4d, 0x5a}) {
+		return false, nil
+	}
+	return true, nil
+}
+
+var (
+	checked = make(map[string]bool)
+)
+
+func AddChecked(path string) {
+	normalized := strings.Join(strings.Split(path, "/")[2:], "/")
+	checked[normalized] = true
+}
+
+func InChecked(path string) bool {
+	normalized := strings.Join(strings.Split(path, "/")[2:], "/")
+	return checked[normalized]
 }
