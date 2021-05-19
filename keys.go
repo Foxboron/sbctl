@@ -70,17 +70,17 @@ func CreateKey(path, name string) ([]byte, error) {
 	}
 	keyOut, err := os.OpenFile(fmt.Sprintf("%s.key", path), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to open key.pem for writing: %v", err)
+		return nil, fmt.Errorf("failed to open key.pem for writing: %v", err)
 	}
 	privBytes, err := x509.MarshalPKCS8PrivateKey(priv)
 	if err != nil {
-		return nil, fmt.Errorf("Unable to marshal private key: %v", err)
+		return nil, fmt.Errorf("unable to marshal private key: %v", err)
 	}
 	if err := pem.Encode(keyOut, &pem.Block{Type: "PRIVATE KEY", Bytes: privBytes}); err != nil {
-		return nil, fmt.Errorf("Failed to write data to key.pem: %v", err)
+		return nil, fmt.Errorf("failed to write data to key.pem: %v", err)
 	}
 	if err := keyOut.Close(); err != nil {
-		return nil, fmt.Errorf("Error closing key.pem: %v", err)
+		return nil, fmt.Errorf("error closing key.pem: %v", err)
 	}
 	return derBytes, nil
 }
