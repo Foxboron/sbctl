@@ -38,6 +38,14 @@ var (
 	GUIDPath = filepath.Join(DatabasePath, "GUID")
 )
 
+// Check if we can access the db certificate to verify files
+func CanVerifyFiles() error {
+	if err := unix.Access(DBCert, unix.R_OK); err != nil {
+		return fmt.Errorf("couldn't access %s: %w", DBCert, err)
+	}
+	return nil
+}
+
 func CreateKey(path, name string) []byte {
 	serialNumberLimit := new(big.Int).Lsh(big.NewInt(1), 128)
 	serialNumber, err := rand.Int(rand.Reader, serialNumberLimit)
