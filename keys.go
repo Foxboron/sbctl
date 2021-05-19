@@ -99,22 +99,20 @@ func SaveKey(k []byte, path string) {
 
 }
 
-func KeyToSiglist(UUID []byte, input string) []byte {
-	logging.Print("Create EFI signature list %s.esl...", input)
-	out, err := exec.Command(
+func KeyToSiglist(UUID []byte, input string) error {
+	_, err := exec.Command(
 		"sbsiglist",
 		"--owner", string(UUID),
 		"--type", "x509",
 		"--output", fmt.Sprintf("%s.esl", input), input,
 	).Output()
 	if err != nil {
-		log.Fatalf("Failed creating signature list: %s", err)
+		return err
 	}
-	return out
+	return nil
 }
 
 func SignEFIVariable(key, cert, varname, vardatafile, output string) ([]byte, error) {
-	logging.Print("Signing %s with %s...", vardatafile, key)
 	out, err := exec.Command("sbvarsign", "--key", key, "--cert", cert, "--output", output, varname, vardatafile).Output()
 	if err != nil {
 		return nil, fmt.Errorf("failed signing EFI variable: %v", err)
@@ -123,7 +121,6 @@ func SignEFIVariable(key, cert, varname, vardatafile, output string) ([]byte, er
 }
 
 func SBKeySync(dir string) bool {
-	logging.Print("Syncing %s to EFI variables...", dir)
 	cmd := exec.Command("sbkeysync", "--pk", "--verbose", "--keystore", dir)
 	var out bytes.Buffer
 	cmd.Stdout = &out
@@ -237,6 +234,7 @@ func InitializeSecureBootKeys(output string) error {
 	if err != nil {
 		return err
 	}
+	logging.Print("Using Owner UUID %s\n", uuid)
 	// Create the directories we need and keys
 	for _, key := range SecureBootKeys {
 		path := filepath.Join(output, "keys", key.Key)
@@ -244,13 +242,17 @@ func InitializeSecureBootKeys(output string) error {
 		keyPath := filepath.Join(path, key.Key)
 		pk := CreateKey(keyPath, key.Description)
 		SaveKey(pk, keyPath)
-		KeyToSiglist(uuid, fmt.Sprintf("%s.der", keyPath))
-		// Confusing code
-		// TODO: make it cleaner
+		derSiglist := fmt.Sprintf("%s.der", keyPath)
+		if err := KeyToSiglist(uuid, derSiglist); err != nil {
+			return err
+		}
+		logging.Print("Created EFI signature list %s.esl...", derSiglist)
 		signingkeyPath := filepath.Join(output, "keys", key.SignedWith, key.SignedWith)
 		signingKey := fmt.Sprintf("%s.key", signingkeyPath)
 		signingCertificate := fmt.Sprintf("%s.pem", signingkeyPath)
-		SignEFIVariable(signingKey, signingCertificate, key.Key, fmt.Sprintf("%s.der.esl", keyPath), fmt.Sprintf("%s.auth", keyPath))
+		vardatafile := fmt.Sprintf("%s.der.esl", keyPath)
+		logging.Print("Signing %s with %s...", vardatafile, key.Key)
+		SignEFIVariable(signingKey, signingCertificate, key.Key, vardatafile, fmt.Sprintf("%s.auth", keyPath))
 	}
 	return nil
 }

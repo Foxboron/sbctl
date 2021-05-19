@@ -6,7 +6,6 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/foxboron/sbctl/logging"
 	"github.com/google/uuid"
 )
 
@@ -22,19 +21,16 @@ func CreateGUID(output string) ([]byte, error) {
 	var uuid []byte
 	guidPath := filepath.Join(output, "GUID")
 	if _, err := os.Stat(guidPath); os.IsNotExist(err) {
-		logging.Print("Created UUID %s...", uuid)
 		uuid = CreateUUID()
 		err := ioutil.WriteFile(guidPath, uuid, 0600)
 		if err != nil {
 			return nil, err
 		}
-		logging.Ok("")
 	} else {
 		uuid, err = ioutil.ReadFile(guidPath)
 		if err != nil {
 			return nil, err
 		}
-		logging.Print("Using UUID %s...", uuid)
 	}
 	return uuid, nil
 }
