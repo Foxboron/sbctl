@@ -2,7 +2,6 @@ package main
 
 import (
 	"errors"
-	"log"
 	"os"
 	"path/filepath"
 
@@ -75,7 +74,7 @@ var verifyCmd = &cobra.Command{
 			}
 			return nil
 		}); err != nil {
-			log.Println(err)
+			return err
 		}
 		return nil
 	},

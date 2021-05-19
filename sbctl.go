@@ -115,7 +115,9 @@ func Sign(file, output string, enroll bool) error {
 		checksum := ChecksumFile(file)
 		entry.Checksum = checksum
 		files[file] = entry
-		WriteFileDatabase(DBPath, files)
+		if err := WriteFileDatabase(DBPath, files); err != nil {
+			return err
+		}
 	} else {
 		err = SignFile(DBKey, DBCert, file, output, "")
 		// return early if signing fails
@@ -127,7 +129,9 @@ func Sign(file, output string, enroll bool) error {
 	if enroll {
 		checksum := ChecksumFile(file)
 		files[file] = &SigningEntry{File: file, OutputFile: output, Checksum: checksum}
-		WriteFileDatabase(DBPath, files)
+		if err := WriteFileDatabase(DBPath, files); err != nil {
+			return err
+		}
 	}
 
 	return err

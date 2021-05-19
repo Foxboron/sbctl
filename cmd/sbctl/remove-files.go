@@ -25,7 +25,9 @@ var removeFileCmd = &cobra.Command{
 			os.Exit(1)
 		}
 		delete(files, args[0])
-		sbctl.WriteFileDatabase(sbctl.DBPath, files)
+		if err := sbctl.WriteFileDatabase(sbctl.DBPath, files); err != nil {
+			return err
+		}
 		return nil
 	},
 }

@@ -42,7 +42,9 @@ var signAllCmd = &cobra.Command{
 			checksum := sbctl.ChecksumFile(entry.File)
 			entry.Checksum = checksum
 			files[entry.File] = entry
-			sbctl.WriteFileDatabase(sbctl.DBPath, files)
+			if err := sbctl.WriteFileDatabase(sbctl.DBPath, files); err != nil {
+				return err
+			}
 
 		}
 		return nil
