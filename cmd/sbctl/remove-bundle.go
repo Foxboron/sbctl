@@ -26,7 +26,10 @@ var removeBundleCmd = &cobra.Command{
 			os.Exit(1)
 		}
 		delete(bundles, args[0])
-		sbctl.WriteBundleDatabase(sbctl.BundleDBPath, bundles)
+		err = sbctl.WriteBundleDatabase(sbctl.BundleDBPath, bundles)
+		if err != nil {
+			return err
+		}
 		return nil
 	},
 }

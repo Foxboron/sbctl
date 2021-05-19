@@ -4,10 +4,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
+
+	"github.com/foxboron/sbctl/logging"
 )
 
 type Bundle struct {
@@ -37,15 +38,16 @@ func ReadBundleDatabase(dbpath string) (Bundles, error) {
 	return bundles, nil
 }
 
-func WriteBundleDatabase(dbpath string, bundles Bundles) {
+func WriteBundleDatabase(dbpath string, bundles Bundles) error {
 	data, err := json.MarshalIndent(bundles, "", "    ")
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	err = os.WriteFile(dbpath, data, 0644)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
+	return nil
 }
 
 func BundleIter(fn func(s *Bundle) error) error {
@@ -120,5 +122,6 @@ func GenerateBundle(bundle *Bundle) (bool, error) {
 			return exitError.ExitCode() == 0, nil
 		}
 	}
+	logging.Print("Wrote EFI bundle %s\n", bundle.Output)
 	return true, nil
 }

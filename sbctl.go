@@ -88,7 +88,7 @@ func GetESP() string {
 func Sign(file, output string, enroll bool) error {
 	file, err := filepath.Abs(file)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	if output == "" {
@@ -96,7 +96,7 @@ func Sign(file, output string, enroll bool) error {
 	} else {
 		output, err = filepath.Abs(output)
 		if err != nil {
-			log.Fatal(err)
+			return err
 		}
 	}
 
@@ -112,7 +112,10 @@ func Sign(file, output string, enroll bool) error {
 		if err != nil {
 			return err
 		}
-		checksum := ChecksumFile(file)
+		checksum, err := ChecksumFile(file)
+		if err != nil {
+			return err
+		}
 		entry.Checksum = checksum
 		files[file] = entry
 		if err := WriteFileDatabase(DBPath, files); err != nil {
@@ -127,7 +130,10 @@ func Sign(file, output string, enroll bool) error {
 	}
 
 	if enroll {
-		checksum := ChecksumFile(file)
+		checksum, err := ChecksumFile(file)
+		if err != nil {
+			return err
+		}
 		files[file] = &SigningEntry{File: file, OutputFile: output, Checksum: checksum}
 		if err := WriteFileDatabase(DBPath, files); err != nil {
 			return err

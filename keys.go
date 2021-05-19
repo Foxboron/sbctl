@@ -9,7 +9,6 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
-	"log"
 	"math/big"
 	"os"
 	"os/exec"
@@ -46,12 +45,9 @@ func CanVerifyFiles() error {
 	return nil
 }
 
-func CreateKey(path, name string) []byte {
+func CreateKey(path, name string) ([]byte, error) {
 	serialNumberLimit := new(big.Int).Lsh(big.NewInt(1), 128)
-	serialNumber, err := rand.Int(rand.Reader, serialNumberLimit)
-	if err != nil {
-		log.Fatalf("Failed to generate serial number: %v", err)
-	}
+	serialNumber, _ := rand.Int(rand.Reader, serialNumberLimit)
 	c := x509.Certificate{
 		SerialNumber:       serialNumber,
 		PublicKeyAlgorithm: x509.RSA,
@@ -66,45 +62,45 @@ func CreateKey(path, name string) []byte {
 	}
 	priv, err := rsa.GenerateKey(rand.Reader, RSAKeySize)
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 	derBytes, err := x509.CreateCertificate(rand.Reader, &c, &c, &priv.PublicKey, priv)
 	if err != nil {
-		log.Fatalf("Failed to create certificate: %v", err)
+		return nil, err
 	}
 	keyOut, err := os.OpenFile(fmt.Sprintf("%s.key", path), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
 	if err != nil {
-		log.Fatalf("Failed to open key.pem for writing: %v", err)
+		return nil, fmt.Errorf("Failed to open key.pem for writing: %v", err)
 	}
 	privBytes, err := x509.MarshalPKCS8PrivateKey(priv)
 	if err != nil {
-		log.Fatalf("Unable to marshal private key: %v", err)
+		return nil, fmt.Errorf("Unable to marshal private key: %v", err)
 	}
 	if err := pem.Encode(keyOut, &pem.Block{Type: "PRIVATE KEY", Bytes: privBytes}); err != nil {
-		log.Fatalf("Failed to write data to key.pem: %v", err)
+		return nil, fmt.Errorf("Failed to write data to key.pem: %v", err)
 	}
 	if err := keyOut.Close(); err != nil {
-		log.Fatalf("Error closing key.pem: %v", err)
+		return nil, fmt.Errorf("Error closing key.pem: %v", err)
 	}
-	return derBytes
+	return derBytes, nil
 }
 
-func SaveKey(k []byte, path string) {
+func SaveKey(k []byte, path string) error {
 	err := os.WriteFile(fmt.Sprintf("%s.der", path), k, 0644)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	certOut, err := os.Create(fmt.Sprintf("%s.pem", path))
 	if err != nil {
-		log.Fatalf("Failed to open cert.pem for writing: %v", err)
+		return err
 	}
 	if err := pem.Encode(certOut, &pem.Block{Type: "CERTIFICATE", Bytes: k}); err != nil {
-		log.Fatalf("Failed to write data to cert.pem: %v", err)
+		return err
 	}
 	if err := certOut.Close(); err != nil {
-		log.Fatalf("Error closing cert.pem: %v", err)
+		return err
 	}
-
+	return nil
 }
 
 func KeyToSiglist(UUID []byte, input string) error {
@@ -180,8 +176,11 @@ func SignFile(key, cert, file, output, checksum string) error {
 	if err != nil {
 		return err
 	}
-
-	if ok && ChecksumFile(file) == checksum {
+	chk, err := ChecksumFile(file)
+	if err != nil {
+		return err
+	}
+	if ok && chk == checksum {
 		return ErrAlreadySigned
 	}
 
@@ -248,7 +247,10 @@ func InitializeSecureBootKeys(output string) error {
 		path := filepath.Join(output, "keys", key.Key)
 		os.MkdirAll(path, os.ModePerm)
 		keyPath := filepath.Join(path, key.Key)
-		pk := CreateKey(keyPath, key.Description)
+		pk, err := CreateKey(keyPath, key.Description)
+		if err != nil {
+			return err
+		}
 		SaveKey(pk, keyPath)
 		derSiglist := fmt.Sprintf("%s.der", keyPath)
 		if err := KeyToSiglist(uuid, derSiglist); err != nil {

@@ -2,7 +2,6 @@ package sbctl
 
 import (
 	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
 
@@ -10,10 +9,7 @@ import (
 )
 
 func CreateUUID() []byte {
-	id, err := uuid.NewRandom()
-	if err != nil {
-		log.Fatal(err)
-	}
+	id, _ := uuid.NewRandom()
 	return []byte(id.String())
 }
 

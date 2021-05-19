@@ -6,21 +6,20 @@ import (
 	"encoding/hex"
 	"errors"
 	"io"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
 )
 
-func ChecksumFile(file string) string {
+func ChecksumFile(file string) (string, error) {
 	hasher := sha256.New()
 	s, err := os.ReadFile(file)
 	if err != nil {
-		log.Fatal(err)
+		return "", err
 	}
 	hasher.Write(s)
 
-	return hex.EncodeToString(hasher.Sum(nil))
+	return hex.EncodeToString(hasher.Sum(nil)), nil
 }
 
 func ReadOrCreateFile(filePath string) ([]byte, error) {
