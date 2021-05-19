@@ -28,11 +28,12 @@ var enrollKeysCmd = &cobra.Command{
 		if isImmutable {
 			return sbctl.ErrImmutable
 		}
-		logging.Print("Syncing %s to EFI variables...", sbctl.KeysPath)
+		logging.Print("Syncing keys to EFI variables...")
 		synced := sbctl.SBKeySync(sbctl.KeysPath)
 		if !synced {
 			return errors.New("couldn't sync keys")
 		}
+		logging.Println("")
 		logging.Ok("Synced keys!")
 		return nil
 	},
