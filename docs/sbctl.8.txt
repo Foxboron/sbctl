@@ -70,8 +70,8 @@ EFI binary commands
 ------------------
 
 **bundle** [FLAGS] <NAME>::
-        Creates a bundle that should produce EFI binaries. This is useful if
-        you want to sign your initramfs along with your kernel.
+        Creates a bundle that should produce EFI binaries. See **BUNDLES**
+        below for more details.
 
                 *-a* 'PATH', *--amducode* 'PATH';;
                         AMD microcode location.
@@ -113,10 +113,26 @@ EFI binary commands
                 Sign all the generated bundles.
 
 **remove-bundle** <NAME>::
-        Removes a bundle from the list.
+        Removes a bundle from the list. This does not delete the bundle itself.
 
 **list-bundles**::
         List all registered bundles to generate.
+
+
+Bundles
+-------
+
+Bundles are EFI binaries which pack all the resources (initramfs, kernel, etc)
+into a single file which can be easily signed. They also don't read parameters
+from external files, which makes them more tamper-proof.
+
+When a bundle is generated, its metadata is stored into the bundle database
+(See **FILES**). Subsequent executions of *sbctl generate-bundles* will rebuild
+these bundles, so you don't need to re-specify all parameters after each system
+update.
+
+Hint: systemd-boot will automatically show entries for any bundles found in
+*$EFI/Linux/+++*+++.efi*.
 
 
 Notes
@@ -152,6 +168,7 @@ Files
 See Also
 --------
 linkman:sbsign[1]
+linkman:bootctl[1]
 
 
 Authors
