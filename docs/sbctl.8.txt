@@ -122,7 +122,7 @@ EFI binary commands
 Bundles
 -------
 
-Normally, only the kernel is signed with your secre boot keys. This leaves the
+Normally, only the kernel is signed with your secure boot keys. This leaves the
 cmdline and initramfs unprotected.
 
 Bundles are EFI executables which pack all three (initramfs, kernel and
@@ -135,7 +135,7 @@ will rebuild these bundles, so you don't need to re-specify all parameters
 after each system update.
 
 Hint: systemd-boot will automatically show entries for any bundles found in
-*esp/Linux/+++*+++.efi*.
+*esp/EFI/Linux/+++*+++.efi*.
 
 
 Notes
