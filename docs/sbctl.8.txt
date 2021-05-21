@@ -126,7 +126,7 @@ Normally, only the kernel is signed with your secure boot keys. This means the
 kernel command line and initramfs can be changed without possibility of verification.
 
 Bundles are EFI executables which pack all three (initramfs, kernel and
-cmdline) into a single file which can easily be signed. Avoiding any unsigned
+cmdline) into a single file which is easy to sign. Avoiding any unsigned
 files during boot makes the whole process more tamper-proof.
 
 When a bundle is generated, its configuration is stored into the bundle
