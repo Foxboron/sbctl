@@ -130,7 +130,7 @@ cmdline) into a single file which can easily be signed. Avoiding any unsigned
 files during boot makes the whole process more tamper-proof.
 
 When a bundle is generated, its configuration is stored into the bundle
-database (See **FILES**). Subsequent executions of *sbctl generate-bundles*
+database (see **FILES**). Subsequent executions of *sbctl generate-bundles*
 will rebuild these bundles, so you don't need to re-specify all parameters
 after each system update.
 
