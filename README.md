@@ -12,14 +12,14 @@ The goal of the project is to have one consistent UI to manage secure boot keys.
 
 # Roadmap
 
-* Convert to use [goefi](https://github.com/Foxboron/goefi) instead of relying on `sbsigntools`
+* Convert to use [go-uefi](https://github.com/Foxboron/go-uefi) instead of relying on `sbsigntools`
 * Key rotation
 * Customize keys
 * Secure the keys
 
 # Support and development channel
 
-`#sbctl` on the [freenode](https://webchat.freenode.net/#sbctl) IRC network.
+`#sbctl` on the [libera](https://kiwiirc.com/nextclient/irc.libera.chat/#sbctl) IRC network.
 
 # Usage
 
