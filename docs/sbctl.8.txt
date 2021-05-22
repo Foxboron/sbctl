@@ -77,7 +77,7 @@ EFI binary commands
                         AMD microcode location.
 
                 *-c* 'PATH', *--cmdline* 'PATH';;
-                        Cmdline location. (default "/proc/cmdline")
+                        Cmdline location. (default "/etc/kernel/cmdline")
 
                 *-e* 'PATH', *--efi-stub* 'PATH';;
                         EFI Stub location. (default "/usr/lib/systemd/boot/efi/linuxx64.efi.stub")
