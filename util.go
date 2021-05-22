@@ -5,7 +5,6 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -19,7 +18,7 @@ func PrintGenerateError(logger *log.Logger, msg string, args ...interface{}) err
 
 func ChecksumFile(file string) string {
 	hasher := sha256.New()
-	s, err := ioutil.ReadFile(file)
+	s, err := os.ReadFile(file)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -30,7 +29,7 @@ func ChecksumFile(file string) string {
 
 func ReadOrCreateFile(filePath string) ([]byte, error) {
 	// Try to access or create the file itself
-	f, err := ioutil.ReadFile(filePath)
+	f, err := os.ReadFile(filePath)
 	if err != nil {
 		// Errors will mainly happen due to permissions or non-existing file
 		if os.IsNotExist(err) {

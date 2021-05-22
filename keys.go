@@ -8,7 +8,6 @@ import (
 	"crypto/x509/pkix"
 	"encoding/pem"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"math/big"
 	"os"
@@ -80,7 +79,7 @@ func CreateKey(path, name string) []byte {
 }
 
 func SaveKey(k []byte, path string) {
-	err := ioutil.WriteFile(fmt.Sprintf("%s.der", path), k, 0644)
+	err := os.WriteFile(fmt.Sprintf("%s.der", path), k, 0644)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -236,12 +235,12 @@ func CreateGUID(output string) []byte {
 	if _, err := os.Stat(guidPath); os.IsNotExist(err) {
 		uuid = CreateUUID()
 		msg2.Printf("Created UUID %s...", uuid)
-		err := ioutil.WriteFile(guidPath, uuid, 0600)
+		err := os.WriteFile(guidPath, uuid, 0600)
 		if err != nil {
 			log.Fatal(err)
 		}
 	} else {
-		uuid, err = ioutil.ReadFile(guidPath)
+		uuid, err = os.ReadFile(guidPath)
 		if err != nil {
 			log.Fatal(err)
 		}

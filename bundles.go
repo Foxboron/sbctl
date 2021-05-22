@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
@@ -43,7 +42,7 @@ func WriteBundleDatabase(dbpath string, bundles Bundles) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	err = ioutil.WriteFile(dbpath, data, 0644)
+	err = os.WriteFile(dbpath, data, 0644)
 	if err != nil {
 		log.Fatal(err)
 	}
