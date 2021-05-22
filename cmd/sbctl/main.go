@@ -33,7 +33,7 @@ var (
 )
 
 func baseFlags(cmd *cobra.Command) {
-	flags := cmd.Flags()
+	flags := cmd.PersistentFlags()
 	flags.BoolVar(&cmdOptions.JsonOutput, "json", false, "Output as json")
 
 	cmd.PreRun = func(cmd *cobra.Command, args []string) {
@@ -54,9 +54,10 @@ func JsonOut(v interface{}) error {
 
 func main() {
 	for _, cmd := range CliCommands {
-		baseFlags(cmd.Cmd)
 		rootCmd.AddCommand(cmd.Cmd)
 	}
+
+	baseFlags(rootCmd)
 
 	// This returns i the flag is not found with a specific error
 	rootCmd.SetFlagErrorFunc(func(cmd *cobra.Command, err error) error {
