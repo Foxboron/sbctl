@@ -71,7 +71,7 @@ func StartVM(conf *TestConfig) *TestVM {
 		OperatingSystem: vmtest.OS_LINUX,
 		Kernel:          "kernel/bzImage",
 		Params:          params,
-		Disks:           []vmtest.QemuDisk{{"kernel/rootfs.cow", "qcow2"}},
+		Disks:           []vmtest.QemuDisk{{Path: "kernel/rootfs.cow", Format: "qcow2"}},
 		Append:          []string{"root=/dev/sda", "quiet", "rw"},
 		Verbose:         false, //testing.Verbose()
 		Timeout:         50 * time.Second,
