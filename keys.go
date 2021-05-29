@@ -225,6 +225,7 @@ var SecureBootKeys = []struct {
 	// },
 }
 
+// Check if we have already intialized keys in the given output directory
 func CheckIfKeysInitialized(output string) bool {
 	for _, key := range SecureBootKeys {
 		path := filepath.Join(output, key.Key)
@@ -235,14 +236,15 @@ func CheckIfKeysInitialized(output string) bool {
 	return true
 }
 
+// Initialize the secure boot keys needed to setup secure boot.
+// It creates the following keys:
+//	* Platform Key (PK)
+//	* Key Exchange Key (KEK)
+//	* db (database)
 func InitializeSecureBootKeys(output string) error {
-	os.MkdirAll(output, os.ModePerm)
-	uuid, err := CreateGUID(output)
-	if err != nil {
-		return err
+	if CheckIfKeysInitialized(output) {
+		return nil
 	}
-	logging.Print("Using Owner UUID %s\n", uuid)
-	// Create the directories we need and keys
 	for _, key := range SecureBootKeys {
 		path := filepath.Join(output, "keys", key.Key)
 		os.MkdirAll(path, os.ModePerm)

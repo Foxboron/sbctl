@@ -22,6 +22,19 @@ func ChecksumFile(file string) (string, error) {
 	return hex.EncodeToString(hasher.Sum(nil)), nil
 }
 
+func CreateDirectory(path string) error {
+	if _, err := os.Stat(path); errors.Is(err, os.ErrExist) {
+		return nil
+	} else if errors.Is(err, os.ErrNotExist) {
+	} else if err != nil {
+		return err
+	}
+	if err := os.MkdirAll(path, os.ModePerm); err != nil {
+		return err
+	}
+	return nil
+}
+
 func ReadOrCreateFile(filePath string) ([]byte, error) {
 	// Try to access or create the file itself
 	f, err := os.ReadFile(filePath)
