@@ -239,9 +239,9 @@ func bundleCmd() *cobra.Command {
 	f.StringVarP(&splashImg, "splash-img", "l", "", "Boot splash image location")
 	f.StringVarP(&osRelease, "os-release", "o", "/usr/lib/os-release", "OS Release file location")
 	f.StringVarP(&efiStub, "efi-stub", "e", "/usr/lib/systemd/boot/efi/linuxx64.efi.stub", "EFI Stub location")
-	f.StringVarP(&kernelImg, "kernel-img", "k", filepath.Join(esp, "vmlinuz-linux"), "Kernel image location")
+	f.StringVarP(&kernelImg, "kernel-img", "k", "/boot/vmlinuz-linux", "Kernel image location")
 	f.StringVarP(&cmdline, "cmdline", "c", "/etc/kernel/cmdline", "Cmdline location")
-	f.StringVarP(&initramfs, "initramfs", "f", filepath.Join(esp, "initramfs-linux.img"), "Initramfs location")
+	f.StringVarP(&initramfs, "initramfs", "f", "/boot/initramfs-linux.img", "Initramfs location")
 	f.StringVarP(&espPath, "esp", "p", esp, "ESP location")
 	f.BoolVarP(&save, "save", "s", false, "save bundle to the database")
 	return cmd
