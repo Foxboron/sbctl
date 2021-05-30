@@ -2,6 +2,7 @@ package sbctl
 
 import (
 	"bytes"
+	"encoding/json"
 	"errors"
 	"io"
 	"log"
@@ -15,28 +16,76 @@ import (
 
 // Functions that doesn't fit anywhere else
 
-// Veryvery simple check
+type LsblkEntry struct {
+	Parttype   string `json:"parttype"`
+	Mountpoint string `json:"mountpoint"`
+	Pttype     string `json:"pttype"`
+	Fstype     string `json:"fstype"`
+}
+
+type LsblkRoot struct {
+	Blockdevices []LsblkEntry `json:"blockdevices"`
+}
+
+// Slightly more advanced check
 func GetESP() string {
-	if _, err := os.Stat("/efi"); !os.IsNotExist(err) {
-		return "/efi"
+
+	for _, env := range []string{"SYSTEMD_ESP_PATH", "ESP_PATH"} {
+		envEspPath, found := os.LookupEnv(env)
+		if found {
+			return envEspPath
+		}
 	}
-	out, err := exec.Command("lsblk", "-o", "PARTTYPE,MOUNTPOINT").Output()
+
+	out, err := exec.Command(
+		"lsblk",
+		"--json",
+		"--output", "PARTTYPE,MOUNTPOINT,PTTYPE,FSTYPE").Output()
 	if err != nil {
-		log.Fatal(err)
+		log.Panic(err)
 	}
-	data := string(out)
-	for _, lines := range strings.Split(data, "\n") {
-		if len(lines) < 1 {
+
+	var lsblkRoot LsblkRoot
+	json.Unmarshal(out, &lsblkRoot)
+
+	var pathBootEntry *LsblkEntry
+	var pathBootEfiEntry *LsblkEntry
+	var pathEfiEntry *LsblkEntry
+
+	for _, lsblkEntry := range lsblkRoot.Blockdevices {
+		switch lsblkEntry.Mountpoint {
+		case "/boot":
+			pathBootEntry = new(LsblkEntry)
+			*pathBootEntry = lsblkEntry
+		case "/boot/efi":
+			pathBootEfiEntry = new(LsblkEntry)
+			*pathBootEfiEntry = lsblkEntry
+		case "/efi":
+			pathEfiEntry = new(LsblkEntry)
+			*pathEfiEntry = lsblkEntry
+		}
+	}
+
+	for _, entryToCheck := range []*LsblkEntry{pathEfiEntry, pathBootEntry, pathBootEfiEntry} {
+		if entryToCheck == nil {
 			continue
 		}
-		l := strings.Split(lines, " ")
-		if len(l) != 2 {
+
+		if entryToCheck.Pttype != "gpt" {
 			continue
 		}
-		if l[0] == "c12a7328-f81f-11d2-ba4b-00a0c93ec93b" {
-			return l[1]
+
+		if entryToCheck.Fstype != "vfat" {
+			continue
 		}
+
+		if entryToCheck.Parttype != "c12a7328-f81f-11d2-ba4b-00a0c93ec93b" {
+			continue
+		}
+
+		return entryToCheck.Mountpoint
 	}
+
 	return ""
 }
 
