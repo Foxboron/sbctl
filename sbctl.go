@@ -30,6 +30,13 @@ type LsblkRoot struct {
 // Slightly more advanced check
 func GetESP() string {
 
+	for _, env := range []string{"SYSTEMD_ESP_PATH", "ESP_PATH"} {
+		envEspPath, found := os.LookupEnv(env)
+		if found {
+			return envEspPath
+		}
+	}
+
 	out, err := exec.Command(
 		"lsblk",
 		"--json",
