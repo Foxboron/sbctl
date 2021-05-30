@@ -36,7 +36,7 @@ func baseFlags(cmd *cobra.Command) {
 	flags := cmd.PersistentFlags()
 	flags.BoolVar(&cmdOptions.JsonOutput, "json", false, "Output as json")
 
-	cmd.PreRun = func(cmd *cobra.Command, args []string) {
+	cmd.PersistentPreRun = func(cmd *cobra.Command, args []string) {
 		if cmdOptions.JsonOutput {
 			logging.PrintOff()
 		}
