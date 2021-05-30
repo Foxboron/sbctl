@@ -144,6 +144,16 @@ All commands that take path arguments convert them into absolute paths when
 saving them to the database.
 
 
+Environment variables
+---------------------
+
+**SYSTEMD_ESP_PATH**, **ESP_PATH**::
+        Defines the EFI system partition (ESP) location. This overrides the
+        behaviour from **sbctl** where we query for the correct partition with
+        **lsblk**. No checks are performed on this path and can be usefull for testing
+        purposes.
+
+
 Files
 ----
 **/usr/share/secureboot**::
