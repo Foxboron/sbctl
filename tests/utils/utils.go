@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -140,4 +141,15 @@ func (tvm *TestVM) RunTest(path string) func(t *testing.T) {
 			t.Error(err)
 		}
 	}
+}
+
+func Exec(c string) error {
+	args := strings.Split(c, " ")
+	cmd := exec.Command(args[0], args[1:]...)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	if err := cmd.Run(); err != nil {
+		return err
+	}
+	return nil
 }

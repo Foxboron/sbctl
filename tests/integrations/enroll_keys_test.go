@@ -3,39 +3,29 @@
 package main
 
 import (
-	"os"
-	"os/exec"
-	"strings"
 	"testing"
 
 	"github.com/foxboron/go-uefi/efi"
+	"github.com/foxboron/sbctl/tests/utils"
 )
 
-func Exec(c string) error {
-	args := strings.Split(c, " ")
-	cmd := exec.Command(args[0], args[1:]...)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	if err := cmd.Run(); err != nil {
-		return err
-	}
-	return nil
-}
-
 func TestEnrollKeys(t *testing.T) {
-
-	if !efi.GetSetupMode() {
-		t.Fatal("not in setup mode")
-	}
 
 	if efi.GetSecureBoot() {
 		t.Fatal("in secure boot mode")
 	}
 
-	Exec("/mnt/sbctl status")
-
 	if !efi.GetSetupMode() {
 		t.Fatal("not in setup mode")
+	}
+
+	utils.Exec("rm -rf /usr/share/secureboot")
+	utils.Exec("/mnt/sbctl status")
+	utils.Exec("/mnt/sbctl create-keys")
+	utils.Exec("/mnt/sbctl enroll-keys")
+
+	if efi.GetSetupMode() {
+		t.Fatal("in setup mode")
 	}
 
 }
