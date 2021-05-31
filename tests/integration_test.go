@@ -14,9 +14,15 @@ import (
 func TestKeyEnrollment(t *testing.T) {
 	conf := utils.NewConfig()
 	conf.AddFile("sbctl")
+
 	utils.WithVM(conf,
 		func(vm *utils.TestVM) {
 			t.Run("Enroll Keys", vm.RunTest("./integrations/enroll_keys_test.go"))
+		})
+
+	utils.WithVM(conf,
+		func(vm *utils.TestVM) {
+			t.Run("Check SecureBoot enabled", vm.RunTest("./integrations/secure_boot_enabled_test.go"))
 		})
 }
 
