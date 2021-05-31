@@ -2,6 +2,7 @@ package sbctl
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -198,4 +199,12 @@ func CreateBundle(bundle Bundle) error {
 	}
 
 	return nil
+}
+
+// Checks if sbctl is setup on this computer
+func CheckSbctlInstallation(path string) bool {
+	if _, err := os.Stat(path); errors.Is(err, os.ErrNotExist) {
+		return false
+	}
+	return true
 }
