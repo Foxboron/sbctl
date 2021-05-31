@@ -19,13 +19,15 @@ var createKeysCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		logging.Print("Using Owner UUID %s\n", uuid)
+		logging.Print("Created Owner UUID %s\n", uuid)
 		if !sbctl.CheckIfKeysInitialized(sbctl.KeysPath) {
 			logging.Print("Creating secure boot keys...")
-			err := sbctl.InitializeSecureBootKeys(sbctl.DatabasePath)
+			err := sbctl.InitializeSecureBootKeys(sbctl.KeysPath)
 			if err != nil {
+				logging.NotOk("")
 				return fmt.Errorf("couldn't initialize secure boot: %w", err)
 			}
+			logging.Ok("\nSecure boot keys created!")
 		} else {
 			logging.Ok("Secure boot keys has already been created!")
 		}
