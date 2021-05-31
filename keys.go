@@ -114,28 +114,31 @@ func SignEFIVariable(key, cert, varname, vardatafile, output string) ([]byte, er
 	return out, nil
 }
 
-func SBKeySync(dir string) bool {
-	cmd := exec.Command("sbkeysync", "--pk", "--verbose", "--keystore", dir)
-	var out bytes.Buffer
-	cmd.Stdout = &out
-	cmd.Stderr = &out
-	if err := cmd.Run(); err != nil {
-		if exitError, ok := err.(*exec.ExitError); ok {
-			return exitError.ExitCode() == 0
-		}
+func Enroll(uuid util.EFIGUID, cert, signerKey, signerPem []byte, efivar string) error {
+	c := signature.NewSignatureList(signature.CERT_X509_GUID)
+	c.AppendBytes(uuid, cert)
+	buf := new(bytes.Buffer)
+	signature.WriteSignatureList(buf, *c)
+	signedBuf := efi.SignEFIVariable(util.ReadKey(signerKey), util.ReadCert(signerPem), efivar, buf.Bytes())
+	return efi.WriteEFIVariable(efivar, signedBuf)
+}
+
+func KeySync(guid util.EFIGUID, keydir string) error {
+	PKKey, _ := os.ReadFile(filepath.Join(keydir, "PK", "PK.key"))
+	PKPem, _ := os.ReadFile(filepath.Join(keydir, "PK", "PK.pem"))
+	KEKKey, _ := os.ReadFile(filepath.Join(keydir, "KEK", "KEK.key"))
+	KEKPem, _ := os.ReadFile(filepath.Join(keydir, "KEK", "KEK.pem"))
+	dbPem, _ := os.ReadFile(filepath.Join(keydir, "db", "db.pem"))
+	if err := Enroll(guid, dbPem, KEKKey, KEKPem, "db"); err != nil {
+		return err
 	}
-	stdout := out.String()
-	for _, line := range strings.Split(stdout, "\n") {
-		if strings.Contains(line, "Operation not permitted") {
-			fmt.Println(stdout)
-			return false
-		}
-		if strings.Contains(line, "Permission denied") {
-			fmt.Println(stdout)
-			return false
-		}
+	if err := Enroll(guid, KEKPem, PKKey, PKPem, "KEK"); err != nil {
+		return err
 	}
-	return true
+	if err := Enroll(guid, PKPem, PKKey, PKPem, "PK"); err != nil {
+		return err
+	}
+	return nil
 }
 
 func VerifyFile(cert, file string) (bool, error) {

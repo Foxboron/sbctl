@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/foxboron/go-uefi/efi/util"
 	"github.com/foxboron/sbctl"
 	"github.com/foxboron/sbctl/logging"
 	"github.com/spf13/cobra"
@@ -35,13 +36,17 @@ var enrollKeysCmd = &cobra.Command{
 		if err := CheckImmutable(); err != nil {
 			return err
 		}
-		logging.Print("Syncing keys to EFI variables...")
-		synced := sbctl.SBKeySync(sbctl.KeysPath)
-		if !synced {
-			return errors.New("couldn't sync keys")
+		uuid, err := sbctl.GetGUID()
+		if err != nil {
+			return err
 		}
-		logging.Println("")
-		logging.Ok("Synced keys!")
+		guid := util.StringToGUID(uuid.String())
+		logging.Print("Enrolling keys to EFI variables...")
+		if err := sbctl.KeySync(*guid, sbctl.KeysPath); err != nil {
+			logging.NotOk("")
+			return fmt.Errorf("couldn't sync keys: %w", err)
+		}
+		logging.Ok("\nEnrolled keys to the EFI variables!")
 		return nil
 	},
 }
