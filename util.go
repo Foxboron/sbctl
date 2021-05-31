@@ -78,7 +78,10 @@ var ErrNotImmutable = errors.New("file is not immutable")
 
 func IsImmutable(file string) error {
 	f, err := os.Open(file)
-	if err != nil {
+	// Files in efivarfs might not exist. Ignore them
+	if errors.Is(err, os.ErrNotExist) {
+		return nil
+	} else if err != nil {
 		return err
 	}
 	attr, err := GetAttr(f)
