@@ -93,27 +93,6 @@ func SaveKey(k []byte, file string) error {
 	return nil
 }
 
-func KeyToSiglist(UUID []byte, input string) error {
-	_, err := exec.Command(
-		"sbsiglist",
-		"--owner", string(UUID),
-		"--type", "x509",
-		"--output", fmt.Sprintf("%s.esl", input), input,
-	).Output()
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func SignEFIVariable(key, cert, varname, vardatafile, output string) ([]byte, error) {
-	out, err := exec.Command("sbvarsign", "--key", key, "--cert", cert, "--output", output, varname, vardatafile).Output()
-	if err != nil {
-		return nil, fmt.Errorf("failed signing EFI variable: %v", err)
-	}
-	return out, nil
-}
-
 func Enroll(uuid util.EFIGUID, cert, signerKey, signerPem []byte, efivar string) error {
 	c := signature.NewSignatureList(signature.CERT_X509_GUID)
 	c.AppendBytes(uuid, cert)
