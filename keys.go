@@ -11,11 +11,12 @@ import (
 	"fmt"
 	"math/big"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"time"
 
 	"github.com/foxboron/go-uefi/efi"
+	"github.com/foxboron/go-uefi/efi/pecoff"
+	"github.com/foxboron/go-uefi/efi/pkcs7"
 	"github.com/foxboron/go-uefi/efi/signature"
 	"github.com/foxboron/go-uefi/efi/util"
 	"golang.org/x/sys/unix"
@@ -125,13 +126,30 @@ func VerifyFile(cert, file string) (bool, error) {
 		return false, fmt.Errorf("couldn't access %s: %w", cert, err)
 	}
 
-	cmd := exec.Command("sbverify", "--cert", cert, file)
-	if err := cmd.Run(); err != nil {
-		if exitError, ok := err.(*exec.ExitError); ok {
-			return exitError.ExitCode() == 0, nil
+	peFile, err := os.ReadFile(file)
+	if err != nil {
+		return false, err
+	}
+
+	x509Cert := util.ReadCertFromFile(cert)
+	sigs, err := pecoff.GetSignatures(peFile)
+	if err != nil {
+		return false, err
+	}
+	if len(sigs) == 0 {
+		return false, nil
+	}
+	for _, signature := range sigs {
+		ok, err := pkcs7.VerifySignature(x509Cert, signature.Certificate)
+		if err != nil {
+			return false, err
+		}
+		if ok {
+			return true, nil
 		}
 	}
-	return true, nil
+	// If we come this far we haven't found a signature that matches the cert
+	return false, nil
 }
 
 var ErrAlreadySigned = errors.New("already signed file")
@@ -161,10 +179,29 @@ func SignFile(key, cert, file, output, checksum string) error {
 		return fmt.Errorf("couldn't access %s: %w", key, err)
 	}
 
-	_, err = exec.Command("sbsign", "--key", key, "--cert", cert, "--output", output, file).Output()
+	// We want to write the file back with correct permissions
+	si, err := os.Stat(file)
 	if err != nil {
 		return fmt.Errorf("failed signing file: %w", err)
 	}
+
+	peFile, err := os.ReadFile(file)
+	if err != nil {
+		return err
+	}
+
+	Cert := util.ReadCertFromFile(cert)
+	Key := util.ReadKeyFromFile(key)
+
+	ctx := pecoff.PECOFFChecksum(peFile)
+
+	sig := pecoff.CreateSignature(ctx, Cert, Key)
+
+	b := pecoff.AppendToBinary(ctx, sig)
+	if err = os.WriteFile(file, b, si.Mode()); err != nil {
+		return err
+	}
+
 	return nil
 }
 
