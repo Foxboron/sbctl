@@ -1,8 +1,9 @@
 package sbctl
 
 import (
-	"golang.org/x/sys/unix"
 	"os"
+
+	"golang.org/x/sys/unix"
 )
 
 const (

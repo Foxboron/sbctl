@@ -2,7 +2,6 @@ package main
 
 import (
 	"errors"
-	"fmt"
 
 	"github.com/foxboron/sbctl"
 	"github.com/foxboron/sbctl/logging"
@@ -23,7 +22,6 @@ var generateBundlesCmd = &cobra.Command{
 		err := sbctl.BundleIter(func(bundle *sbctl.Bundle) error {
 			err := sbctl.CreateBundle(*bundle)
 			if err != nil {
-				fmt.Println(err)
 				out_create = false
 				return nil
 			}

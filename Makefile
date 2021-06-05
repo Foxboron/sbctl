@@ -57,3 +57,7 @@ lint:
 .PHONY: test
 test:
 	go test -v ./...
+
+.PHONY: integration
+integration:
+	go test -v tests/integration_test.go

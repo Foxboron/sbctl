@@ -11,12 +11,14 @@ import (
 	"fmt"
 	"math/big"
 	"os"
-	"os/exec"
 	"path/filepath"
-	"strings"
 	"time"
 
-	"github.com/foxboron/sbctl/logging"
+	"github.com/foxboron/go-uefi/efi"
+	"github.com/foxboron/go-uefi/efi/pecoff"
+	"github.com/foxboron/go-uefi/efi/pkcs7"
+	"github.com/foxboron/go-uefi/efi/signature"
+	"github.com/foxboron/go-uefi/efi/util"
 	"golang.org/x/sys/unix"
 )
 
@@ -45,7 +47,7 @@ func CanVerifyFiles() error {
 	return nil
 }
 
-func CreateKey(path, name string) ([]byte, error) {
+func CreateKey(name string) ([]byte, []byte, error) {
 	serialNumberLimit := new(big.Int).Lsh(big.NewInt(1), 128)
 	serialNumber, _ := rand.Int(rand.Reader, serialNumberLimit)
 	c := x509.Certificate{
@@ -62,90 +64,61 @@ func CreateKey(path, name string) ([]byte, error) {
 	}
 	priv, err := rsa.GenerateKey(rand.Reader, RSAKeySize)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
+	}
+	privateKeyBytes, err := x509.MarshalPKCS8PrivateKey(priv)
+	if err != nil {
+		return nil, nil, fmt.Errorf("unable to marshal private key: %v", err)
+	}
+	keyOut := new(bytes.Buffer)
+	if err := pem.Encode(keyOut, &pem.Block{Type: "PRIVATE KEY", Bytes: privateKeyBytes}); err != nil {
+		return nil, nil, fmt.Errorf("failed to write data to key: %v", err)
 	}
 	derBytes, err := x509.CreateCertificate(rand.Reader, &c, &c, &priv.PublicKey, priv)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	keyOut, err := os.OpenFile(fmt.Sprintf("%s.key", path), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
-	if err != nil {
-		return nil, fmt.Errorf("failed to open key.pem for writing: %v", err)
+	certOut := new(bytes.Buffer)
+	if err := pem.Encode(certOut, &pem.Block{Type: "CERTIFICATE", Bytes: derBytes}); err != nil {
+		return nil, nil, fmt.Errorf("failed to write data to certificate: %v", err)
 	}
-	privBytes, err := x509.MarshalPKCS8PrivateKey(priv)
-	if err != nil {
-		return nil, fmt.Errorf("unable to marshal private key: %v", err)
-	}
-	if err := pem.Encode(keyOut, &pem.Block{Type: "PRIVATE KEY", Bytes: privBytes}); err != nil {
-		return nil, fmt.Errorf("failed to write data to key.pem: %v", err)
-	}
-	if err := keyOut.Close(); err != nil {
-		return nil, fmt.Errorf("error closing key.pem: %v", err)
-	}
-	return derBytes, nil
+	return keyOut.Bytes(), certOut.Bytes(), nil
 }
 
-func SaveKey(k []byte, path string) error {
-	err := os.WriteFile(fmt.Sprintf("%s.der", path), k, 0644)
-	if err != nil {
-		return err
-	}
-	certOut, err := os.Create(fmt.Sprintf("%s.pem", path))
-	if err != nil {
-		return err
-	}
-	if err := pem.Encode(certOut, &pem.Block{Type: "CERTIFICATE", Bytes: k}); err != nil {
-		return err
-	}
-	if err := certOut.Close(); err != nil {
-		return err
-	}
-	return nil
-}
-
-func KeyToSiglist(UUID []byte, input string) error {
-	_, err := exec.Command(
-		"sbsiglist",
-		"--owner", string(UUID),
-		"--type", "x509",
-		"--output", fmt.Sprintf("%s.esl", input), input,
-	).Output()
+func SaveKey(k []byte, file string) error {
+	os.MkdirAll(filepath.Dir(file), os.ModePerm)
+	err := os.WriteFile(file, k, 0644)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func SignEFIVariable(key, cert, varname, vardatafile, output string) ([]byte, error) {
-	out, err := exec.Command("sbvarsign", "--key", key, "--cert", cert, "--output", output, varname, vardatafile).Output()
-	if err != nil {
-		return nil, fmt.Errorf("failed signing EFI variable: %v", err)
-	}
-	return out, nil
+func Enroll(uuid util.EFIGUID, cert, signerKey, signerPem []byte, efivar string) error {
+	c := signature.NewSignatureList(signature.CERT_X509_GUID)
+	c.AppendBytes(uuid, cert)
+	buf := new(bytes.Buffer)
+	signature.WriteSignatureList(buf, *c)
+	signedBuf := efi.SignEFIVariable(util.ReadKey(signerKey), util.ReadCert(signerPem), efivar, buf.Bytes())
+	return efi.WriteEFIVariable(efivar, signedBuf)
 }
 
-func SBKeySync(dir string) bool {
-	cmd := exec.Command("sbkeysync", "--pk", "--verbose", "--keystore", dir)
-	var out bytes.Buffer
-	cmd.Stdout = &out
-	cmd.Stderr = &out
-	if err := cmd.Run(); err != nil {
-		if exitError, ok := err.(*exec.ExitError); ok {
-			return exitError.ExitCode() == 0
-		}
+func KeySync(guid util.EFIGUID, keydir string) error {
+	PKKey, _ := os.ReadFile(filepath.Join(keydir, "PK", "PK.key"))
+	PKPem, _ := os.ReadFile(filepath.Join(keydir, "PK", "PK.pem"))
+	KEKKey, _ := os.ReadFile(filepath.Join(keydir, "KEK", "KEK.key"))
+	KEKPem, _ := os.ReadFile(filepath.Join(keydir, "KEK", "KEK.pem"))
+	dbPem, _ := os.ReadFile(filepath.Join(keydir, "db", "db.pem"))
+	if err := Enroll(guid, dbPem, KEKKey, KEKPem, "db"); err != nil {
+		return err
 	}
-	stdout := out.String()
-	for _, line := range strings.Split(stdout, "\n") {
-		if strings.Contains(line, "Operation not permitted") {
-			fmt.Println(stdout)
-			return false
-		}
-		if strings.Contains(line, "Permission denied") {
-			fmt.Println(stdout)
-			return false
-		}
+	if err := Enroll(guid, KEKPem, PKKey, PKPem, "KEK"); err != nil {
+		return err
 	}
-	return true
+	if err := Enroll(guid, PKPem, PKKey, PKPem, "PK"); err != nil {
+		return err
+	}
+	return nil
 }
 
 func VerifyFile(cert, file string) (bool, error) {
@@ -153,13 +126,30 @@ func VerifyFile(cert, file string) (bool, error) {
 		return false, fmt.Errorf("couldn't access %s: %w", cert, err)
 	}
 
-	cmd := exec.Command("sbverify", "--cert", cert, file)
-	if err := cmd.Run(); err != nil {
-		if exitError, ok := err.(*exec.ExitError); ok {
-			return exitError.ExitCode() == 0, nil
+	peFile, err := os.ReadFile(file)
+	if err != nil {
+		return false, err
+	}
+
+	x509Cert := util.ReadCertFromFile(cert)
+	sigs, err := pecoff.GetSignatures(peFile)
+	if err != nil {
+		return false, err
+	}
+	if len(sigs) == 0 {
+		return false, nil
+	}
+	for _, signature := range sigs {
+		ok, err := pkcs7.VerifySignature(x509Cert, signature.Certificate)
+		if err != nil {
+			return false, err
+		}
+		if ok {
+			return true, nil
 		}
 	}
-	return true, nil
+	// If we come this far we haven't found a signature that matches the cert
+	return false, nil
 }
 
 var ErrAlreadySigned = errors.New("already signed file")
@@ -189,33 +179,48 @@ func SignFile(key, cert, file, output, checksum string) error {
 		return fmt.Errorf("couldn't access %s: %w", key, err)
 	}
 
-	_, err = exec.Command("sbsign", "--key", key, "--cert", cert, "--output", output, file).Output()
+	// We want to write the file back with correct permissions
+	si, err := os.Stat(file)
 	if err != nil {
 		return fmt.Errorf("failed signing file: %w", err)
 	}
+
+	peFile, err := os.ReadFile(file)
+	if err != nil {
+		return err
+	}
+
+	Cert := util.ReadCertFromFile(cert)
+	Key := util.ReadKeyFromFile(key)
+
+	ctx := pecoff.PECOFFChecksum(peFile)
+
+	sig := pecoff.CreateSignature(ctx, Cert, Key)
+
+	b := pecoff.AppendToBinary(ctx, sig)
+	if err = os.WriteFile(file, b, si.Mode()); err != nil {
+		return err
+	}
+
 	return nil
 }
 
+// Map up our default keys in a struct
 var SecureBootKeys = []struct {
 	Key         string
 	Description string
-	// Path to the key we sign it with
-	SignedWith string
 }{
 	{
 		Key:         "PK",
 		Description: "Platform Key",
-		SignedWith:  "PK",
 	},
 	{
 		Key:         "KEK",
 		Description: "Key Exchange Key",
-		SignedWith:  "PK",
 	},
 	{
 		Key:         "db",
 		Description: "Database Key",
-		SignedWith:  "KEK",
 	},
 	// Haven't used this yet so WIP
 	// {
@@ -225,44 +230,34 @@ var SecureBootKeys = []struct {
 	// },
 }
 
+// Check if we have already intialized keys in the given output directory
 func CheckIfKeysInitialized(output string) bool {
 	for _, key := range SecureBootKeys {
 		path := filepath.Join(output, key.Key)
-		if _, err := os.Stat(path); os.IsNotExist(err) {
+		if _, err := os.Stat(path); errors.Is(err, os.ErrNotExist) {
 			return false
 		}
 	}
 	return true
 }
 
+// Initialize the secure boot keys needed to setup secure boot.
+// It creates the following keys:
+//	* Platform Key (PK)
+//	* Key Exchange Key (KEK)
+//	* db (database)
 func InitializeSecureBootKeys(output string) error {
-	os.MkdirAll(output, os.ModePerm)
-	uuid, err := CreateGUID(output)
-	if err != nil {
-		return err
+	if CheckIfKeysInitialized(output) {
+		return nil
 	}
-	logging.Print("Using Owner UUID %s\n", uuid)
-	// Create the directories we need and keys
 	for _, key := range SecureBootKeys {
-		path := filepath.Join(output, "keys", key.Key)
-		os.MkdirAll(path, os.ModePerm)
-		keyPath := filepath.Join(path, key.Key)
-		pk, err := CreateKey(keyPath, key.Description)
+		keyfile, cert, err := CreateKey(key.Description)
 		if err != nil {
 			return err
 		}
-		SaveKey(pk, keyPath)
-		derSiglist := fmt.Sprintf("%s.der", keyPath)
-		if err := KeyToSiglist(uuid, derSiglist); err != nil {
-			return err
-		}
-		logging.Print("Created EFI signature list %s.esl...", derSiglist)
-		signingkeyPath := filepath.Join(output, "keys", key.SignedWith, key.SignedWith)
-		signingKey := fmt.Sprintf("%s.key", signingkeyPath)
-		signingCertificate := fmt.Sprintf("%s.pem", signingkeyPath)
-		vardatafile := fmt.Sprintf("%s.der.esl", keyPath)
-		logging.Print("Signing %s with %s...", vardatafile, key.Key)
-		SignEFIVariable(signingKey, signingCertificate, key.Key, vardatafile, fmt.Sprintf("%s.auth", keyPath))
+		path := filepath.Join(output, key.Key)
+		SaveKey(keyfile, filepath.Join(path, fmt.Sprintf("%s.key", key.Key)))
+		SaveKey(cert, filepath.Join(path, fmt.Sprintf("%s.pem", key.Key)))
 	}
 	return nil
 }

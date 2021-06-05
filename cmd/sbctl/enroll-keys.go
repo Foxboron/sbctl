@@ -4,37 +4,49 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/foxboron/go-uefi/efi/util"
 	"github.com/foxboron/sbctl"
 	"github.com/foxboron/sbctl/logging"
 	"github.com/spf13/cobra"
 )
 
+func CheckImmutable() error {
+	var isImmutable bool
+	for _, file := range sbctl.EfivarFSFiles {
+		err := sbctl.IsImmutable(file)
+		if errors.Is(err, sbctl.ErrImmutable) {
+			isImmutable = true
+			logging.Warn("File is immutable: %s", file)
+		} else if errors.Is(err, sbctl.ErrNotImmutable) {
+			continue
+		} else if err != nil {
+			return fmt.Errorf("couldn't read file: %s", file)
+		}
+	}
+	if isImmutable {
+		return sbctl.ErrImmutable
+	}
+	return nil
+}
+
 var enrollKeysCmd = &cobra.Command{
 	Use:   "enroll-keys",
 	Short: "Enroll the current keys to EFI",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		var isImmutable bool
-		for _, file := range sbctl.EfivarFSFiles {
-			err := sbctl.IsImmutable(file)
-			if errors.Is(err, sbctl.ErrImmutable) {
-				isImmutable = true
-				logging.Warn("File is immutable: %s", file)
-			} else if errors.Is(err, sbctl.ErrNotImmutable) {
-				continue
-			} else if err != nil {
-				return fmt.Errorf("couldn't read file: %s", file)
-			}
+		if err := CheckImmutable(); err != nil {
+			return err
 		}
-		if isImmutable {
-			return sbctl.ErrImmutable
+		uuid, err := sbctl.GetGUID()
+		if err != nil {
+			return err
 		}
-		logging.Print("Syncing keys to EFI variables...")
-		synced := sbctl.SBKeySync(sbctl.KeysPath)
-		if !synced {
-			return errors.New("couldn't sync keys")
+		guid := util.StringToGUID(uuid.String())
+		logging.Print("Enrolling keys to EFI variables...")
+		if err := sbctl.KeySync(*guid, sbctl.KeysPath); err != nil {
+			logging.NotOk("")
+			return fmt.Errorf("couldn't sync keys: %w", err)
 		}
-		logging.Println("")
-		logging.Ok("Synced keys!")
+		logging.Ok("\nEnrolled keys to the EFI variables!")
 		return nil
 	},
 }

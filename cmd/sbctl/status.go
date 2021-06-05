@@ -21,13 +21,21 @@ func RunStatus(cmd *cobra.Command, args []string) error {
 	if _, err := os.Stat("/sys/firmware/efi/efivars"); os.IsNotExist(err) {
 		return fmt.Errorf("system is not booted with UEFI")
 	}
-	u, err := sbctl.GetGUID()
-	if err != nil {
-		return err
+	logging.Print("Installed:\t")
+	if sbctl.CheckSbctlInstallation(sbctl.DatabasePath) {
+		logging.Ok("Sbctl is installed")
+		u, err := sbctl.GetGUID()
+		if err != nil {
+			return err
+		}
+		logging.Print("Owner GUID:\t")
+		logging.Println(u.String())
+		ret["Owner GUID"] = u.String()
+		ret["Installed"] = true
+	} else {
+		logging.NotOk("Sbctl is not installed")
+		ret["Installed"] = false
 	}
-	logging.Print("Owner GUID:\t")
-	logging.Println(u.String())
-	ret["Owner GUID"] = u.String()
 	logging.Print("Setup Mode:\t")
 	if efi.GetSetupMode() {
 		logging.NotOk("Enabled")

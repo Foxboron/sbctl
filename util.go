@@ -22,6 +22,19 @@ func ChecksumFile(file string) (string, error) {
 	return hex.EncodeToString(hasher.Sum(nil)), nil
 }
 
+func CreateDirectory(path string) error {
+	if _, err := os.Stat(path); errors.Is(err, os.ErrExist) {
+		return nil
+	} else if errors.Is(err, os.ErrNotExist) {
+	} else if err != nil {
+		return err
+	}
+	if err := os.MkdirAll(path, os.ModePerm); err != nil {
+		return err
+	}
+	return nil
+}
+
 func ReadOrCreateFile(filePath string) ([]byte, error) {
 	// Try to access or create the file itself
 	f, err := os.ReadFile(filePath)
@@ -65,7 +78,10 @@ var ErrNotImmutable = errors.New("file is not immutable")
 
 func IsImmutable(file string) error {
 	f, err := os.Open(file)
-	if err != nil {
+	// Files in efivarfs might not exist. Ignore them
+	if errors.Is(err, os.ErrNotExist) {
+		return nil
+	} else if err != nil {
 		return err
 	}
 	attr, err := GetAttr(f)
