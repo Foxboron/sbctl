@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/foxboron/sbctl"
 	"github.com/foxboron/sbctl/logging"
@@ -19,10 +20,12 @@ var generateBundlesCmd = &cobra.Command{
 		logging.Println("Generating EFI bundles....")
 		out_create := true
 		out_sign := true
+		var out_err error
 		err := sbctl.BundleIter(func(bundle *sbctl.Bundle) error {
 			err := sbctl.CreateBundle(*bundle)
 			if err != nil {
 				out_create = false
+				out_err = fmt.Errorf("failed creating bundle %s: %w", bundle.Output, err)
 				return nil
 			}
 			logging.Print("Wrote EFI bundle %s\n", bundle.Output)
@@ -33,19 +36,15 @@ var generateBundlesCmd = &cobra.Command{
 					logging.Unknown("Bundle has already been signed")
 				} else if err != nil {
 					out_sign = false
+					out_err = fmt.Errorf("failed signing bundle %s: %w", bundle.Output, err)
 				} else {
 					logging.Ok("Signed %s", file)
 				}
 			}
 			return nil
 		})
-
-		if !out_create {
-			return errors.New("error generating EFI bundles")
-		}
-
-		if !out_sign {
-			return errors.New("error signing EFI bundles")
+		if !out_create || !out_sign {
+			return out_err
 		}
 		if err != nil {
 			return err
