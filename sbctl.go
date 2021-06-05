@@ -145,6 +145,12 @@ func Sign(file, output string, enroll bool) error {
 }
 
 func CombineFiles(microcode, initramfs string) (*os.File, error) {
+	for _, file := range []string{microcode, initramfs} {
+		if _, err := os.Stat(file); err != nil {
+			return nil, fmt.Errorf("%s: %w", file, errors.Unwrap(err))
+		}
+	}
+
 	tmpFile, err := os.CreateTemp("/var/tmp", "initramfs-")
 	if err != nil {
 		return nil, err
