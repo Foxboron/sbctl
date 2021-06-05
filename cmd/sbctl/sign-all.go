@@ -19,7 +19,7 @@ var signAllCmd = &cobra.Command{
 		if generate {
 			sign = true
 			if err := generateBundlesCmd.RunE(cmd, args); err != nil {
-				return err
+				logging.Error(err)
 			}
 		}
 
