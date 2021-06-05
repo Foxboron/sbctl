@@ -2,7 +2,7 @@ package sbctl
 
 import (
 	"encoding/json"
-	"log"
+	"fmt"
 	"os"
 )
 
@@ -26,13 +26,27 @@ func ReadFileDatabase(dbpath string) (SigningEntries, error) {
 	return files, nil
 }
 
-func WriteFileDatabase(dbpath string, files SigningEntries) {
+func WriteFileDatabase(dbpath string, files SigningEntries) error {
 	data, err := json.MarshalIndent(files, "", "    ")
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	err = os.WriteFile(dbpath, data, 0644)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
+	return nil
+}
+
+func SigningEntryIter(fn func(s *SigningEntry) error) error {
+	files, err := ReadFileDatabase(DBPath)
+	if err != nil {
+		return fmt.Errorf("couldn't open database %v: %w", DBPath, err)
+	}
+	for _, s := range files {
+		if err := fn(s); err != nil {
+			return err
+		}
+	}
+	return nil
 }

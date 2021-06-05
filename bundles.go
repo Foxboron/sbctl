@@ -4,10 +4,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
+
+	"github.com/foxboron/sbctl/logging"
 )
 
 type Bundle struct {
@@ -37,15 +38,29 @@ func ReadBundleDatabase(dbpath string) (Bundles, error) {
 	return bundles, nil
 }
 
-func WriteBundleDatabase(dbpath string, bundles Bundles) {
+func WriteBundleDatabase(dbpath string, bundles Bundles) error {
 	data, err := json.MarshalIndent(bundles, "", "    ")
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	err = os.WriteFile(dbpath, data, 0644)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
+	return nil
+}
+
+func BundleIter(fn func(s *Bundle) error) error {
+	files, err := ReadBundleDatabase(BundleDBPath)
+	if err != nil {
+		return err
+	}
+	for _, s := range files {
+		if err := fn(s); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func GetEfistub() string {
@@ -83,7 +98,7 @@ func NewBundle() *Bundle {
 	}
 }
 
-func GenerateBundle(bundle *Bundle) bool {
+func GenerateBundle(bundle *Bundle) (bool, error) {
 	args := []string{
 		"--add-section", fmt.Sprintf(".osrel=%s", bundle.OSRelease), "--change-section-vma", ".osrel=0x20000",
 		"--add-section", fmt.Sprintf(".cmdline=%s", bundle.Cmdline), "--change-section-vma", ".cmdline=0x30000",
@@ -101,33 +116,12 @@ func GenerateBundle(bundle *Bundle) bool {
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
 		if errors.Is(err, exec.ErrNotFound) {
-			err2.Printf(err.Error())
-			return false
+			return false, err
 		}
 		if exitError, ok := err.(*exec.ExitError); ok {
-			return exitError.ExitCode() == 0
+			return exitError.ExitCode() == 0, nil
 		}
 	}
-	msg.Printf("Wrote EFI bundle %s", bundle.Output)
-	return true
-}
-
-func FormatBundle(name string, bundle *Bundle) {
-	msg.Printf("Bundle: %s", name)
-	if bundle.AMDMicrocode != "" {
-		msg2.Printf("AMD Microcode: %s", bundle.AMDMicrocode)
-	}
-	if bundle.IntelMicrocode != "" {
-		msg2.Printf("Intel Microcode: %s", bundle.IntelMicrocode)
-	}
-	msg2.Printf("Kernel Image: %s", bundle.KernelImage)
-	msg2.Printf("Initramfs Image: %s", bundle.Initramfs)
-	msg2.Printf("Cmdline: %s", bundle.Cmdline)
-	msg2.Printf("OS Release: %s", bundle.OSRelease)
-	msg2.Printf("EFI Stub Image: %s", bundle.EFIStub)
-	msg2.Printf("ESP Location: %s", bundle.ESP)
-	if bundle.Splash != "" {
-		msg2.Printf("Splash Image: %s", bundle.Splash)
-	}
-	msg2.Printf("Output: %s", bundle.Output)
+	logging.Print("Wrote EFI bundle %s\n", bundle.Output)
+	return true, nil
 }

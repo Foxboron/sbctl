@@ -1,30 +1,25 @@
 package sbctl
 
 import (
+	"bytes"
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
-	"fmt"
-	"log"
+	"io"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
-func PrintGenerateError(logger *log.Logger, msg string, args ...interface{}) error {
-	msg = fmt.Sprintf(msg, args...)
-	logger.Println(msg)
-	return errors.New(msg)
-}
-
-func ChecksumFile(file string) string {
+func ChecksumFile(file string) (string, error) {
 	hasher := sha256.New()
 	s, err := os.ReadFile(file)
 	if err != nil {
-		log.Fatal(err)
+		return "", err
 	}
 	hasher.Write(s)
 
-	return hex.EncodeToString(hasher.Sum(nil))
+	return hex.EncodeToString(hasher.Sum(nil)), nil
 }
 
 func ReadOrCreateFile(filePath string) ([]byte, error) {
@@ -37,17 +32,11 @@ func ReadOrCreateFile(filePath string) ([]byte, error) {
 			// os.MkdirAll simply returns nil if the directory already exists
 			fileDir := filepath.Dir(filePath)
 			if err = os.MkdirAll(fileDir, os.ModePerm); err != nil {
-				if os.IsPermission(err) {
-					warning.Printf(rootMsg)
-				}
 				return nil, err
 			}
 
 			file, err := os.Create(filePath)
 			if err != nil {
-				if os.IsPermission(err) {
-					warning.Printf(rootMsg)
-				}
 				return nil, err
 			}
 			file.Close()
@@ -56,9 +45,8 @@ func ReadOrCreateFile(filePath string) ([]byte, error) {
 			f = make([]byte, 0)
 		} else {
 			if os.IsPermission(err) {
-				warning.Printf(rootMsg)
+				return nil, err
 			}
-
 			return nil, err
 		}
 	}
@@ -66,19 +54,59 @@ func ReadOrCreateFile(filePath string) ([]byte, error) {
 	return f, nil
 }
 
-func IsImmutable(file string) (bool, error) {
+var EfivarFSFiles = []string{
+	"/sys/firmware/efi/efivars/PK-8be4df61-93ca-11d2-aa0d-00e098032b8c",
+	"/sys/firmware/efi/efivars/KEK-8be4df61-93ca-11d2-aa0d-00e098032b8c",
+	"/sys/firmware/efi/efivars/db-d719b2cb-3d3a-4596-a3bc-dad00e67656f",
+}
+
+var ErrImmutable = errors.New("file is immutable")
+var ErrNotImmutable = errors.New("file is not immutable")
+
+func IsImmutable(file string) error {
 	f, err := os.Open(file)
-	if errors.Is(err, os.ErrNotExist) {
-		return false, nil
-	} else if err != nil {
-		return false, err
+	if err != nil {
+		return err
 	}
 	attr, err := GetAttr(f)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	if (attr & FS_IMMUTABLE_FL) != 0 {
+		return ErrImmutable
+	}
+	return ErrNotImmutable
+}
+
+func CheckMSDos(path string) (bool, error) {
+	r, err := os.Open(path)
+	if err != nil {
+		return false, err
+	}
+	defer r.Close()
+
+	// We are looking for MS-DOS executables.
+	// They contain "MZ" as the two first bytes
+	var header [2]byte
+	if _, err = io.ReadFull(r, header[:]); err != nil {
+		return false, err
+	}
+	if !bytes.Equal(header[:], []byte{0x4d, 0x5a}) {
 		return false, nil
 	}
 	return true, nil
+}
+
+var (
+	checked = make(map[string]bool)
+)
+
+func AddChecked(path string) {
+	normalized := strings.Join(strings.Split(path, "/")[2:], "/")
+	checked[normalized] = true
+}
+
+func InChecked(path string) bool {
+	normalized := strings.Join(strings.Split(path, "/")[2:], "/")
+	return checked[normalized]
 }
