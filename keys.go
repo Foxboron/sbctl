@@ -99,7 +99,18 @@ func Enroll(uuid util.EFIGUID, cert, signerKey, signerPem []byte, efivar string)
 	c.AppendBytes(uuid, cert)
 	buf := new(bytes.Buffer)
 	signature.WriteSignatureList(buf, *c)
-	signedBuf := efi.SignEFIVariable(util.ReadKey(signerKey), util.ReadCert(signerPem), efivar, buf.Bytes())
+	key, err := util.ReadKey(signerKey)
+	if err != nil {
+		return nil
+	}
+	crt, err := util.ReadCert(signerPem)
+	if err != nil {
+		return nil
+	}
+	signedBuf, err := efi.SignEFIVariable(key, crt, efivar, buf.Bytes())
+	if err != nil {
+		return err
+	}
 	return efi.WriteEFIVariable(efivar, signedBuf)
 }
 
@@ -131,7 +142,10 @@ func VerifyFile(cert, file string) (bool, error) {
 		return false, err
 	}
 
-	x509Cert := util.ReadCertFromFile(cert)
+	x509Cert, err := util.ReadCertFromFile(cert)
+	if err != nil {
+		return false, err
+	}
 	sigs, err := pecoff.GetSignatures(peFile)
 	if err != nil {
 		return false, err
@@ -190,14 +204,26 @@ func SignFile(key, cert, file, output, checksum string) error {
 		return err
 	}
 
-	Cert := util.ReadCertFromFile(cert)
-	Key := util.ReadKeyFromFile(key)
+	Cert, err := util.ReadCertFromFile(cert)
+	if err != nil {
+		return err
+	}
+	Key, err := util.ReadKeyFromFile(key)
+	if err != nil {
+		return err
+	}
 
 	ctx := pecoff.PECOFFChecksum(peFile)
 
-	sig := pecoff.CreateSignature(ctx, Cert, Key)
+	sig, err := pecoff.CreateSignature(ctx, Cert, Key)
+	if err != nil {
+		return err
+	}
 
-	b := pecoff.AppendToBinary(ctx, sig)
+	b, err := pecoff.AppendToBinary(ctx, sig)
+	if err != nil {
+		return err
+	}
 	if err = os.WriteFile(file, b, si.Mode()); err != nil {
 		return err
 	}
