@@ -1,8 +1,6 @@
 package main
 
 import (
-	"fmt"
-
 	"github.com/foxboron/sbctl"
 	"github.com/foxboron/sbctl/logging"
 	"github.com/spf13/cobra"
@@ -40,7 +38,7 @@ func RunList(_ *cobra.Command, args []string) error {
 			if s.File != s.OutputFile {
 				logging.Print("Output File:\t%s\n", s.OutputFile)
 			}
-			fmt.Println("")
+			logging.Println("")
 			files = append(files, JsonFile{*s, isSigned})
 			return nil
 		},
