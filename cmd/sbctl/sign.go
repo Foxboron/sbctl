@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 
@@ -37,8 +38,13 @@ var signCmd = &cobra.Command{
 			}
 		}
 
-		if err := sbctl.Sign(file, output, save); err != nil {
+		err = sbctl.Sign(file, output, save)
+		if errors.Is(err, sbctl.ErrAlreadySigned) {
+			logging.Print("File have already been signed %s\n", output)
+		} else if err != nil {
 			return err
+		} else {
+			logging.Ok("Signed %s", output)
 		}
 		return nil
 	},
