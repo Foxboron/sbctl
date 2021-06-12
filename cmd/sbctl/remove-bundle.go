@@ -30,6 +30,7 @@ var removeBundleCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
+		logging.Print("Removed %s from the database.\n", args[0])
 		return nil
 	},
 }

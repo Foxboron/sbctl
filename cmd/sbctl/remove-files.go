@@ -28,6 +28,7 @@ var removeFileCmd = &cobra.Command{
 		if err := sbctl.WriteFileDatabase(sbctl.DBPath, files); err != nil {
 			return err
 		}
+		logging.Print("Removed %s from the database.\n", args[0])
 		return nil
 	},
 }
