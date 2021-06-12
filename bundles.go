@@ -7,8 +7,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-
-	"github.com/foxboron/sbctl/logging"
 )
 
 type Bundle struct {
@@ -122,6 +120,5 @@ func GenerateBundle(bundle *Bundle) (bool, error) {
 			return exitError.ExitCode() == 0, nil
 		}
 	}
-	logging.Print("Wrote EFI bundle %s\n", bundle.Output)
 	return true, nil
 }
