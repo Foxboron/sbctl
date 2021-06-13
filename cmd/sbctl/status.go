@@ -16,44 +16,68 @@ var statusCmd = &cobra.Command{
 	RunE:  RunStatus,
 }
 
+type Status struct {
+	Installed  bool   `json:"installed"`
+	GUID       string `json:"guid"`
+	SetupMode  bool   `json:"setup_mode"`
+	SecureBoot bool   `json:"secure_boot"`
+}
+
+func NewStatus() *Status {
+	return &Status{
+		Installed:  false,
+		GUID:       "",
+		SetupMode:  false,
+		SecureBoot: false,
+	}
+}
+
+func PrintStatus(s *Status) {
+	logging.Print("Installed:\t")
+	if s.Installed {
+		logging.Ok("Sbctl is installed")
+		logging.Print("Owner GUID:\t")
+		logging.Println(s.GUID)
+	} else {
+		logging.NotOk("Sbctl is not installed")
+	}
+	logging.Print("Setup Mode:\t")
+	if s.SetupMode {
+		logging.NotOk("Enabled")
+	} else {
+		logging.Ok("Disabled")
+	}
+	logging.Print("Secure Boot:\t")
+	if s.SecureBoot {
+		logging.Ok("Enabled")
+	} else {
+		logging.NotOk("Disabled")
+	}
+}
+
 func RunStatus(cmd *cobra.Command, args []string) error {
-	ret := map[string]interface{}{}
+	stat := NewStatus()
 	if _, err := os.Stat("/sys/firmware/efi/efivars"); os.IsNotExist(err) {
 		return fmt.Errorf("system is not booted with UEFI")
 	}
-	logging.Print("Installed:\t")
 	if sbctl.CheckSbctlInstallation(sbctl.DatabasePath) {
-		logging.Ok("Sbctl is installed")
+		stat.Installed = true
 		u, err := sbctl.GetGUID()
 		if err != nil {
 			return err
 		}
-		logging.Print("Owner GUID:\t")
-		logging.Println(u.String())
-		ret["Owner GUID"] = u.String()
-		ret["Installed"] = true
-	} else {
-		logging.NotOk("Sbctl is not installed")
-		ret["Installed"] = false
+		stat.GUID = u.String()
 	}
-	logging.Print("Setup Mode:\t")
 	if efi.GetSetupMode() {
-		logging.NotOk("Enabled")
-		ret["Setup Mode"] = true
-	} else {
-		logging.Ok("Disabled")
-		ret["Setup Mode"] = false
+		stat.SetupMode = true
 	}
-	logging.Print("Secure Boot:\t")
 	if efi.GetSecureBoot() {
-		logging.Ok("Enabled")
-		ret["Secure Boot"] = true
-	} else {
-		logging.NotOk("Disabled")
-		ret["Secure Boot"] = false
+		stat.SecureBoot = true
 	}
 	if cmdOptions.JsonOutput {
-		JsonOut(ret)
+		JsonOut(stat)
+	} else {
+		PrintStatus(stat)
 	}
 	return nil
 }
