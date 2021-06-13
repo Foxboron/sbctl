@@ -1,31 +1,48 @@
 # sbctl - Secure Boot Manager
 [![Build Status](https://github.com/Foxboron/sbctl/workflows/CI/badge.svg)](https://github.com/Foxboron/sbctl/actions)
 
-The goal of the project is to have one consistent UI to manage secure boot keys.
+sbctl intends to be a user-friendly secure boot key manager capable of setting
+up secure boot, offer key management capabilities, and keep track of files that
+needs to be signed in the boot chain.
 
-# Features
+It is written top-to-bottom in [Golang](https://golang.org/) using
+[go-uefi](https://github.com/Foxboron/go-uefi) for the API layer and doesn't
+rely on existing secure boot tooling. It also tries to sport some integration
+testing towards towards [tianocore](https://www.tianocore.org/) utilizing
+[vmtest](https://github.com/anatol/vmtest).
+
+![](https://pkgbuild.com/~foxboron/sbctl_demo.gif)
+
+## Features
+* User-friendly
 * Manages secure boot keys
-* Live enrollment of secure boot keys
+* Live enrollment of keys
 * Signing database to help keep track of files to sign
 * Verify ESP of files missing signatures
 * EFI stub generation
+* JSON Output
 
-# Roadmap
-
-* Convert to use [go-uefi](https://github.com/Foxboron/go-uefi) instead of relying on `sbsigntools`
+## Roadmap to 1.0
 * Key rotation
-* Customize keys
-* Secure the keys
+* TPM Support
+* Hardware Token support
+* Configuration Files
+* Automatic boot chain signing using the [Boot Loader Interface](https://systemd.io/BOOT_LOADER_INTERFACE/)
+
+## Dependencies
+* util-linux (using `lsblk`)
+* binutils (using `objcopy`)
+* Go >= 1.16
 
 # Support and development channel
 
-`#sbctl` on the [libera](https://kiwiirc.com/nextclient/irc.libera.chat/#sbctl) IRC network.
+Development discussions and support happens in `#sbctl` on the [libera.chat](https://kiwiirc.com/nextclient/irc.libera.chat/#sbctl) IRC network.
 
 # Usage
 
 ```
 $ sbctl
-Secure Boot key manager
+Secure Boot Key Manager
 
 Usage:
   sbctl [command]
@@ -47,6 +64,7 @@ Available Commands:
 
 Flags:
   -h, --help   help for sbctl
+      --json   Output as json
 
 Use "sbctl [command] --help" for more information about a command.
 ```
@@ -55,71 +73,89 @@ Use "sbctl [command] --help" for more information about a command.
 
 ```
 # sbctl status
-==> WARNING: Setup Mode: Enabled
-==> WARNING: Secure Boot: Disabled
+Installed:	✘ Sbctl is not installed
+Setup Mode:	✘ Enabled
+Secure Boot:	✘ Disabled
 
 # sbctl create-keys
-==> Creating secure boot keys...
-  -> Using UUID d6e9af79-c6b5-4b43-b893-dbb7e6570142...
-==> Signing /usr/share/secureboot/keys/PK/PK.der.esl with /usr/share/secureboot/keys/PK/PK.key...
-==> Signing /usr/share/secureboot/keys/KEK/KEK.der.esl with /usr/share/secureboot/keys/PK/PK.key...
-==> Signing /usr/share/secureboot/keys/db/db.der.esl with /usr/share/secureboot/keys/KEK/KEK.key...
+Created Owner UUID a9fbbdb7-a05f-48d5-b63a-08c5df45ee70
+Creating secure boot keys...✔
+Secure boot keys created!
 
 # sbctl enroll-keys
-==> Syncing /usr/share/secureboot/keys to EFI variables...
-==> Synced keys!
+Enrolling keys to EFI variables...✔
+Enrolled keys to the EFI variables!
 
 # sbctl status
-==> Setup Mode: Disabled
-==> WARNING: Secure Boot: Disabled
+Installed:	✔ Sbctl is installed
+Owner GUID:	a9fbbdb7-a05f-48d5-b63a-08c5df45ee70
+Setup Mode:	✔ Disabled
+Secure Boot:	✘ Disabled
 
 // Reboot!
 # sbctl status
-==> Setup Mode: Disabled
-==> Secure Boot: Enabled
+Installed:	✔ Sbctl is installed
+Owner GUID:	a9fbbdb7-a05f-48d5-b63a-08c5df45ee70
+Setup Mode:	✔ Disabled
+Secure Boot:	✔ Enabled
 ```
 
 
 ## Signatures
 ```
 # sbctl verify
-==> Verifying file database and EFI images in /efi...
-  -> WARNING: /boot/vmlinuz-linux is not signed
-  -> WARNING: /efi/EFI/BOOT/BOOTX64.EFI is not signed
-  -> WARNING: /efi/EFI/BOOT/KeyTool-signed.efi is not signed
-  -> WARNING: /efi/EFI/Linux/linux-linux.efi is not signed
-  -> WARNING: /efi/EFI/arch/fwupdx64.efi is not signed
-  -> WARNING: /efi/EFI/systemd/systemd-bootx64.efi is not signed
+Verifying file database and EFI images in /efi...
+✘ /boot/vmlinuz-linux is not signed
+✘ /efi/EFI/BOOT/BOOTX64.EFI is not signed
+✘ /efi/EFI/BOOT/KeyTool-signed.efi is not signed
+✘ /efi/EFI/Linux/linux-linux.efi is not signed
+✘ /efi/EFI/arch/fwupdx64.efi is not signed
+✘ /efi/EFI/systemd/systemd-bootx64.efi is not signed
 
 # sbctl sign -s /efi/EFI/BOOT/BOOTX64.EFI
-==> Signing /efi/EFI/BOOT/BOOTX64.EFI...
+✔ Signed /efi/EFI/BOOT/BOOTX64.EFI...
 
 # sbctl sign -s /efi/EFI/arch/fwupdx64.efi
-==> Signing /efi/EFI/arch/fwupdx64.efi...
+✔ Signed /efi/EFI/arch/fwupdx64.efi...
 
 # sbctl sign -s /efi/EFI/systemd/systemd-bootx64.efi
-==> Signing /efi/EFI/systemd/systemd-bootx64.efi...
+✔ Signed /efi/EFI/systemd/systemd-bootx64.efi...
 
 # sbctl sign -s /usr/lib/fwupd/efi/fwupdx64.efi -o /usr/lib/fwupd/efi/fwupdx64.efi.signed
-==> Signing /usr/lib/fwupd/efi/fwupdx64.efi...
+✔ Signed /usr/lib/fwupd/efi/fwupdx64.efi...
 
 # sbctl verify
-==> Verifying file database and EFI images in /efi...
-  -> /usr/lib/fwupd/efi/fwupdx64.efi.signed is signed
-  -> /efi/EFI/BOOT/BOOTX64.EFI is signed
-  -> /efi/EFI/arch/fwupdx64.efi is signed
-  -> /efi/EFI/systemd/systemd-bootx64.efi is signed
-  -> WARNING: /boot/vmlinuz-linux is not signed
-  -> WARNING: /efi/EFI/BOOT/KeyTool-signed.efi is not signed
-  -> WARNING: /efi/EFI/Linux/linux-linux.efi is not signed
+Verifying file database and EFI images in /efi...
+✔ /usr/lib/fwupd/efi/fwupdx64.efi.signed is signed
+✔ /efi/EFI/BOOT/BOOTX64.EFI is signed
+✔ /efi/EFI/arch/fwupdx64.efi is signed
+✔ /efi/EFI/systemd/systemd-bootx64.efi is signed
+✘ /boot/vmlinuz-linux is not signed
+✘ /efi/EFI/BOOT/KeyTool-signed.efi is not signed
+✘ /efi/EFI/Linux/linux-linux.efi is not signed
 
 # sbctl list-files
-==> File: /efi/EFI/BOOT/BOOTX64.EFI
-==> File: /efi/EFI/arch/fwupdx64.efi
-==> File: /efi/EFI/systemd/systemd-bootx64.efi
-==> File: /efi/vmlinuz-linux
-==> File: /usr/lib/fwupd/efi/fwupdx64.efi
-  -> Output: /usr/lib/fwupd/efi/fwupdx64.efi.signed
+/boot/vmlinuz-linux
+Signed:		✘ Not Signed
+
+/efi/EFI/BOOT/KeyTool-signed.efi
+Signed:		✘ Not Signed
+
+/efi/EFI/Linux/linux-linux.efi
+Signed:		✘ Not Signed
+
+/efi/EFI/arch/fwupdx64.efi
+Signed:		✔ Signed
+
+/efi/EFI/BOOT/BOOTX64.EFI
+Signed:		✔ Signed
+
+/usr/lib/fwupd/efi/fwupdx64.efi
+Signed:		✔ Signed
+Output File:	/usr/lib/fwupd/efi/fwupdx64.efi.signed
+
+/efi/EFI/systemd/systemd-bootx64.efi
+Signed:		✔ Signed
 ```
 
 ## Generate EFI Stub
@@ -128,32 +164,26 @@ Use "sbctl [command] --help" for more information about a command.
       -l /usr/share/systemd/bootctl/splash-arch.bmp \
       -k /boot/vmlinuz-linux \
       -f /boot/initramfs-linux.img \
-      /boot/EFI/Linux/linux-linux.efi
-==> Wrote EFI bundle /boot/EFI/Linux/linux-linux.efi
-==> Bundle: /boot/EFI/Linux/linux-linux.efi
-  -> Intel Microcode: /boot/intel-ucode.img
-  -> Kernel Image: /boot/vmlinuz-linux
-  -> Initramfs Image: /boot/initramfs-linux.img
-  -> Cmdline: /proc/cmdline
-  -> OS Release: /usr/lib/os-release
-  -> EFI Stub Image: /usr/lib/systemd/boot/efi/linuxx64.efi.stub
-  -> ESP Location: /efi
-  -> Splash Image: /usr/share/systemd/bootctl/splash-arch.bmp
-  -> Output: /boot/EFI/Linux/linux-linux.efi
+      /efi/EFI/Linux/linux-linux.efi
+Wrote EFI bundle /efi/EFI/Linux/linux-linux.efi
 
 # sbctl list-bundles
-==> Bundle: /boot/EFI/Linux/linux-linux.efi
-  -> Intel Microcode: /boot/intel-ucode.img
-  -> Kernel Image: /boot/vmlinuz-linux
-  -> Initramfs Image: /boot/initramfs-linux.img
-  -> Cmdline: /proc/cmdline
-  -> OS Release: /usr/lib/os-release
-  -> EFI Stub Image: /usr/lib/systemd/boot/efi/linuxx64.efi.stub
-  -> ESP Location: /efi
-  -> Splash Image: /usr/share/systemd/bootctl/splash-arch.bmp
-  -> Output: /boot/EFI/Linux/linux-linux.efi
+Enrolled bundles:
+
+/efi/EFI/Linux/linux-linux.efi
+	Signed:		✔ Signed
+	ESP Location:	/efi
+	Output:		└─/EFI/Linux/linux-linux.efi
+	EFI Stub Image:	  └─/usr/lib/systemd/boot/efi/linuxx64.efi.stub
+	Splash Image:	    ├─/usr/share/systemd/bootctl/splash-arch.bmp
+	Cmdline:	    ├─/etc/kernel/cmdline
+	OS Release:	    ├─/usr/lib/os-release
+	Kernel Image:	    ├─/boot/vmlinuz-linux
+	Initramfs Image:    └─/boot/initramfs-linux.img
+	Intel Microcode:      └─/boot/intel-ucode.img
+
 
 # sbctl generate-bundles
-==> Generating EFI bundles....
-==> Wrote EFI bundle /boot/EFI/Linux/linux-linux.efi
+Generating EFI bundles....
+Wrote EFI bundle /efi/EFI/Linux/linux-linux.efi
 ```
