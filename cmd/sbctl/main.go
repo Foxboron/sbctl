@@ -74,7 +74,7 @@ func main() {
 		} else if errors.Is(err, sbctl.ErrImmutable) {
 			logging.Println("You need to chattr -i files in efivarfs")
 		} else if !errors.Is(err, ErrSilent) {
-			logging.Fatal(err)
+			logging.Error(err)
 		}
 		os.Exit(1)
 	}
