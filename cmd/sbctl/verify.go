@@ -68,9 +68,9 @@ var verifyCmd = &cobra.Command{
 				return err
 			}
 			if ok {
-				logging.Ok("%s is signed\n", path)
+				logging.Ok("%s is signed", path)
 			} else {
-				logging.NotOk("%s is not signed\n", path)
+				logging.NotOk("%s is not signed", path)
 			}
 			return nil
 		}); err != nil {
