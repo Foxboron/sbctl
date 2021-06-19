@@ -153,6 +153,10 @@ Environment variables
         **lsblk**. No checks are performed on this path and can be usefull for testing
         purposes.
 
+**SBCTL_UNICODE**::
+       If this value is "0" sbctl will replace the unicode symbols to equivalent
+       ascii ones. The default value is assumed to be 1.
+
 
 Files
 ----

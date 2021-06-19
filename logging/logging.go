@@ -103,7 +103,7 @@ func Error(err error) {
 }
 
 func init() {
-	if ok := os.Getenv("EFIBOOTCTL_UNICODE"); ok == "0" {
+	if ok := os.Getenv("SBCTL_UNICODE"); ok == "0" {
 		OkSym = OkSymText
 		NotOkSym = NotOkSymText
 		WarnSym = WarnSymText
