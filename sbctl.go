@@ -83,7 +83,7 @@ func GetESP() string {
 		return entryToCheck.Mountpoint
 	}
 
-	return ""
+	return "efi"
 }
 
 func Sign(file, output string, enroll bool) error {
