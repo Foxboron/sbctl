@@ -1,0 +1,9 @@
+[Unit]
+Description=Backup currently booted EFI image
+
+[Service]
+ExecStart=/usr/bin/sbctl backup
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
