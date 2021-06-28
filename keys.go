@@ -177,9 +177,14 @@ func SignFile(key, cert, file, output, checksum string) error {
 
 	// Let's check if we have signed it already AND the original file hasn't changed
 	ok, err := VerifyFile(cert, output)
-	if err != nil {
+	if errors.Is(err, os.ErrNotExist) && (file != output) {
+		// if the file does not exist and file is not the same as output
+		// then we just catch the error and continue. This is expected
+		// behaviour
+	} else if err != nil {
 		return err
 	}
+
 	chk, err := ChecksumFile(file)
 	if err != nil {
 		return err
@@ -224,7 +229,7 @@ func SignFile(key, cert, file, output, checksum string) error {
 	if err != nil {
 		return err
 	}
-	if err = os.WriteFile(file, b, si.Mode()); err != nil {
+	if err = os.WriteFile(output, b, si.Mode()); err != nil {
 		return err
 	}
 
