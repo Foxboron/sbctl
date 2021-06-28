@@ -74,15 +74,18 @@ func GetEfistub() string {
 	return ""
 }
 
-func NewBundle() *Bundle {
-	esp := GetESP()
+func NewBundle() (bundle *Bundle, err error) {
+	esp, err := GetESP()
+	if err != nil {
+		return
+	}
 
 	stub := GetEfistub()
 	if stub == "" {
 		panic("No EFISTUB file found. Please install systemd-boot or gummiboot!")
 	}
 
-	return &Bundle{
+	bundle = &Bundle{
 		Output:         "",
 		IntelMicrocode: "",
 		AMDMicrocode:   "",
@@ -94,6 +97,8 @@ func NewBundle() *Bundle {
 		EFIStub:        stub,
 		ESP:            esp,
 	}
+
+	return
 }
 
 func GenerateBundle(bundle *Bundle) (bool, error) {

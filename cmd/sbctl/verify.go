@@ -18,7 +18,10 @@ var verifyCmd = &cobra.Command{
 		if err := sbctl.CanVerifyFiles(); err != nil {
 			return err
 		}
-		espPath := sbctl.GetESP()
+		espPath, err := sbctl.GetESP()
+		if err != nil {
+			return err
+		}
 		logging.Print("Verifying file database and EFI images in %s...\n", espPath)
 		if err := sbctl.SigningEntryIter(func(file *sbctl.SigningEntry) error {
 			sbctl.AddChecked(file.OutputFile)
