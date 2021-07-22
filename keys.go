@@ -87,7 +87,7 @@ func CreateKey(name string) ([]byte, []byte, error) {
 
 func SaveKey(k []byte, file string) error {
 	os.MkdirAll(filepath.Dir(file), os.ModePerm)
-	err := os.WriteFile(file, k, 0644)
+	err := os.WriteFile(file, k, 0400)
 	if err != nil {
 		return err
 	}
