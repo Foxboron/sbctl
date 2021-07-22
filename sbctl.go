@@ -24,14 +24,27 @@ type LsblkRoot struct {
 	Blockdevices []LsblkEntry `json:"blockdevices"`
 }
 
+var espLocations = []string{
+	"/boot",
+	"/boot/efi",
+	"/efi",
+}
+var ErrNoESP = errors.New("failed to find EFI system partition")
+
 // Slightly more advanced check
-func GetESP() string {
+func GetESP() (string, error) {
 
 	for _, env := range []string{"SYSTEMD_ESP_PATH", "ESP_PATH"} {
 		envEspPath, found := os.LookupEnv(env)
 		if found {
-			return envEspPath
+			return envEspPath, nil
 		}
+	}
+
+	for _, location := range espLocations {
+		// "Touch" a file inside all candiadate locations to trigger an
+		// automount if there's an automount partition.
+		os.Stat(fmt.Sprintf("%s/does-not-exist", location))
 	}
 
 	out, err := exec.Command(
@@ -80,10 +93,10 @@ func GetESP() string {
 			continue
 		}
 
-		return entryToCheck.Mountpoint
+		return entryToCheck.Mountpoint, nil
 	}
 
-	return ""
+	return "", ErrNoESP
 }
 
 func Sign(file, output string, enroll bool) error {

@@ -35,7 +35,10 @@ var listBundlesCmd = &cobra.Command{
 					isSigned = false
 					logging.NotOk("Not Signed")
 				}
-				esp := sbctl.GetESP()
+				esp, err := sbctl.GetESP()
+				if err != nil {
+					return err
+				}
 				logging.Print("\tESP Location:\t%s\n", esp)
 				logging.Print("\tOutput:\t\t└─%s\n", strings.TrimPrefix(s.Output, esp))
 				logging.Print("\tEFI Stub Image:\t  └─%s\n", s.EFIStub)
