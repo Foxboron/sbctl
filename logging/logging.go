@@ -8,8 +8,8 @@ import (
 )
 
 var (
-	OkSym    = "✔"
-	NotOkSym = "✘"
+	OkSym    = "✓"
+	NotOkSym = "✗"
 	WarnSym  = "‼"
 	UnkwnSym = "⁇"
 )
