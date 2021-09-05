@@ -70,7 +70,7 @@ func main() {
 		if strings.HasPrefix(err.Error(), "unknown comman") {
 			logging.Println(err.Error())
 		} else if errors.Is(err, os.ErrPermission) {
-			logging.Error(fmt.Errorf("sbtl requires root to run: %w", err))
+			logging.Error(fmt.Errorf("sbctl requires root to run: %w", err))
 		} else if errors.Is(err, sbctl.ErrImmutable) {
 			logging.Println("You need to chattr -i files in efivarfs")
 		} else if !errors.Is(err, ErrSilent) {

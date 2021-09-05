@@ -148,7 +148,7 @@ func VerifyFile(cert, file string) (bool, error) {
 	}
 	sigs, err := pecoff.GetSignatures(peFile)
 	if err != nil {
-		return false, err
+		return false, fmt.Errorf("%s: %w", file, err)
 	}
 	if len(sigs) == 0 {
 		return false, nil

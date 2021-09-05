@@ -33,7 +33,7 @@ var signAllCmd = &cobra.Command{
 			if errors.Is(err, sbctl.ErrAlreadySigned) {
 				logging.Print("File have already been signed %s\n", entry.OutputFile)
 			} else if err != nil {
-				return err
+				return fmt.Errorf("failed signing %s: %w", entry.File, err)
 			} else {
 				logging.Ok("Signed %s", entry.OutputFile)
 			}
