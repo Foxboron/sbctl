@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/foxboron/sbctl"
@@ -23,7 +24,8 @@ var listBundlesCmd = &cobra.Command{
 			func(s *sbctl.Bundle) error {
 				ok, err := sbctl.VerifyFile(sbctl.DBCert, s.Output)
 				if err != nil {
-					return err
+					logging.Error(fmt.Errorf("%s: %w\n", s.Output, err))
+					return nil
 				}
 				logging.Println("Enrolled bundles:\n")
 				logging.Println(s.Output)

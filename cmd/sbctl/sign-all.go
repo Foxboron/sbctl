@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/foxboron/sbctl"
 	"github.com/foxboron/sbctl/logging"

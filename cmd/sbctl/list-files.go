@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/foxboron/sbctl"
 	"github.com/foxboron/sbctl/logging"
 	"github.com/spf13/cobra"
@@ -24,7 +26,8 @@ func RunList(_ *cobra.Command, args []string) error {
 		func(s *sbctl.SigningEntry) error {
 			ok, err := sbctl.VerifyFile(sbctl.DBCert, s.OutputFile)
 			if err != nil {
-				return err
+				logging.Error(fmt.Errorf("%s: %w\n", s.OutputFile, err))
+				return nil
 			}
 			logging.Println(s.File)
 			logging.Print("Signed:\t\t")
