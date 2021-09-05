@@ -23,7 +23,13 @@ docs/sbctl.%: docs/sbctl.%.txt docs/asciidoc.conf
 sbctl: $(SOURCES)
 	go build ./cmd/$@
 
-install: man
+.PHONY: completion
+completion:
+	./sbctl completion bash | install -Dm644 /dev/stdin "$(DESTDIR)$(SHRDIR)/bash-completion/completions/sbctl"
+	./sbctl completion zsh | install -Dm644 /dev/stdin "$(DESTDIR)$(SHRDIR)/usr/share/zsh/site-functions/_sbctl"
+	./sbctl completion fish | install -Dm644 /dev/stdin "$(DESTDIR)$(SHRDIR)/usr/share/fish/vendor_completions.d/sbctl.fish"
+
+install: man completion
 	install -Dm755 sbctl -t $(DESTDIR)$(BINDIR)
 	for manfile in $(MANS); do \
 		install -Dm644 $$manfile -t $(DESTDIR)$(MANDIR)/man$${manfile##*.}; \
