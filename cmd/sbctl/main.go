@@ -67,7 +67,7 @@ func main() {
 	})
 
 	if err := rootCmd.Execute(); err != nil {
-		if strings.HasPrefix(err.Error(), "unknown comman") {
+		if strings.HasPrefix(err.Error(), "unknown command") {
 			logging.Println(err.Error())
 		} else if errors.Is(err, os.ErrPermission) {
 			logging.Error(fmt.Errorf("sbctl requires root to run: %w", err))
