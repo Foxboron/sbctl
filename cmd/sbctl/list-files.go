@@ -26,7 +26,8 @@ func RunList(_ *cobra.Command, args []string) error {
 		func(s *sbctl.SigningEntry) error {
 			ok, err := sbctl.VerifyFile(sbctl.DBCert, s.OutputFile)
 			if err != nil {
-				logging.Error(fmt.Errorf("%s: %w\n", s.OutputFile, err))
+				logging.Error(fmt.Errorf("%s: %w", s.OutputFile, err))
+				logging.Error(fmt.Errorf(""))
 				return nil
 			}
 			logging.Println(s.File)

@@ -24,7 +24,8 @@ var listBundlesCmd = &cobra.Command{
 			func(s *sbctl.Bundle) error {
 				ok, err := sbctl.VerifyFile(sbctl.DBCert, s.Output)
 				if err != nil {
-					logging.Error(fmt.Errorf("%s: %w\n", s.Output, err))
+					logging.Error(fmt.Errorf("%s: %w", s.Output, err))
+					logging.Error(fmt.Errorf(""))
 					return nil
 				}
 				logging.Println("Enrolled bundles:\n")
