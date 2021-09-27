@@ -1,0 +1,19 @@
+#!/bin/sh
+
+COMMAND="$1"
+KERNEL_VERSION="$2"
+ENTRY_DIR_ABS="$3"
+KERNEL_IMAGE="$4"
+
+case "$COMMAND" in
+add)
+	[ "$KERNEL_INSTALL_VERBOSE" -gt 0 ] &&
+		printf 'Signing kernel %s\n' "$ENTRY_DIR_ABS/linux"
+	sbctl sign -s "$ENTRY_DIR_ABS/linux" 1>/dev/null
+	;;
+remove)
+	[ "$KERNEL_INSTALL_VERBOSE" -gt 0 ] &&
+		printf 'Removing kernel %s from signing database\n' "$ENTRY_DIR_ABS/linux"
+	sbctl remove-file "$ENTRY_DIR_ABS/linux" 1>/dev/null
+	;;
+esac
