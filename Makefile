@@ -1,14 +1,12 @@
-PROGNM ?= sbctl
-PREFIX ?= /usr/local
-BINDIR ?= $(PREFIX)/bin
-SHRDIR ?= $(PREFIX)/share
-DOCDIR ?= $(PREFIX)/share/doc
-MANDIR ?= $(PREFIX)/share/man
+PROGNM := sbctl
+PREFIX := /usr/local
+BINDIR := $(PREFIX)/bin
+SHRDIR := $(PREFIX)/share
+DOCDIR := $(PREFIX)/share/doc
+MANDIR := $(PREFIX)/share/man
 MANS = $(basename $(wildcard docs/*.txt))
 
 GOFLAGS ?= -buildmode=pie -trimpath
-
-SOURCES = $(shell go list -f '{{range .GoFiles}}{{$$.Dir}}/{{.}} {{end}}' ./...)
 
 TAG = $(shell git describe --abbrev=0 --tags)
 
@@ -20,21 +18,25 @@ $(MANS):
 docs/sbctl.%: docs/sbctl.%.txt docs/asciidoc.conf
 	a2x --no-xmllint --asciidoc-opts="-f docs/asciidoc.conf" -d manpage -f manpage -D docs $<
 
-sbctl: $(SOURCES)
-	go build ./cmd/$@
+sbctl:
+	go build -o $@ ./cmd/$@
 
-.PHONY: completion
-completion:
-	./sbctl completion bash | install -Dm644 /dev/stdin "$(DESTDIR)$(SHRDIR)/bash-completion/completions/sbctl"
-	./sbctl completion zsh | install -Dm644 /dev/stdin "$(DESTDIR)$(SHRDIR)/usr/share/zsh/site-functions/_sbctl"
-	./sbctl completion fish | install -Dm644 /dev/stdin "$(DESTDIR)$(SHRDIR)/usr/share/fish/vendor_completions.d/sbctl.fish"
+.PHONY: completions
+completions: sbctl
+	./sbctl completion bash | install -D /dev/stdin contrib/completions/bash-completion/completions/sbctl
+	./sbctl completion zsh | install -D /dev/stdin contrib/completions/zsh/site-functions/_sbctl
+	./sbctl completion fish | install -D /dev/stdin contrib/completions/fish/vendor_completions.d/sbctl.fish
 
-install: man completion
-	install -Dm755 sbctl -t $(DESTDIR)$(BINDIR)
+install: sbctl completions man
+	install -Dm755 sbctl -t '$(DESTDIR)$(BINDIR)'
 	for manfile in $(MANS); do \
-		install -Dm644 $$manfile -t $(DESTDIR)$(MANDIR)/man$${manfile##*.}; \
+		install -Dm644 "$$manfile" -t '$(DESTDIR)$(MANDIR)/man'"$${manfile##*.}"; \
 	done;
-	install -Dm644 LICENSE -t $(DESTDIR)$(SHRDIR)/licenses/$(PROGNM)
+	install -Dm644 contrib/completions/bash-completion/completions/sbctl '$(DESTDIR)$(SHRDIR)/bash-completion/completions/sbctl'
+	install -Dm644 contrib/completions/zsh/site-functions/_sbctl '$(DESTDIR)$(SHRDIR)/zsh/site-functions/_sbctl'
+	install -Dm644 contrib/completions/fish/vendor_completions.d/sbctl.fish '$(DESTDIR)$(SHRDIR)/fish/vendor_completions.d/sbctl.fish'
+	install -Dm755 contrib/kernel-install/91-sbctl.install '$(DESTDIR)/usr/lib/kernel/install.d/91-sbctl.install'
+	install -Dm644 LICENSE -t '$(DESTDIR)$(SHRDIR)/licenses/$(PROGNM)'
 
 .PHONY: release
 release:
