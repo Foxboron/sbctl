@@ -70,3 +70,11 @@ test:
 .PHONY: integration
 integration:
 	go test -v tests/integration_test.go
+
+.PHONY: local-aur
+.ONESHELL:
+local-aur:
+	cd ./contrib/aur/sbctl-git
+	mkdir -p ./src
+	ln -srfT $(CURDIR) ./src/sbctl
+	makepkg --holdver --syncdeps --noextract --force
