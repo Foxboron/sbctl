@@ -1,6 +1,7 @@
 PROGNM := sbctl
 PREFIX := /usr/local
 BINDIR := $(PREFIX)/bin
+LIBDIR := $(PREFIX)/lib
 SHRDIR := $(PREFIX)/share
 DOCDIR := $(PREFIX)/share/doc
 MANDIR := $(PREFIX)/share/man
@@ -35,7 +36,7 @@ install: sbctl completions man
 	install -Dm644 contrib/completions/bash-completion/completions/sbctl '$(DESTDIR)$(SHRDIR)/bash-completion/completions/sbctl'
 	install -Dm644 contrib/completions/zsh/site-functions/_sbctl '$(DESTDIR)$(SHRDIR)/zsh/site-functions/_sbctl'
 	install -Dm644 contrib/completions/fish/vendor_completions.d/sbctl.fish '$(DESTDIR)$(SHRDIR)/fish/vendor_completions.d/sbctl.fish'
-	install -Dm755 contrib/kernel-install/91-sbctl.install '$(DESTDIR)/usr/lib/kernel/install.d/91-sbctl.install'
+	install -Dm755 contrib/kernel-install/91-sbctl.install '$(DESTDIR)$(LIBDIR)/kernel/install.d/91-sbctl.install'
 	install -Dm644 LICENSE -t '$(DESTDIR)$(SHRDIR)/licenses/$(PROGNM)'
 
 .PHONY: release
