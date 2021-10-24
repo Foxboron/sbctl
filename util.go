@@ -105,6 +105,10 @@ func CheckMSDos(path string) (bool, error) {
 	// They contain "MZ" as the two first bytes
 	var header [2]byte
 	if _, err = io.ReadFull(r, header[:]); err != nil {
+		// File is smaller than 2 bytes
+		if errors.Is(err, io.EOF) {
+			return false, nil
+		}
 		return false, err
 	}
 	if !bytes.Equal(header[:], []byte{0x4d, 0x5a}) {
