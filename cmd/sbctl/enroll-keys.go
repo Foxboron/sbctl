@@ -11,6 +11,7 @@ import (
 )
 
 type EnrollKeysCmdOptions struct {
+	MicrosoftKeys bool
 }
 
 var (
@@ -23,6 +24,10 @@ var (
 )
 
 func RunEnrollKeys(cmd *cobra.Command, args []string) error {
+	var oems []string
+	if enrollKeysCmdOptions.MicrosoftKeys {
+		oems = append(oems, "microsoft")
+	}
 	if err := CheckImmutable(); err != nil {
 		return err
 	}
@@ -32,7 +37,7 @@ func RunEnrollKeys(cmd *cobra.Command, args []string) error {
 	}
 	guid := util.StringToGUID(uuid.String())
 	logging.Print("Enrolling keys to EFI variables...")
-	if err := sbctl.KeySync(*guid, sbctl.KeysPath); err != nil {
+	if err := sbctl.KeySync(*guid, sbctl.KeysPath, oems); err != nil {
 		logging.NotOk("")
 		return fmt.Errorf("couldn't sync keys: %w", err)
 	}
@@ -59,7 +64,13 @@ func CheckImmutable() error {
 	return nil
 }
 
+func enrollKeysCmdFlags(cmd *cobra.Command) {
+	f := cmd.Flags()
+	f.BoolVarP(&enrollKeysCmdOptions.MicrosoftKeys, "microsoft", "m", false, "include microsoft keys into key enrollment")
+}
+
 func init() {
+	enrollKeysCmdFlags(enrollKeysCmd)
 	CliCommands = append(CliCommands, cliCommand{
 		Cmd: enrollKeysCmd,
 	})

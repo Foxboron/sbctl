@@ -12,6 +12,7 @@ import (
 	"math/big"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/foxboron/go-uefi/efi"
@@ -19,6 +20,8 @@ import (
 	"github.com/foxboron/go-uefi/efi/pkcs7"
 	"github.com/foxboron/go-uefi/efi/signature"
 	"github.com/foxboron/go-uefi/efi/util"
+	"github.com/foxboron/sbctl/certs"
+	"github.com/foxboron/sbctl/logging"
 	"golang.org/x/sys/unix"
 )
 
@@ -110,7 +113,7 @@ func Enroll(sigdb *signature.SignatureDatabase, cert, signerKey, signerPem []byt
 	return efi.WriteEFIVariable(efivar, signedBuf)
 }
 
-func KeySync(guid util.EFIGUID, keydir string) error {
+func KeySync(guid util.EFIGUID, keydir string, oems []string) error {
 	var sigdb *signature.SignatureDatabase
 
 	PKKey, _ := os.ReadFile(filepath.Join(keydir, "PK", "PK.key"))
@@ -121,6 +124,17 @@ func KeySync(guid util.EFIGUID, keydir string) error {
 
 	sigdb = signature.NewSignatureDatabase()
 	sigdb.Append(signature.CERT_X509_GUID, guid, dbPem)
+
+	if len(oems) > 0 {
+		for _, oem := range oems {
+			logging.Print("\nWith vendor keys from %s...", strings.Title(oem))
+			oemSigDb, err := certs.GetCerts(oem)
+			if err != nil {
+				return fmt.Errorf("could not enroll db keys: %w", err)
+			}
+			sigdb.AppendDatabase(oemSigDb)
+		}
+	}
 	if err := Enroll(sigdb, dbPem, KEKKey, KEKPem, "db"); err != nil {
 		return err
 	}
