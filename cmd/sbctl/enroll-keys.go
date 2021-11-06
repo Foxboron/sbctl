@@ -10,6 +10,36 @@ import (
 	"github.com/spf13/cobra"
 )
 
+type EnrollKeysCmdOptions struct {
+}
+
+var (
+	enrollKeysCmdOptions = EnrollKeysCmdOptions{}
+	enrollKeysCmd        = &cobra.Command{
+		Use:   "enroll-keys",
+		Short: "Enroll the current keys to EFI",
+		RunE:  RunEnrollKeys,
+	}
+)
+
+func RunEnrollKeys(cmd *cobra.Command, args []string) error {
+	if err := CheckImmutable(); err != nil {
+		return err
+	}
+	uuid, err := sbctl.GetGUID()
+	if err != nil {
+		return err
+	}
+	guid := util.StringToGUID(uuid.String())
+	logging.Print("Enrolling keys to EFI variables...")
+	if err := sbctl.KeySync(*guid, sbctl.KeysPath); err != nil {
+		logging.NotOk("")
+		return fmt.Errorf("couldn't sync keys: %w", err)
+	}
+	logging.Ok("\nEnrolled keys to the EFI variables!")
+	return nil
+}
+
 func CheckImmutable() error {
 	var isImmutable bool
 	for _, file := range sbctl.EfivarFSFiles {
@@ -27,28 +57,6 @@ func CheckImmutable() error {
 		return sbctl.ErrImmutable
 	}
 	return nil
-}
-
-var enrollKeysCmd = &cobra.Command{
-	Use:   "enroll-keys",
-	Short: "Enroll the current keys to EFI",
-	RunE: func(cmd *cobra.Command, args []string) error {
-		if err := CheckImmutable(); err != nil {
-			return err
-		}
-		uuid, err := sbctl.GetGUID()
-		if err != nil {
-			return err
-		}
-		guid := util.StringToGUID(uuid.String())
-		logging.Print("Enrolling keys to EFI variables...")
-		if err := sbctl.KeySync(*guid, sbctl.KeysPath); err != nil {
-			logging.NotOk("")
-			return fmt.Errorf("couldn't sync keys: %w", err)
-		}
-		logging.Ok("\nEnrolled keys to the EFI variables!")
-		return nil
-	},
 }
 
 func init() {
