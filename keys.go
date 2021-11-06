@@ -313,3 +313,8 @@ func InitializeSecureBootKeys(output string) error {
 	}
 	return nil
 }
+
+func GetEnrolledVendorCerts() []string {
+	db, _ := efi.Getdb()
+	return certs.DetectVendorCerts(db)
+}

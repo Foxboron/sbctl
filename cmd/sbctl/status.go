@@ -17,10 +17,11 @@ var statusCmd = &cobra.Command{
 }
 
 type Status struct {
-	Installed  bool   `json:"installed"`
-	GUID       string `json:"guid"`
-	SetupMode  bool   `json:"setup_mode"`
-	SecureBoot bool   `json:"secure_boot"`
+	Installed  bool     `json:"installed"`
+	GUID       string   `json:"guid"`
+	SetupMode  bool     `json:"setup_mode"`
+	SecureBoot bool     `json:"secure_boot"`
+	Vendors    []string `json:"vendors"`
 }
 
 func NewStatus() *Status {
@@ -29,6 +30,7 @@ func NewStatus() *Status {
 		GUID:       "",
 		SetupMode:  false,
 		SecureBoot: false,
+		Vendors:    []string{},
 	}
 }
 
@@ -53,6 +55,11 @@ func PrintStatus(s *Status) {
 	} else {
 		logging.NotOk("Disabled")
 	}
+	// TODO: We only have microsoft keys
+	// this needs to be extended for more keys in the future
+	if len(s.Vendors) > 0 {
+		logging.Println("Vendor Keys:\t microsoft")
+	}
 }
 
 func RunStatus(cmd *cobra.Command, args []string) error {
@@ -73,6 +80,9 @@ func RunStatus(cmd *cobra.Command, args []string) error {
 	}
 	if efi.GetSecureBoot() {
 		stat.SecureBoot = true
+	}
+	if keys := sbctl.GetEnrolledVendorCerts(); len(keys) > 0 {
+		stat.Vendors = keys
 	}
 	if cmdOptions.JsonOutput {
 		JsonOut(stat)
