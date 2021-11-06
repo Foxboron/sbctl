@@ -19,6 +19,7 @@ $(MANS):
 docs/sbctl.%: docs/sbctl.%.txt docs/asciidoc.conf
 	a2x --no-xmllint --asciidoc-opts="-f docs/asciidoc.conf" -d manpage -f manpage -D docs $<
 
+.PHONY: sbctl
 sbctl:
 	go build -o $@ ./cmd/$@
 
