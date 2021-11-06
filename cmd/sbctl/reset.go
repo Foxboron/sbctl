@@ -9,6 +9,7 @@ import (
 	"github.com/foxboron/go-uefi/efi"
 	"github.com/foxboron/go-uefi/efi/util"
 	"github.com/foxboron/sbctl"
+	"github.com/foxboron/sbctl/logging"
 	"github.com/spf13/cobra"
 )
 
@@ -39,6 +40,9 @@ func RunReset(cmd *cobra.Command, args []string) error {
 		}
 		return err
 	}
+
+	logging.Ok("Removed Platform Key!")
+	logging.Println("Use `sbctl enroll-keys` to enroll the Platform Key again.")
 	return nil
 }
 
