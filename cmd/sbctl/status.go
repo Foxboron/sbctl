@@ -35,7 +35,7 @@ func NewStatus() *Status {
 func PrintStatus(s *Status) {
 	logging.Print("Installed:\t")
 	if s.Installed {
-		logging.Ok("Sbctl is installed")
+		logging.Ok("sbctl is installed")
 		logging.Print("Owner GUID:\t")
 		logging.Println(s.GUID)
 	} else {
