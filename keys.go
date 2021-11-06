@@ -94,11 +94,7 @@ func SaveKey(k []byte, file string) error {
 	return nil
 }
 
-func Enroll(uuid util.EFIGUID, cert, signerKey, signerPem []byte, efivar string) error {
-	c := signature.NewSignatureList(signature.CERT_X509_GUID)
-	c.AppendBytes(uuid, cert)
-	buf := new(bytes.Buffer)
-	signature.WriteSignatureList(buf, *c)
+func Enroll(sigdb *signature.SignatureDatabase, cert, signerKey, signerPem []byte, efivar string) error {
 	key, err := util.ReadKey(signerKey)
 	if err != nil {
 		return nil
@@ -107,7 +103,7 @@ func Enroll(uuid util.EFIGUID, cert, signerKey, signerPem []byte, efivar string)
 	if err != nil {
 		return nil
 	}
-	signedBuf, err := efi.SignEFIVariable(key, crt, efivar, buf.Bytes())
+	signedBuf, err := efi.SignEFIVariable(key, crt, efivar, sigdb.Bytes())
 	if err != nil {
 		return err
 	}
@@ -115,18 +111,29 @@ func Enroll(uuid util.EFIGUID, cert, signerKey, signerPem []byte, efivar string)
 }
 
 func KeySync(guid util.EFIGUID, keydir string) error {
+	var sigdb *signature.SignatureDatabase
+
 	PKKey, _ := os.ReadFile(filepath.Join(keydir, "PK", "PK.key"))
 	PKPem, _ := os.ReadFile(filepath.Join(keydir, "PK", "PK.pem"))
 	KEKKey, _ := os.ReadFile(filepath.Join(keydir, "KEK", "KEK.key"))
 	KEKPem, _ := os.ReadFile(filepath.Join(keydir, "KEK", "KEK.pem"))
 	dbPem, _ := os.ReadFile(filepath.Join(keydir, "db", "db.pem"))
-	if err := Enroll(guid, dbPem, KEKKey, KEKPem, "db"); err != nil {
+
+	sigdb = signature.NewSignatureDatabase()
+	sigdb.Append(signature.CERT_X509_GUID, guid, dbPem)
+	if err := Enroll(sigdb, dbPem, KEKKey, KEKPem, "db"); err != nil {
 		return err
 	}
-	if err := Enroll(guid, KEKPem, PKKey, PKPem, "KEK"); err != nil {
+
+	sigdb = signature.NewSignatureDatabase()
+	sigdb.Append(signature.CERT_X509_GUID, guid, KEKPem)
+	if err := Enroll(sigdb, KEKPem, PKKey, PKPem, "KEK"); err != nil {
 		return err
 	}
-	if err := Enroll(guid, PKPem, PKKey, PKPem, "PK"); err != nil {
+
+	sigdb = signature.NewSignatureDatabase()
+	sigdb.Append(signature.CERT_X509_GUID, guid, PKPem)
+	if err := Enroll(sigdb, PKPem, PKKey, PKPem, "PK"); err != nil {
 		return err
 	}
 	return nil
