@@ -39,7 +39,7 @@ func PrintStatus(s *Status) {
 		logging.Print("Owner GUID:\t")
 		logging.Println(s.GUID)
 	} else {
-		logging.NotOk("Sbctl is not installed")
+		logging.NotOk("sbctl is not installed")
 	}
 	logging.Print("Setup Mode:\t")
 	if s.SetupMode {
