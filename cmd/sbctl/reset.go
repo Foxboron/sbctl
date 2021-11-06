@@ -1,7 +1,10 @@
 package main
 
 import (
+	"errors"
+	"fmt"
 	"path/filepath"
+	"syscall"
 
 	"github.com/foxboron/go-uefi/efi"
 	"github.com/foxboron/go-uefi/efi/util"
@@ -31,6 +34,9 @@ func RunReset(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	if err := efi.WriteEFIVariable("PK", signedBuf); err != nil {
+		if errors.Is(err, syscall.EIO) {
+			return fmt.Errorf("platform key already reset or not enrolled")
+		}
 		return err
 	}
 	return nil
