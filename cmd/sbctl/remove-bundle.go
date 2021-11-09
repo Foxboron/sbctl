@@ -9,7 +9,10 @@ import (
 )
 
 var removeBundleCmd = &cobra.Command{
-	Use:   "remove-bundle",
+	Use: "remove-bundle",
+	Aliases: []string{
+		"rm-bundle",
+	},
 	Short: "Remove bundle from database",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if len(args) < 1 {

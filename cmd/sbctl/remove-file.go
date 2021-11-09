@@ -9,7 +9,11 @@ import (
 )
 
 var removeFileCmd = &cobra.Command{
-	Use:   "remove-file",
+	Use: "remove-file",
+	Aliases: []string{
+		"rm-file",
+		"rm",
+	},
 	Short: "Remove file from database",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if len(args) < 1 {
