@@ -5,10 +5,13 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/foxboron/sbctl/logging"
 )
 
 func ChecksumFile(file string) (string, error) {
@@ -79,6 +82,7 @@ var EfivarFSFiles = []string{
 var ErrImmutable = errors.New("file is immutable")
 var ErrNotImmutable = errors.New("file is not immutable")
 
+// Check if a given file has the immutable bit set
 func IsImmutable(file string) error {
 	f, err := os.Open(file)
 	// Files in efivarfs might not exist. Ignore them
@@ -95,6 +99,26 @@ func IsImmutable(file string) error {
 		return ErrImmutable
 	}
 	return ErrNotImmutable
+}
+
+// Check if any files in efivarfs has the immutable bit set
+func CheckImmutable() error {
+	var isImmutable bool
+	for _, file := range EfivarFSFiles {
+		err := IsImmutable(file)
+		if errors.Is(err, ErrImmutable) {
+			isImmutable = true
+			logging.Warn("File is immutable: %s", file)
+		} else if errors.Is(err, ErrNotImmutable) {
+			continue
+		} else if err != nil {
+			return fmt.Errorf("couldn't read file: %s", file)
+		}
+	}
+	if isImmutable {
+		return ErrImmutable
+	}
+	return nil
 }
 
 func CheckMSDos(path string) (bool, error) {

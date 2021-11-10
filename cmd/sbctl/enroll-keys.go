@@ -1,11 +1,15 @@
 package main
 
 import (
-	"errors"
 	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
 
+	"github.com/foxboron/go-uefi/efi/signature"
 	"github.com/foxboron/go-uefi/efi/util"
 	"github.com/foxboron/sbctl"
+	"github.com/foxboron/sbctl/certs"
 	"github.com/foxboron/sbctl/logging"
 	"github.com/spf13/cobra"
 )
@@ -24,8 +28,49 @@ var (
 	}
 )
 
+// Sync keys from a key directory into efivarfs
+func KeySync(guid util.EFIGUID, keydir string, oems []string) error {
+	var sigdb *signature.SignatureDatabase
+
+	PKKey, _ := os.ReadFile(filepath.Join(keydir, "PK", "PK.key"))
+	PKPem, _ := os.ReadFile(filepath.Join(keydir, "PK", "PK.pem"))
+	KEKKey, _ := os.ReadFile(filepath.Join(keydir, "KEK", "KEK.key"))
+	KEKPem, _ := os.ReadFile(filepath.Join(keydir, "KEK", "KEK.pem"))
+	dbPem, _ := os.ReadFile(filepath.Join(keydir, "db", "db.pem"))
+
+	sigdb = signature.NewSignatureDatabase()
+	sigdb.Append(signature.CERT_X509_GUID, guid, dbPem)
+
+	if len(oems) > 0 {
+		for _, oem := range oems {
+			logging.Print("\nWith vendor keys from %s...", strings.Title(oem))
+			oemSigDb, err := certs.GetCerts(oem)
+			if err != nil {
+				return fmt.Errorf("could not enroll db keys: %w", err)
+			}
+			sigdb.AppendDatabase(oemSigDb)
+		}
+	}
+	if err := sbctl.Enroll(sigdb, dbPem, KEKKey, KEKPem, "db"); err != nil {
+		return err
+	}
+
+	sigdb = signature.NewSignatureDatabase()
+	sigdb.Append(signature.CERT_X509_GUID, guid, KEKPem)
+	if err := sbctl.Enroll(sigdb, KEKPem, PKKey, PKPem, "KEK"); err != nil {
+		return err
+	}
+
+	sigdb = signature.NewSignatureDatabase()
+	sigdb.Append(signature.CERT_X509_GUID, guid, PKPem)
+	if err := sbctl.Enroll(sigdb, PKPem, PKKey, PKPem, "PK"); err != nil {
+		return err
+	}
+	return nil
+}
+
 func RunEnrollKeys(cmd *cobra.Command, args []string) error {
-	var oems []string
+	oems := []string{}
 	if enrollKeysCmdOptions.MicrosoftKeys {
 		oems = append(oems, "microsoft")
 	}
@@ -40,33 +85,13 @@ func RunEnrollKeys(cmd *cobra.Command, args []string) error {
 	}
 	guid := util.StringToGUID(uuid.String())
 	logging.Print("Enrolling keys to EFI variables...")
-	if err := sbctl.KeySync(*guid, sbctl.KeysPath, oems); err != nil {
+	if err := KeySync(*guid, sbctl.KeysPath, oems); err != nil {
 		logging.NotOk("")
 		return fmt.Errorf("couldn't sync keys: %w", err)
 	}
 	logging.Ok("\nEnrolled keys to the EFI variables!")
 	return nil
 }
-
-func CheckImmutable() error {
-	var isImmutable bool
-	for _, file := range sbctl.EfivarFSFiles {
-		err := sbctl.IsImmutable(file)
-		if errors.Is(err, sbctl.ErrImmutable) {
-			isImmutable = true
-			logging.Warn("File is immutable: %s", file)
-		} else if errors.Is(err, sbctl.ErrNotImmutable) {
-			continue
-		} else if err != nil {
-			return fmt.Errorf("couldn't read file: %s", file)
-		}
-	}
-	if isImmutable {
-		return sbctl.ErrImmutable
-	}
-	return nil
-}
-
 func enrollKeysCmdFlags(cmd *cobra.Command) {
 	f := cmd.Flags()
 	f.BoolVarP(&enrollKeysCmdOptions.MicrosoftKeys, "microsoft", "m", false, "include microsoft keys into key enrollment")
