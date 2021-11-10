@@ -23,10 +23,13 @@ func ChecksumFile(file string) (string, error) {
 }
 
 func CreateDirectory(path string) error {
-	if _, err := os.Stat(path); errors.Is(err, os.ErrExist) {
+	_, err := os.Stat(path)
+	switch {
+	case errors.Is(err, os.ErrNotExist):
+		// Ignore this error
+	case errors.Is(err, os.ErrExist):
 		return nil
-	} else if errors.Is(err, os.ErrNotExist) {
-	} else if err != nil {
+	case err != nil:
 		return err
 	}
 	if err := os.MkdirAll(path, os.ModePerm); err != nil {
