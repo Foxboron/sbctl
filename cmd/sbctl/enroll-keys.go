@@ -11,7 +11,8 @@ import (
 )
 
 type EnrollKeysCmdOptions struct {
-	MicrosoftKeys bool
+	MicrosoftKeys   bool
+	IgnoreImmutable bool
 }
 
 var (
@@ -28,8 +29,10 @@ func RunEnrollKeys(cmd *cobra.Command, args []string) error {
 	if enrollKeysCmdOptions.MicrosoftKeys {
 		oems = append(oems, "microsoft")
 	}
-	if err := CheckImmutable(); err != nil {
-		return err
+	if !enrollKeysCmdOptions.IgnoreImmutable {
+		if err := sbctl.CheckImmutable(); err != nil {
+			return err
+		}
 	}
 	uuid, err := sbctl.GetGUID()
 	if err != nil {
@@ -67,6 +70,7 @@ func CheckImmutable() error {
 func enrollKeysCmdFlags(cmd *cobra.Command) {
 	f := cmd.Flags()
 	f.BoolVarP(&enrollKeysCmdOptions.MicrosoftKeys, "microsoft", "m", false, "include microsoft keys into key enrollment")
+	f.BoolVarP(&enrollKeysCmdOptions.IgnoreImmutable, "ignore-immutable", "i", false, "ignore checking for immutable efivarfs files")
 }
 
 func init() {
