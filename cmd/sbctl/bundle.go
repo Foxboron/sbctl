@@ -84,11 +84,7 @@ var bundleCmd = &cobra.Command{
 }
 
 func bundleCmdFlags(cmd *cobra.Command) {
-	esp, err := sbctl.GetESP()
-	if err != nil {
-		logging.Warn("Failed to find ESP: %s", err)
-	}
-
+	esp, _ := sbctl.GetESP()
 	f := cmd.Flags()
 	f.StringVarP(&amducode, "amducode", "a", "", "AMD microcode location")
 	f.StringVarP(&intelucode, "intelucode", "i", "", "Intel microcode location")
