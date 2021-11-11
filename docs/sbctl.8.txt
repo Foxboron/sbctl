@@ -3,7 +3,7 @@ sbctl(8)
 
 Name
 ----
-sbctl - Secure Boot manager
+sbctl - Secure Boot Manager
 
 
 Synopsis
@@ -32,8 +32,21 @@ EFI signing commands
         * Signature Database Key
 
 **enroll-keys**::
-        It will first attempt to use `sbkeysync` to live enroll the
-        required keys. This requires Setup Mode to be active. 
+        Enrolls the creates key into the EFI variables. This puts the computer
+        out of SetupMode and enables Secure Boot.
+
+        Note that some devices have hardware firmware that is signed and
+        validated when Secure Boot is enabled. Failing to validate this firmware
+        could brick devices. It's recommended to enroll your own keys with
+        Microsoft certificates.
+
+        *-m*, *--microsoft*;;
+                Enroll UEFI vendor certificates from Microsoft.
+
+        *-i*, *--ignore-immutable*;;
+                Ignore checking `/sys/firmware/efi/efivars/` for immutable
+                files and unset the immutable attribute before enrolling
+                certificates.
 
 **sign** <FILE>...::
         Signs a EFI binary with the created key. The file will be checked for
@@ -61,6 +74,10 @@ EFI signing commands
         Looks for EFI binaries with the mime type application/x-dosexec in the
         ESP partition, and looks at the file database. Checks if they have been
         signed with the Signature Database Key.
+
+**reset**::
+        Resets the Platform Key. This sets the machine out of Secure Boot mode
+        and allows to rotate keys.
 
 **help** <FILE>...::
         Displays a help message.
@@ -119,6 +136,15 @@ EFI binary commands
         List all registered bundles to generate.
 
 
+Options
+-------
+
+**-j**, **--json**::
+        This enables supported commands to output their values in json instead
+        of human readable text. This is practical for parsing data with tools
+        like `jq`.
+
+
 Bundles
 -------
 
@@ -172,13 +198,13 @@ Files
 **/usr/share/secureboot/bundles.db**::
         Contains a list of EFI bundles to be generated.
 
-**/usr/share/secureboot/keys/db/db.{auth,der,pem,der.esl,key}**::
+**/usr/share/secureboot/keys/db/db.{pem,key}**::
         Contains the Signature Database key used for signing EFI binaries.
 
-**/usr/share/secureboot/keys/KEK/KEK.{auth,der,pem,der.esl,key}**::
+**/usr/share/secureboot/keys/KEK/KEK.{pem,key}**::
         Contains the Key Exchange Key.
 
-**/usr/share/secureboot/keys/PK/PK.{auth,der,pem,der.esl,key}**::
+**/usr/share/secureboot/keys/PK/PK.{pem,key}**::
         Contains the Platform Key.
 
 
@@ -186,7 +212,7 @@ See Also
 --------
 linkman:sbsign[1]
 linkman:bootctl[1]
-
+linkman:jq[1]
 
 Authors
 -------
