@@ -52,9 +52,13 @@ EFI signing commands
                 Generate all bundles before signing.
 
 **list-files**::
+**ls-files**::
+**ls**::
         Lists all enrolled EFI binaries.
 
 **remove-file** <FILE>::
+**rm-file** <FILE>::
+**rm** <FILE>::
         Removes the file from the signing database.
 
 **verify**::
@@ -113,9 +117,11 @@ EFI binary commands
                 Sign all the generated bundles.
 
 **remove-bundle** <NAME>::
+**rm-bundle** <NAME>::
         Removes a bundle from the list. This does not delete the bundle itself.
 
 **list-bundles**::
+**ls-bundle**::
         List all registered bundles to generate.
 
 
