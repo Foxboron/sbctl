@@ -273,6 +273,9 @@ func InitializeSecureBootKeys(output string) error {
 }
 
 func GetEnrolledVendorCerts() []string {
-	db, _ := efi.Getdb()
+	db, err := efi.Getdb()
+	if err != nil {
+		return []string{}
+	}
 	return certs.DetectVendorCerts(db)
 }
