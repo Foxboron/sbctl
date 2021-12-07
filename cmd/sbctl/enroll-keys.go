@@ -15,11 +15,14 @@ import (
 )
 
 type EnrollKeysCmdOptions struct {
-	MicrosoftKeys   bool
-	IgnoreImmutable bool
+	MicrosoftKeys        bool
+	IgnoreImmutable      bool
+	Force                bool
+	TPMEventlogChecksums bool
 }
 
 var (
+	systemEventlog       = "/sys/kernel/security/tpm0/binary_bios_measurements"
 	enrollKeysCmdOptions = EnrollKeysCmdOptions{}
 	enrollKeysCmd        = &cobra.Command{
 		Use:   "enroll-keys",
@@ -79,6 +82,11 @@ func RunEnrollKeys(cmd *cobra.Command, args []string) error {
 			return err
 		}
 	}
+	if !(enrollKeysCmdOptions.Force || enrollKeysCmdOptions.TPMEventlogChecksums || enrollKeysCmdOptions.MicrosoftKeys) {
+		if err := sbctl.CheckEventlogOprom(systemEventlog); err != nil {
+			return err
+		}
+	}
 	uuid, err := sbctl.GetGUID()
 	if err != nil {
 		return err
@@ -95,6 +103,10 @@ func RunEnrollKeys(cmd *cobra.Command, args []string) error {
 func enrollKeysCmdFlags(cmd *cobra.Command) {
 	f := cmd.Flags()
 	f.BoolVarP(&enrollKeysCmdOptions.MicrosoftKeys, "microsoft", "m", false, "include microsoft keys into key enrollment")
+	f.BoolVarP(&enrollKeysCmdOptions.TPMEventlogChecksums, "tpm-eventlog", "t", false, "include TPM eventlog checksums into the db database")
+	f.BoolVarP(&enrollKeysCmdOptions.Force, "yes-this-might-brick-my-machine", "", false, "ignore any errors and enroll keys")
+	f.BoolVarP(&enrollKeysCmdOptions.Force, "yolo", "", false, "yolo")
+	f.MarkHidden("yolo")
 	f.BoolVarP(&enrollKeysCmdOptions.IgnoreImmutable, "ignore-immutable", "i", false, "ignore checking for immutable efivarfs files")
 }
 
