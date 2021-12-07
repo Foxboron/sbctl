@@ -46,12 +46,22 @@ func KeySync(guid util.EFIGUID, keydir string, oems []string) error {
 
 	if len(oems) > 0 {
 		for _, oem := range oems {
-			logging.Print("\nWith vendor keys from %s...", strings.Title(oem))
-			oemSigDb, err := certs.GetCerts(oem)
-			if err != nil {
-				return fmt.Errorf("could not enroll db keys: %w", err)
+			switch oem {
+			case "tpm-eventlog":
+				logging.Print("\nWith cheksums from the TPM Eventlog...")
+				eventlogDB, err := sbctl.GetEventlogChecksums(systemEventlog)
+				if err != nil {
+					return fmt.Errorf("could not enroll db keys: %w", err)
+				}
+				sigdb.AppendDatabase(eventlogDB)
+			default:
+				logging.Print("\nWith vendor keys from %s...", strings.Title(oem))
+				oemSigDb, err := certs.GetCerts(oem)
+				if err != nil {
+					return fmt.Errorf("could not enroll db keys: %w", err)
+				}
+				sigdb.AppendDatabase(oemSigDb)
 			}
-			sigdb.AppendDatabase(oemSigDb)
 		}
 	}
 	if err := sbctl.Enroll(sigdb, dbPem, KEKKey, KEKPem, "db"); err != nil {
@@ -76,6 +86,9 @@ func RunEnrollKeys(cmd *cobra.Command, args []string) error {
 	oems := []string{}
 	if enrollKeysCmdOptions.MicrosoftKeys {
 		oems = append(oems, "microsoft")
+	}
+	if enrollKeysCmdOptions.TPMEventlogChecksums {
+		oems = append(oems, "tpm-eventlog")
 	}
 	if !enrollKeysCmdOptions.IgnoreImmutable {
 		if err := sbctl.CheckImmutable(); err != nil {
