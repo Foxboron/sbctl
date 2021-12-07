@@ -30,6 +30,16 @@ var (
 		SilenceUsage:  true,
 		SilenceErrors: true,
 	}
+	baseErrorMsg = `
+
+There are three flags that can be used:
+    --microsoft: Enrolls the Microsoft OEM certificates into the sinature database.
+    --tpm-eventlog: Enroll OpRom checksums into the signature database (experimental!).
+    --yes-this-might-brick-my-machine: Ignore this warning and continue regardless.
+
+Please read the FAQ for more information: https://github.com/Foxboron/sbctl/wiki/FAQ#option-rom`
+	opromErrorMsg      = `Found OptionROM in the bootchain. This means we should not enroll keys into UEFI without some precautions.` + baseErrorMsg
+	noEventlogErrorMsg = `Could not find any TPM Eventlog in the system. This means we do not know if there is any OptionROM present on the system.` + baseErrorMsg
 )
 
 func baseFlags(cmd *cobra.Command) {
@@ -73,6 +83,10 @@ func main() {
 			logging.Error(fmt.Errorf("sbctl requires root to run: %w", err))
 		} else if errors.Is(err, sbctl.ErrImmutable) {
 			logging.Println("You need to chattr -i files in efivarfs")
+		} else if errors.Is(err, sbctl.ErrOprom) {
+			logging.Error(fmt.Errorf(opromErrorMsg))
+		} else if errors.Is(err, sbctl.ErrNoEventlog) {
+			logging.Error(fmt.Errorf(noEventlogErrorMsg))
 		} else if !errors.Is(err, ErrSilent) {
 			logging.Error(err)
 		}
