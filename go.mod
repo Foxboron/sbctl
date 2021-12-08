@@ -6,7 +6,7 @@ require (
 	github.com/anatol/vmtest v0.0.0-20210225191124-26540db15d49
 	github.com/fatih/color v1.13.0
 	github.com/foxboron/go-uefi v0.0.0-20211120193624-3d898a764ffd
-	github.com/google/go-attestation v0.3.2
+	github.com/google/go-attestation v0.3.3-0.20210901195502-505680f536da
 	github.com/google/uuid v1.3.0
 	github.com/spf13/cobra v1.1.3
 	golang.org/x/crypto v0.0.0-20211202192323-5770296d904e
