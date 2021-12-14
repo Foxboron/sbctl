@@ -61,7 +61,8 @@ func PrintStatus(s *Status) {
 	// TODO: We only have microsoft keys
 	// this needs to be extended for more keys in the future
 	if len(s.Vendors) > 0 {
-		logging.Println("Vendor Keys:\t microsoft")
+		logging.Print("Vendor Keys:\t")
+		logging.Println(strings.Join(s.Vendors, " "))
 	}
 }
 
