@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/foxboron/go-uefi/efi"
 	"github.com/foxboron/sbctl"
@@ -38,8 +39,10 @@ func PrintStatus(s *Status) {
 	logging.Print("Installed:\t")
 	if s.Installed {
 		logging.Ok("sbctl is installed")
-		logging.Print("Owner GUID:\t")
-		logging.Println(s.GUID)
+		if s.GUID != "" {
+			logging.Print("Owner GUID:\t")
+			logging.Println(s.GUID)
+		}
 	} else {
 		logging.NotOk("sbctl is not installed")
 	}
@@ -70,10 +73,9 @@ func RunStatus(cmd *cobra.Command, args []string) error {
 	if sbctl.CheckSbctlInstallation(sbctl.DatabasePath) {
 		stat.Installed = true
 		u, err := sbctl.GetGUID()
-		if err != nil {
-			return err
+		if err == nil {
+			stat.GUID = u.String()
 		}
-		stat.GUID = u.String()
 	}
 	if efi.GetSetupMode() {
 		stat.SetupMode = true
