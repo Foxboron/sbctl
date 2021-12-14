@@ -53,6 +53,9 @@ func KeySync(guid util.EFIGUID, keydir string, oems []string) error {
 				if err != nil {
 					return fmt.Errorf("could not enroll db keys: %w", err)
 				}
+				if len((*eventlogDB)) == 0 {
+					return fmt.Errorf("could not find any OpROM entries in the TPM eventlog")
+				}
 				sigdb.AppendDatabase(eventlogDB)
 			default:
 				logging.Print("\nWith vendor keys from %s...", strings.Title(oem))
