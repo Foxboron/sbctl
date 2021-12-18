@@ -83,7 +83,7 @@ func Warnf(m string, a ...interface{}) string {
 	return fmt.Sprintf("%s %s\n", warn, fmt.Sprintf(m, a...))
 }
 func Warn(m string, a ...interface{}) {
-	Print(Warnf(m, a...))
+	PrintWithFile(os.Stderr, Warnf(m, a...))
 }
 
 func Fatalf(m string, a ...interface{}) string {
