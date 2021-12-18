@@ -1,7 +1,6 @@
 package sbctl
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -18,12 +17,12 @@ func CreateGUID(output string) ([]byte, error) {
 	guidPath := filepath.Join(output, "GUID")
 	if _, err := os.Stat(guidPath); os.IsNotExist(err) {
 		uuid = CreateUUID()
-		err := ioutil.WriteFile(guidPath, uuid, 0600)
+		err := os.WriteFile(guidPath, uuid, 0644)
 		if err != nil {
 			return nil, err
 		}
 	} else {
-		uuid, err = ioutil.ReadFile(guidPath)
+		uuid, err = os.ReadFile(guidPath)
 		if err != nil {
 			return nil, err
 		}
