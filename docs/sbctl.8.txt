@@ -8,12 +8,13 @@ sbctl - Secure Boot Manager
 
 Synopsis
 --------
-'sbctl' <command>
+*sbctl* <command>
 
 
 Description
 -----------
-'sbctl' aims to provide a full integrated secure boot experience.
+*sbctl* is a tool that allows one to create keys for secure boot, securely
+enroll them and keep track of files to sign.
 
 
 EFI signing commands
@@ -62,7 +63,7 @@ EFI signing commands
                 files and unset the immutable attribute before enrolling
                 certificates.
 
-**sign** <FILE>...::
+**sign** <'FILE'>...::
         Signs a EFI binary with the created key. The file will be checked for
         valid signatures to avoid duplicates.
 
@@ -93,14 +94,14 @@ EFI signing commands
         Resets the Platform Key. This sets the machine out of Secure Boot mode
         and allows to rotate keys.
 
-**help** <FILE>...::
+**help** <'FILE'>...::
         Displays a help message.
 
 
 EFI binary commands
 ------------------
 
-**bundle** [FLAGS] <NAME>::
+**bundle** ['FLAGS'] <'NAME'>::
         Creates a bundle that should produce EFI binaries. See **BUNDLES**
         below for more details.
 
@@ -143,7 +144,7 @@ EFI binary commands
         *-s*, *--sign*;;
                 Sign all the generated bundles.
 
-**remove-bundle** <NAME>::
+**remove-bundle** <'NAME'>::
         Removes a bundle from the list. This does not delete the bundle itself.
 
 **list-bundles**::
@@ -174,14 +175,115 @@ database (see **FILES**). Subsequent executions of *sbctl generate-bundles*
 will rebuild these bundles, so you don't need to re-specify all parameters
 after each system update.
 
-Hint: systemd-boot will automatically show entries for any bundles found in
+Tip: systemd-boot will automatically show entries for any bundles found in
 *esp/EFI/Linux/+++*+++.efi*.
+
+
+Option ROM
+----------
+See https://github.com/Foxboron/sbctl/wiki/FAQ#option-rom
+
+
+Usage
+-----
+
+'Note': To use Secure Boot it's important to reboot the machine, navigate through the
+BIOS menu into the 'Secure Boot' options and enable "User Mode". Please also
+ensure you have reset the current platform keys. If this step is not completed
+the following step might not work depending on the firmware.
+
+Next is creating the keys for secure boot. 'create-keys' creates the key
+hierarchy needed for secure boot into "/usr/share/secureboot".
+
+        $ sbctl create-keys
+        Created Owner UUID a9fbbdb7-a05f-48d5-b63a-08c5df45ee70
+        Creating secure boot keys...✔
+        Secure boot keys created!
+
+Next up is enrolling the keys into the efi firmware. *sbctl* supports doing this
+on a live system instead of having to boot or run a key management tool from the
+UEFI shell.
+
+'Note': This can fail because of firmware issues and unique options in the
+machine BIOS menu.
+
+        $ sbctl enroll-keys
+        Enrolling keys to EFI variables...✔
+        Enrolled keys to the EFI variables!
+
+After we have successfully enrolled the keys we need to sign our current
+boot chain. Traditionally on UEFI systems one can have an EFI System Partition
+('ESP') on '/efi', '/boot' or '/boot/efi'. One can usually find the correct one by
+looking at mount points or finding the 'EFI" directory on the ESP.
+
+The most important file to sign is the kernel. This location differs between
+distributions but can usually be found on the ESP or /boot. We use '--save' to
+store the file path so we don't need to manually sign it later.
+
+Note that *sbctl* can only keep track of file paths. On versioned kernels this
+might prove tricky.
+
+        $ sbctl sign --save /efi/vmlinuz-linux
+        ✔ Signed /efi/vmlinuz-linux
+
+Next is to sign the bootloader. This can usually be found on the standard path
+below, but might differ between installations.
+
+        $ sbctl sign --save /efi/EFI/BOOT/BOOTX64.EFI
+        ✔ Signed /efi/EFI/BOOT/BOOTX64.EFI
+
+*sbctl* is able to find and verify the ESP, along with any saved files to verify
+we have signed the files we need.
+
+        $ sbctl verify
+        Verifying file database and EFI images in /efi...
+        ✔ /efi/EFI/BOOT/BOOTX64.EFI is signed
+        ✔ /efi/vmlinuz-linux is signed
+
+Once we have confirmed everything works, we can reboot. Remember to re enable
+Secure Boot in the BIOS menu. Once we have logged back inn we can very the state
+of the system.
+
+        $ sbctl status
+        Installed:  ✓ sbctl is installed
+        Owner GUID: a7b893cc-949d-408c-b5cc-6e7d0370fdb6
+        Setup Mode: ✓ Disabled
+        Secure Boot:    ✓ Enabled
+
+When we do system updated we can run 'sign-all' to resign all the saved files
+from earlier.
+
+        $ sbctl sign-all
+        File have already been signed /boot/vmlinuz-linux
+        ✓ Signed /efi/EFI/BOOT/BOOTX64.EFI
+
+sbctl supports creating unified kernel images. These UEFI executables bundles
+the initramfs, kernel and cmdline into one executable which can be signed for
+secure boot. This allows you to authenticate larger parts of the bootchain
+instead of only signing the kernel.
+
+        $ sbctl bundle -i /boot/intel-ucode.img
+                       -l /usr/share/systemd/bootctl/splash-arch.bmp
+                       -k /boot/vmlinuz-linux 
+                       -f /boot/initramfs-linux-lts.img 
+                       -c /etc/kernel/cmdline
+                       /efi/EFI/Linux/linux-linux.efi
+
+Note that linkman:dracut[8] and linkman:mkinitcpio[8] supports unified kernel
+features, and they should be preferred over the sbctl implementation. It is
+mostly provided in the cases where this feature is not supported by the
+initramfs generator of the distribution.
 
 
 Notes
 -----
 All commands that take path arguments convert them into absolute paths when
 saving them to the database.
+
+
+Exit status
+-----------
+On success, 0 is returned, a non-zero failure code otherwise.
 
 
 Environment variables
@@ -224,7 +326,6 @@ Files
 
 See Also
 --------
-linkman:sbsign[1]
 linkman:bootctl[1]
 linkman:jq[1]
 
