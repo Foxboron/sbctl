@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -49,7 +50,7 @@ var verifyCmd = &cobra.Command{
 
 		if err := filepath.Walk(espPath, func(path string, info os.FileInfo, err error) error {
 			if err != nil {
-				return err
+				logging.Error(fmt.Errorf("failed to read path %s: %s", path, err))
 			}
 			if fi, _ := os.Stat(path); fi.IsDir() {
 				return nil
@@ -61,14 +62,14 @@ var verifyCmd = &cobra.Command{
 
 			ok, err := sbctl.CheckMSDos(path)
 			if err != nil {
-				return err
+				logging.Error(fmt.Errorf("failed to read file %s: %s", path, err))
 			}
 			if !ok {
 				return nil
 			}
 			ok, err = sbctl.VerifyFile(sbctl.DBCert, path)
 			if err != nil {
-				return err
+				logging.Error(fmt.Errorf("failed to verify file %s: %s", path, err))
 			}
 			if ok {
 				logging.Ok("%s is signed", path)
