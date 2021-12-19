@@ -135,6 +135,8 @@ func CheckMSDos(path string) (bool, error) {
 		// File is smaller than 2 bytes
 		if errors.Is(err, io.EOF) {
 			return false, nil
+		} else if errors.Is(err, io.ErrUnexpectedEOF) {
+			return false, nil
 		}
 		return false, err
 	}
