@@ -15,7 +15,8 @@ var content embed.FS
 var (
 	defaultCerts = []string{"microsoft"}
 	oemGUID      = map[string]util.EFIGUID{
-		"microsoft": *util.StringToGUID("77fa9abd-0359-4d32-bd60-28f4e78f784b"),
+		"microsoft":    *util.StringToGUID("77fa9abd-0359-4d32-bd60-28f4e78f784b"),
+		"tpm-eventlog": *util.StringToGUID("4f52704f-494d-41736e-6e6f79696e6721"),
 	}
 )
 
