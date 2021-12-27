@@ -40,7 +40,7 @@ var signCmd = &cobra.Command{
 
 		err = sbctl.Sign(file, output, save)
 		if errors.Is(err, sbctl.ErrAlreadySigned) {
-			logging.Print("File have already been signed %s\n", output)
+			logging.Print("File has already been signed %s\n", output)
 		} else if err != nil {
 			return err
 		} else {
