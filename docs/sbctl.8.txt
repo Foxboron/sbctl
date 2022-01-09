@@ -79,6 +79,32 @@ EFI signing commands
         *-g*, *--generate*;;
                 Generate all bundles before signing.
 
+**import-keys**::
+        Imports existing keys into sbctl.
+
+        *--db-cert* 'PATH';;
+                Path to a valid Database (db) certificate.
+        *--db-key* 'PATH' ;;
+                Path to a valid Database (db) private key.
+        *--kek-cert* 'PATH' ;;
+                Path to a valid Key Exchange Key (KEK) certificate.
+        *--kek-key* 'PATH' ;;
+                Path to a valid Key Exchange Key (KEK) private key.
+        *--pk-cert* 'PATH' ;;
+                Path to a valid Platform Key(PK) certificate.
+        *--pk-key* 'PATH' ;;
+                Path to a valid Platform Key (PK) private key.
+        *--directory* 'PATH' ;;
+                Path to a key directory. The expected file locations inside this directory is
+                        * PK/PK.pem
+                        * PK/PK.cert
+                        * KEK/KEK.pem
+                        * KEK/KEK.cert
+                        * db/db.pem
+                        * db/db.cert
+        *--force*;;
+                Overwrite the existing key directory used by sbctl.
+
 **list-files**::
         Lists all enrolled EFI binaries.
 

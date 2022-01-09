@@ -159,3 +159,27 @@ func InChecked(path string) bool {
 	normalized := strings.Join(strings.Split(path, "/")[2:], "/")
 	return checked[normalized]
 }
+
+func CopyFile(src, dst string) error {
+	source, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer source.Close()
+
+	f, err := os.OpenFile(dst, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	io.Copy(f, source)
+	si, err := os.Stat(src)
+	if err != nil {
+		return err
+	}
+	err = os.Chmod(dst, si.Mode())
+	if err != nil {
+		return err
+	}
+	return nil
+}
