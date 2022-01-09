@@ -120,7 +120,7 @@ EFI signing commands
         Resets the Platform Key. This sets the machine out of Secure Boot mode
         and allows to rotate keys.
 
-**help** <'FILE'>...::
+**help**::
         Displays a help message.
 
 
