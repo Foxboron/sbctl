@@ -33,7 +33,7 @@ var (
 	baseErrorMsg = `
 
 There are three flags that can be used:
-    --microsoft: Enrolls the Microsoft OEM certificates into the sinature database.
+    --microsoft: Enroll the Microsoft OEM certificates into the signature database.
     --tpm-eventlog: Enroll OpRom checksums into the signature database (experimental!).
     --yes-this-might-brick-my-machine: Ignore this warning and continue regardless.
 
