@@ -187,3 +187,15 @@ Enrolled bundles:
 Generating EFI bundles....
 Wrote EFI bundle /efi/EFI/Linux/linux-linux.efi
 ```
+
+# Generate and sign GRUB EFI 
+```
+# sudo grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=GRUB --modules="normal test efi_gop efi_uga search echo linux all_video gfxmenu gfxterm_background gfxterm_menu gfxterm loadenv configfile tpm" --disable-shim-lock
+
+Installing for x86_64-efi platform.
+Installation finished. No error reported.
+
+# sbctl sign -s /boot/efi/EFI/GRUB/grubx64.efi
+✓ Signed /boot/efi/EFI/GRUB/grubx64.efi
+// Reboot!
+```
