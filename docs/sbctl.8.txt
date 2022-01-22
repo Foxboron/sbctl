@@ -96,12 +96,12 @@ EFI signing commands
                 Path to a valid Platform Key (PK) private key.
         *--directory* 'PATH' ;;
                 Path to a key directory. The expected file locations inside this directory is
+                        * PK/PK.key
                         * PK/PK.pem
-                        * PK/PK.cert
+                        * KEK/KEK.key
                         * KEK/KEK.pem
-                        * KEK/KEK.cert
+                        * db/db.key
                         * db/db.pem
-                        * db/db.cert
         *--force*;;
                 Overwrite the existing key directory used by sbctl.
 
