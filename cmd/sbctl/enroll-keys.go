@@ -116,10 +116,15 @@ func RunEnrollKeys(cmd *cobra.Command, args []string) error {
 	logging.Ok("\nEnrolled keys to the EFI variables!")
 	return nil
 }
-func enrollKeysCmdFlags(cmd *cobra.Command) {
+
+func vendorFlags(cmd *cobra.Command) {
 	f := cmd.Flags()
 	f.BoolVarP(&enrollKeysCmdOptions.MicrosoftKeys, "microsoft", "m", false, "include microsoft keys into key enrollment")
 	f.BoolVarP(&enrollKeysCmdOptions.TPMEventlogChecksums, "tpm-eventlog", "t", false, "include TPM eventlog checksums into the db database")
+}
+
+func enrollKeysCmdFlags(cmd *cobra.Command) {
+	f := cmd.Flags()
 	f.BoolVarP(&enrollKeysCmdOptions.Force, "yes-this-might-brick-my-machine", "", false, "ignore any errors and enroll keys")
 	f.BoolVarP(&enrollKeysCmdOptions.Force, "yolo", "", false, "yolo")
 	f.MarkHidden("yolo")
@@ -128,6 +133,7 @@ func enrollKeysCmdFlags(cmd *cobra.Command) {
 
 func init() {
 	enrollKeysCmdFlags(enrollKeysCmd)
+	vendorFlags(enrollKeysCmd)
 	CliCommands = append(CliCommands, cliCommand{
 		Cmd: enrollKeysCmd,
 	})
