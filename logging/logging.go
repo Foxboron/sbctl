@@ -2,6 +2,7 @@ package logging
 
 import (
 	"fmt"
+	"io"
 	"os"
 
 	"github.com/fatih/color"
@@ -28,7 +29,8 @@ var (
 )
 
 var (
-	on bool
+	on     bool
+	output io.Writer = os.Stdout
 )
 
 func PrintOn() {
@@ -39,18 +41,22 @@ func PrintOff() {
 	on = false
 }
 
-func PrintWithFile(f *os.File, msg string, a ...interface{}) {
+func SetOutput(w io.Writer) {
+	output = w
+}
+
+func PrintWithFile(f io.Writer, msg string, a ...interface{}) {
 	if on {
 		fmt.Fprintf(f, msg, a...)
 	}
 }
 
 func Print(msg string, a ...interface{}) {
-	PrintWithFile(os.Stdout, msg, a...)
+	PrintWithFile(output, msg, a...)
 }
 
 func Println(msg string) {
-	PrintWithFile(os.Stdout, msg+"\n")
+	PrintWithFile(output, msg+"\n")
 }
 
 func Okf(m string, a ...interface{}) string {

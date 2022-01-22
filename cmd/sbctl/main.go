@@ -58,7 +58,7 @@ func JsonOut(v interface{}) error {
 	if err != nil {
 		return fmt.Errorf("could not marshal json: %w", err)
 	}
-	fmt.Fprint(os.Stdout, string(b))
+	logging.Print(string(b))
 	return nil
 }
 
