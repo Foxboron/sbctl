@@ -107,24 +107,14 @@ func RunImportKeys(cmd *cobra.Command, args []string) error {
 		if _, err := util.ReadKeyFromFile(key.Cert); err != nil {
 			return fmt.Errorf("invalid private key file")
 		}
-		for _, k := range []struct {
-			dst string
-			src string
-		}{
-			{
-				dst: path.Join(sbctl.KeysPath, key.Type, key.Type+".pem"),
-				src: key.Cert,
-			},
-			{
-				dst: path.Join(sbctl.KeysPath, key.Type, key.Type+".key"),
-				src: key.Key,
-			},
-		} {
-			srcFile, err := filepath.Abs(k.src)
+		for src, dst := range map[string]string{
+			key.Cert: path.Join(sbctl.KeysPath, key.Type, key.Type+".pem"),
+			key.Key:  path.Join(sbctl.KeysPath, key.Type, key.Type+".key")} {
+			srcFile, err := filepath.Abs(src)
 			if err != nil {
 				return err
 			}
-			if err = Import(srcFile, k.dst); err != nil {
+			if err = Import(srcFile, dst); err != nil {
 				return err
 			}
 		}
