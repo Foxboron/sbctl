@@ -280,7 +280,7 @@ When we do system updated we can run 'sign-all' to resign all the saved files
 from earlier.
 
         $ sbctl sign-all
-        File have already been signed /boot/vmlinuz-linux
+        File has already been signed /boot/vmlinuz-linux
         ✓ Signed /efi/EFI/BOOT/BOOTX64.EFI
 
 sbctl supports creating unified kernel images. These UEFI executables bundles
