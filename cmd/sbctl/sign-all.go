@@ -32,7 +32,7 @@ var signAllCmd = &cobra.Command{
 
 			err := sbctl.SignFile(sbctl.DBKey, sbctl.DBCert, entry.File, entry.OutputFile, entry.Checksum)
 			if errors.Is(err, sbctl.ErrAlreadySigned) {
-				logging.Print("File have already been signed %s\n", entry.OutputFile)
+				logging.Print("File has already been signed %s\n", entry.OutputFile)
 			} else if err != nil {
 				return fmt.Errorf("failed signing %s: %w", entry.File, err)
 			} else {
