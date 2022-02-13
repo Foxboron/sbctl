@@ -104,7 +104,7 @@ func RunImportKeys(cmd *cobra.Command, args []string) error {
 		if _, err := util.ReadCertFromFile(key.Cert); err != nil {
 			return fmt.Errorf("invalid certificate file")
 		}
-		if _, err := util.ReadKeyFromFile(key.Cert); err != nil {
+		if _, err := util.ReadKeyFromFile(key.Key); err != nil {
 			return fmt.Errorf("invalid private key file")
 		}
 		for src, dst := range map[string]string{
