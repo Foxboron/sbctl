@@ -18,6 +18,8 @@ var (
 var signCmd = &cobra.Command{
 	Use:   "sign",
 	Short: "Sign a file with secure boot keys",
+	Long: `Signs a EFI binary with the created key. The file will be
+checked for valid signatures to avoid duplicates.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if len(args) < 1 {
 			logging.Print("Requires a file to sign\n")

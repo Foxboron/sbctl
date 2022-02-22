@@ -26,10 +26,52 @@ var (
 	CliCommands = []cliCommand{}
 	ErrSilent   = errors.New("SilentErr")
 	rootCmd     = &cobra.Command{
-		Use:           "sbctl",
-		Short:         "Secure Boot Key Manager",
-		SilenceUsage:  true,
-		SilenceErrors: true,
+		Use:   "sbctl",
+		Short: "Secure Boot Key Manager",
+		Long: `'sbctl' aims to provide a full integrated secure boot experience.
+
+All commands that take path arguments convert them into absolute paths when
+saving them to the database.
+
+ENVIRONMENT VARIABLES
+---------------------
+
+**SYSTEMD_ESP_PATH**, **ESP_PATH**::
+        Defines the EFI system partition (ESP) location. This overrides the
+        behaviour from **sbctl** where we query for the correct partition with
+        **lsblk**. No checks are performed on this path and can be usefull for testing
+        purposes.
+
+**SBCTL_UNICODE**::
+       If this value is "0" sbctl will replace the unicode symbols to equivalent
+       ascii ones. The default value is assumed to be 1.
+
+
+FILES
+----
+**/usr/share/secureboot**::
+        Default storage directory.
+
+**/usr/share/secureboot/GUID**::
+        Owner identification. This is a randomly generated UUID.
+
+**/usr/share/secureboot/files.db**::
+        Contains a list of EFI binaries to be signed by the generated key.
+
+**/usr/share/secureboot/bundles.db**::
+        Contains a list of EFI bundles to be generated.
+
+**/usr/share/secureboot/keys/db/db.{auth,der,pem,der.esl,key}**::
+        Contains the Signature Database key used for signing EFI binaries.
+
+**/usr/share/secureboot/keys/KEK/KEK.{auth,der,pem,der.esl,key}**::
+        Contains the Key Exchange Key.
+
+**/usr/share/secureboot/keys/PK/PK.{auth,der,pem,der.esl,key}**::
+        Contains the Platform Key.`,
+		SilenceUsage:     true,
+		SilenceErrors:    true,
+		TraverseChildren: true,
 	}
 	baseErrorMsg = `
 

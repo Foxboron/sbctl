@@ -14,6 +14,9 @@ import (
 var verifyCmd = &cobra.Command{
 	Use:   "verify",
 	Short: "Find and check if files in the ESP are signed or not",
+	Long: `Looks for EFI binaries with the mime type application/x-dosexec
+in the ESP partition, and looks at the file database. Checks if they have been
+signed with the Signature Database Key.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		// Exit early if we can't verify files
 		if err := sbctl.CanVerifyFiles(); err != nil {
