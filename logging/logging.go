@@ -29,8 +29,9 @@ var (
 )
 
 var (
-	on     bool
-	output io.Writer = os.Stdout
+	on          bool
+	DisableInfo bool      = false
+	output      io.Writer = os.Stdout
 )
 
 func PrintOn() {
@@ -52,10 +53,16 @@ func PrintWithFile(f io.Writer, msg string, a ...interface{}) {
 }
 
 func Print(msg string, a ...interface{}) {
+	if DisableInfo && output == os.Stdout {
+		return
+	}
 	PrintWithFile(output, msg, a...)
 }
 
 func Println(msg string) {
+	if DisableInfo && output == os.Stdout {
+		return
+	}
 	PrintWithFile(output, msg+"\n")
 }
 

@@ -13,7 +13,8 @@ import (
 )
 
 type CmdOptions struct {
-	JsonOutput bool
+	JsonOutput  bool
+	QuietOutput bool
 }
 
 type cliCommand struct {
@@ -45,10 +46,14 @@ Please read the FAQ for more information: https://github.com/Foxboron/sbctl/wiki
 func baseFlags(cmd *cobra.Command) {
 	flags := cmd.PersistentFlags()
 	flags.BoolVar(&cmdOptions.JsonOutput, "json", false, "Output as json")
+	flags.BoolVar(&cmdOptions.QuietOutput, "quiet", false, "Mute info from logging")
 
 	cmd.PersistentPreRun = func(cmd *cobra.Command, args []string) {
 		if cmdOptions.JsonOutput {
 			logging.PrintOff()
+		}
+		if cmdOptions.QuietOutput {
+			logging.DisableInfo = true
 		}
 	}
 }
