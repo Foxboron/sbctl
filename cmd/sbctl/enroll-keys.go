@@ -48,7 +48,7 @@ func KeySync(guid util.EFIGUID, keydir string, oems []string) error {
 		for _, oem := range oems {
 			switch oem {
 			case "tpm-eventlog":
-				logging.Print("\nWith cheksums from the TPM Eventlog...")
+				logging.Print("\nWith checksums from the TPM Eventlog...")
 				eventlogDB, err := sbctl.GetEventlogChecksums(systemEventlog)
 				if err != nil {
 					return fmt.Errorf("could not enroll db keys: %w", err)
