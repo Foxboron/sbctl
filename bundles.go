@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 )
 
 type Bundle struct {
@@ -61,17 +62,35 @@ func BundleIter(fn func(s *Bundle) error) error {
 	return nil
 }
 
-func GetEfistub() string {
-	candidates := []string{
-		"/lib/systemd/boot/efi/linuxx64.efi.stub",
-		"/lib/gummiboot/linuxx64.efi.stub",
+func efiStubArch() (string, error) {
+	switch runtime.GOARCH {
+	case "amd64":
+		return "linuxx64.efi.stub", nil
+	case "arm64":
+		return "linuxaa64.efi.stub", nil
+	case "386":
+		return "linuxia32.efi.stub", nil
 	}
-	for _, f := range candidates {
-		if _, err := os.Stat(f); err == nil {
-			return f
+
+	return "", fmt.Errorf("unsupported architecture")
+}
+
+func GetEfistub() (string, error) {
+	candidatePaths := []string{
+		"/lib/systemd/boot/efi/",
+		"/lib/gummiboot/",
+	}
+	stubName, err := efiStubArch()
+	if err != nil {
+		return "", fmt.Errorf("cannot search for EFI stub: %v", err)
+	}
+
+	for _, f := range candidatePaths {
+		if _, err := os.Stat(f + stubName); err == nil {
+			return f + stubName, nil
 		}
 	}
-	return ""
+	return "", fmt.Errorf("no EFI stub found")
 }
 
 func NewBundle() (bundle *Bundle, err error) {
@@ -80,8 +99,8 @@ func NewBundle() (bundle *Bundle, err error) {
 		return
 	}
 
-	stub := GetEfistub()
-	if stub == "" {
+	stub, err := GetEfistub()
+	if err != nil {
 		panic("No EFISTUB file found. Please install systemd-boot or gummiboot!")
 	}
 
