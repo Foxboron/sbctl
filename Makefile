@@ -55,14 +55,10 @@ clean:
 	rm -f $(MANS)
 	rm -f sbctl
 
-.PHONY: deps
-deps:
-	go get honnef.co/go/tools/cmd/staticcheck@2020.1.6
-
 .PHONY: lint
 lint:
 	go vet ./...
-	staticcheck ./...
+	go run honnef.co/go/tools/cmd/staticcheck@v0.3.0 ./...
 
 .PHONY: test
 test:
