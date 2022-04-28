@@ -8,9 +8,16 @@ require (
 	github.com/foxboron/go-uefi v0.0.0-20211120193624-3d898a764ffd
 	github.com/google/go-attestation v0.3.3-0.20210901195502-505680f536da
 	github.com/google/uuid v1.3.0
-	github.com/spf13/cobra v1.1.3
+	github.com/spf13/cobra v1.2.1
 	golang.org/x/crypto v0.0.0-20211202192323-5770296d904e
 	golang.org/x/sys v0.0.0-20211205182925-97ca703d548d
+)
+
+require (
+	github.com/cpuguy83/go-md2man/v2 v2.0.0 // indirect
+	github.com/russross/blackfriday/v2 v2.0.1 // indirect
+	github.com/shurcooL/sanitized_anchor_name v1.0.0 // indirect
+	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
 
 require (

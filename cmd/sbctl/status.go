@@ -14,6 +14,9 @@ import (
 var statusCmd = &cobra.Command{
 	Use:   "status",
 	Short: "Show current boot status",
+	Long: `Shows the current secure boot status of the system. It checks if
+you are currently booted in UEFI with Secure Boot, and whether or not Setup
+Mode has been enabled.`,
 	RunE:  RunStatus,
 }
 

@@ -11,6 +11,7 @@ import (
 var listFilesCmd = &cobra.Command{
 	Use:   "list-files",
 	Short: "List enrolled files",
+	Long:  "Lists all enrolled EFI binaries.",
 	RunE:  RunList,
 }
 

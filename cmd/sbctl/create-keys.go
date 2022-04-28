@@ -11,6 +11,12 @@ import (
 var createKeysCmd = &cobra.Command{
 	Use:   "create-keys",
 	Short: "Create a set of secure boot signing keys",
+	Long: `Creates a set of signing keys used to sign EFI binaries. Currently it
+will create the following keys:
+
+* Platform Key
+* Key Exchange key
+* Signature Database Key`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if err := sbctl.CreateDirectory(sbctl.KeysPath); err != nil {
 			return err

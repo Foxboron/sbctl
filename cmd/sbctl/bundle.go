@@ -25,6 +25,22 @@ var (
 var bundleCmd = &cobra.Command{
 	Use:   "bundle",
 	Short: "Bundle the needed files for an EFI stub image",
+	Long: `Creates a bundle that should produce EFI binaries.
+
+Normally, only the kernel is signed with your secure boot keys. This means the
+kernel command line and initramfs can be changed without possibility of verification.
+
+Bundles are EFI executables which pack all three (initramfs, kernel and
+cmdline) into a single file which is easy to sign. Avoiding any unsigned
+files during boot makes the whole process more tamper-proof.
+
+When a bundle is generated, its configuration is stored into the bundle
+database (see **FILES**). Subsequent executions of sbctl-generate-bundles(8)
+will rebuild these bundles, so you don't need to re-specify all parameters
+after each system update.
+
+Hint: systemd-boot will automatically show entries for any bundles found in
+*esp/EFI/Linux/\*.efi*.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if len(args) < 1 {
 			logging.Print("Requires a file to sign...\n")

@@ -11,6 +11,7 @@ import (
 var removeFileCmd = &cobra.Command{
 	Use:   "remove-file",
 	Short: "Remove file from database",
+	Long:  "Removes the file from the signing database.",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if len(args) < 1 {
 			logging.Println("Need to specify file")

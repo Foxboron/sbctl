@@ -26,6 +26,8 @@ var (
 	enrollKeysCmd        = &cobra.Command{
 		Use:   "enroll-keys",
 		Short: "Enroll the current keys to EFI",
+		Long: `It will first attempt to use 'sbkeysync' to live enroll
+the required keys. This requires Setup Mode to be active.`,
 		RunE:  RunEnrollKeys,
 	}
 )
