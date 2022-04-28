@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/foxboron/go-uefi/efi/signature"
 	"github.com/foxboron/go-uefi/efi/util"
@@ -77,7 +76,7 @@ func KeySync(guid util.EFIGUID, keydir string, oems []string) error {
 				}
 				sigdb.AppendDatabase(eventlogDB)
 			default:
-				logging.Print("\nWith vendor keys from %s...", strings.Title(oem))
+				logging.Print("\nWith vendor keys from %s...", oem)
 				oemSigDb, err := certs.GetCerts(oem)
 				if err != nil {
 					return fmt.Errorf("could not enroll db keys: %w", err)

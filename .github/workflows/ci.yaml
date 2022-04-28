@@ -6,19 +6,21 @@ jobs:
       container: archlinux:latest
       steps:
          - run: pacman --noconfirm --noprogressbar -Syu
-         - run: pacman --noconfirm --noprogressbar -S make go asciidoc gcc
+         - run: pacman --noconfirm --noprogressbar -S make go asciidoc gcc git
          - uses: actions/checkout@v1
+         - run: git config --global --add safe.directory $(pwd)
          - run: make
          - run: make test
-         - run: GOBIN=/usr/bin make deps lint
+         - run: GOBIN=/usr/bin make lint
    void:
       runs-on: ubuntu-latest
       container: voidlinux/voidlinux-musl
       steps:
          # update xbps, if necessary
          - run: xbps-install -Syu || ( xbps-install -yu xbps && xbps-install -yu )
-         - run: xbps-install -y make go asciidoc gcc
+         - run: xbps-install -y make go asciidoc gcc git
          - uses: actions/checkout@v1
+         - run: git config --global --add safe.directory $(pwd)
          - run: make
          - run: make test
-         - run: GOBIN=/usr/bin make deps lint
+         - run: GOBIN=/usr/bin make lint
