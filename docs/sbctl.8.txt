@@ -63,7 +63,7 @@ EFI signing commands
                 files and unset the immutable attribute before enrolling
                 certificates.
 
-**sign** <'FILE'>...::
+**sign** <FILE>...::
         Signs a EFI binary with the created key. The file will be checked for
         valid signatures to avoid duplicates.
 
@@ -105,10 +105,10 @@ EFI signing commands
         *--force*;;
                 Overwrite the existing key directory used by sbctl.
 
-**list-files**::
+**list-files**, **ls-files**, **ls**::
         Lists all enrolled EFI binaries.
 
-**remove-file** <FILE>::
+**remove-file** <FILE>, **rm-file** <FILE>, **rm** <FILE>::
         Removes the file from the signing database.
 
 **verify**::
@@ -127,7 +127,7 @@ EFI signing commands
 EFI binary commands
 ------------------
 
-**bundle** ['FLAGS'] <'NAME'>::
+**bundle** ['FLAGS'] <NAME>::
         Creates a bundle that should produce EFI binaries. See **BUNDLES**
         below for more details.
 
@@ -170,10 +170,10 @@ EFI binary commands
         *-s*, *--sign*;;
                 Sign all the generated bundles.
 
-**remove-bundle** <'NAME'>::
+**remove-bundle** <NAME>, **rm-bundle** <NAME>::
         Removes a bundle from the list. This does not delete the bundle itself.
 
-**list-bundles**::
+**list-bundles**, **ls-bundle**::
         List all registered bundles to generate.
 
 

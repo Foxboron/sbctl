@@ -9,7 +9,11 @@ import (
 )
 
 var listFilesCmd = &cobra.Command{
-	Use:   "list-files",
+	Use: "list-files",
+	Aliases: []string{
+		"ls-files",
+		"ls",
+	},
 	Short: "List enrolled files",
 	RunE:  RunList,
 }

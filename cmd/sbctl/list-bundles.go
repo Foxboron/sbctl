@@ -15,7 +15,10 @@ type JsonBundle struct {
 }
 
 var listBundlesCmd = &cobra.Command{
-	Use:   "list-bundles",
+	Use: "list-bundles",
+	Aliases: []string{
+		"ls-bundles",
+	},
 	Short: "List stored bundles",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		bundles := []JsonBundle{}
