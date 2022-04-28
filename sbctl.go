@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -52,7 +51,7 @@ func GetESP() (string, error) {
 		"--json",
 		"--output", "PARTTYPE,MOUNTPOINT,PTTYPE,FSTYPE").Output()
 	if err != nil {
-		log.Panic(err)
+		return "", err
 	}
 
 	var lsblkRoot LsblkRoot
