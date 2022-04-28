@@ -35,11 +35,30 @@ var (
 func KeySync(guid util.EFIGUID, keydir string, oems []string) error {
 	var sigdb *signature.SignatureDatabase
 
-	PKKey, _ := os.ReadFile(filepath.Join(keydir, "PK", "PK.key"))
-	PKPem, _ := os.ReadFile(filepath.Join(keydir, "PK", "PK.pem"))
-	KEKKey, _ := os.ReadFile(filepath.Join(keydir, "KEK", "KEK.key"))
-	KEKPem, _ := os.ReadFile(filepath.Join(keydir, "KEK", "KEK.pem"))
-	dbPem, _ := os.ReadFile(filepath.Join(keydir, "db", "db.pem"))
+	PKKey, err := os.ReadFile(filepath.Join(keydir, "PK", "PK.key"))
+	if err != nil {
+		return err
+	}
+
+	PKPem, err := os.ReadFile(filepath.Join(keydir, "PK", "PK.pem"))
+	if err != nil {
+		return err
+	}
+
+	KEKKey, err := os.ReadFile(filepath.Join(keydir, "KEK", "KEK.key"))
+	if err != nil {
+		return err
+	}
+
+	KEKPem, err := os.ReadFile(filepath.Join(keydir, "KEK", "KEK.pem"))
+	if err != nil {
+		return err
+	}
+
+	dbPem, err := os.ReadFile(filepath.Join(keydir, "db", "db.pem"))
+	if err != nil {
+		return err
+	}
 
 	sigdb = signature.NewSignatureDatabase()
 	sigdb.Append(signature.CERT_X509_GUID, guid, dbPem)
@@ -98,7 +117,7 @@ func RunEnrollKeys(cmd *cobra.Command, args []string) error {
 			return err
 		}
 	}
-	if !(enrollKeysCmdOptions.Force || enrollKeysCmdOptions.TPMEventlogChecksums || enrollKeysCmdOptions.MicrosoftKeys) {
+	if (!enrollKeysCmdOptions.Force && !enrollKeysCmdOptions.TPMEventlogChecksums && !enrollKeysCmdOptions.MicrosoftKeys) {
 		if err := sbctl.CheckEventlogOprom(systemEventlog); err != nil {
 			return err
 		}
