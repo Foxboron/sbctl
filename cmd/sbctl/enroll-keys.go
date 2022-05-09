@@ -51,6 +51,7 @@ type EnrollKeysCmdOptions struct {
 	Force                bool
 	TPMEventlogChecksums bool
 	Custom               bool
+	BuiltinFirmwareCerts bool
 	Export               StringSet
 }
 
@@ -160,6 +161,13 @@ func KeySync(guid util.EFIGUID, keydir string, oems []string) error {
 					return fmt.Errorf("could not enroll custom KEK keys: %w", err)
 				}
 				sigkek.AppendDatabase(customSigKEK)
+			case "firmware-builtin":
+				logging.Print("\nWith vendor certificates built into the firmware...")
+				builtinSigDb, err := certs.GetBuiltinCertificates()
+				if err != nil {
+					return fmt.Errorf("could not enroll built-in firmware keys: %w", err)
+				}
+				sigdb.AppendDatabase(builtinSigDb)
 			}
 		}
 	}
@@ -230,6 +238,9 @@ func RunEnrollKeys(cmd *cobra.Command, args []string) error {
 	if enrollKeysCmdOptions.Custom {
 		oems = append(oems, "custom")
 	}
+	if enrollKeysCmdOptions.BuiltinFirmwareCerts {
+		oems = append(oems, "firmware-builtin")
+	}
 	if !enrollKeysCmdOptions.IgnoreImmutable {
 		if err := sbctl.CheckImmutable(); err != nil {
 			return err
@@ -267,6 +278,7 @@ func vendorFlags(cmd *cobra.Command) {
 	f.BoolVarP(&enrollKeysCmdOptions.MicrosoftKeys, "microsoft", "m", false, "include microsoft keys into key enrollment")
 	f.BoolVarP(&enrollKeysCmdOptions.TPMEventlogChecksums, "tpm-eventlog", "t", false, "include TPM eventlog checksums into the db database")
 	f.BoolVarP(&enrollKeysCmdOptions.Custom, "custom", "c", false, "include custom db and KEK")
+	f.BoolVarP(&enrollKeysCmdOptions.BuiltinFirmwareCerts, "firmware-builtin", "f", false, "include keys indicated by the firmware as being part of the default database")
 }
 
 func enrollKeysCmdFlags(cmd *cobra.Command) {
