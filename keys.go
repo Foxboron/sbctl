@@ -87,9 +87,10 @@ func CreateKey(name string) ([]byte, []byte, error) {
 }
 
 func SaveKey(k []byte, file string) error {
-	os.MkdirAll(filepath.Dir(file), os.ModePerm)
-	err := os.WriteFile(file, k, 0400)
-	if err != nil {
+	if err := os.MkdirAll(filepath.Dir(file), os.ModePerm); err != nil {
+		return err
+	}
+	if err := os.WriteFile(file, k, 0400); err != nil {
 		return err
 	}
 	return nil
@@ -266,8 +267,14 @@ func InitializeSecureBootKeys(output string) error {
 			return err
 		}
 		path := filepath.Join(output, key.Key)
-		SaveKey(keyfile, filepath.Join(path, fmt.Sprintf("%s.key", key.Key)))
-		SaveKey(cert, filepath.Join(path, fmt.Sprintf("%s.pem", key.Key)))
+
+		if err = SaveKey(keyfile, filepath.Join(path, fmt.Sprintf("%s.key", key.Key))); err != nil {
+			return err
+		}
+
+		if err = SaveKey(cert, filepath.Join(path, fmt.Sprintf("%s.pem", key.Key))); err != nil {
+			return err
+		}
 	}
 	return nil
 }

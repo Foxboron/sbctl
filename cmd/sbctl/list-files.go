@@ -55,7 +55,7 @@ func RunList(_ *cobra.Command, args []string) error {
 		return err
 	}
 	if cmdOptions.JsonOutput {
-		JsonOut(files)
+		return JsonOut(files)
 	}
 	return nil
 }

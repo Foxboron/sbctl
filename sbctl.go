@@ -55,7 +55,9 @@ func GetESP() (string, error) {
 	}
 
 	var lsblkRoot LsblkRoot
-	json.Unmarshal(out, &lsblkRoot)
+	if err = json.Unmarshal(out, &lsblkRoot); err != nil {
+		return "", fmt.Errorf("failed to parse json: %v", err)
+	}
 
 	var pathBootEntry *LsblkEntry
 	var pathBootEfiEntry *LsblkEntry

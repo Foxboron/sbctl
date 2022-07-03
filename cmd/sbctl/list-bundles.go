@@ -69,7 +69,7 @@ var listBundlesCmd = &cobra.Command{
 			return err
 		}
 		if cmdOptions.JsonOutput {
-			JsonOut(bundles)
+			return JsonOut(bundles)
 		}
 		return nil
 	},

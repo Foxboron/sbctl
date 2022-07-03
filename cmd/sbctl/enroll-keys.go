@@ -60,7 +60,9 @@ func KeySync(guid util.EFIGUID, keydir string, oems []string) error {
 	}
 
 	sigdb = signature.NewSignatureDatabase()
-	sigdb.Append(signature.CERT_X509_GUID, guid, dbPem)
+	if err = sigdb.Append(signature.CERT_X509_GUID, guid, dbPem); err != nil {
+		return err
+	}
 
 	if len(oems) > 0 {
 		for _, oem := range oems {
@@ -90,13 +92,17 @@ func KeySync(guid util.EFIGUID, keydir string, oems []string) error {
 	}
 
 	sigdb = signature.NewSignatureDatabase()
-	sigdb.Append(signature.CERT_X509_GUID, guid, KEKPem)
+	if err = sigdb.Append(signature.CERT_X509_GUID, guid, KEKPem); err != nil {
+		return err
+	}
 	if err := sbctl.Enroll(sigdb, KEKPem, PKKey, PKPem, "KEK"); err != nil {
 		return err
 	}
 
 	sigdb = signature.NewSignatureDatabase()
-	sigdb.Append(signature.CERT_X509_GUID, guid, PKPem)
+	if err = sigdb.Append(signature.CERT_X509_GUID, guid, PKPem); err != nil {
+		return nil
+	}
 	if err := sbctl.Enroll(sigdb, PKPem, PKKey, PKPem, "PK"); err != nil {
 		return err
 	}
@@ -116,7 +122,7 @@ func RunEnrollKeys(cmd *cobra.Command, args []string) error {
 			return err
 		}
 	}
-	if (!enrollKeysCmdOptions.Force && !enrollKeysCmdOptions.TPMEventlogChecksums && !enrollKeysCmdOptions.MicrosoftKeys) {
+	if !enrollKeysCmdOptions.Force && !enrollKeysCmdOptions.TPMEventlogChecksums && !enrollKeysCmdOptions.MicrosoftKeys {
 		if err := sbctl.CheckEventlogOprom(systemEventlog); err != nil {
 			return err
 		}

@@ -33,7 +33,9 @@ func ReadBundleDatabase(dbpath string) (Bundles, error) {
 		return nil, err
 	}
 	bundles := make(Bundles)
-	json.Unmarshal(f, &bundles)
+	if err = json.Unmarshal(f, &bundles); err != nil {
+		return nil, fmt.Errorf("failed to parse json: %v", err)
+	}
 	return bundles, nil
 }
 

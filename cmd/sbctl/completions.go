@@ -12,8 +12,8 @@ func completionBashCmd() *cobra.Command {
 	var completionCmd = &cobra.Command{
 		Use:    "bash",
 		Hidden: true,
-		Run: func(cmd *cobra.Command, args []string) {
-			rootCmd.GenBashCompletion(os.Stdout)
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return rootCmd.GenBashCompletion(os.Stdout)
 		},
 	}
 	return completionCmd
@@ -23,8 +23,8 @@ func completionZshCmd() *cobra.Command {
 	var completionCmd = &cobra.Command{
 		Use:    "zsh",
 		Hidden: true,
-		Run: func(cmd *cobra.Command, args []string) {
-			rootCmd.GenZshCompletion(os.Stdout)
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return rootCmd.GenZshCompletion(os.Stdout)
 		},
 	}
 	return completionCmd
@@ -34,8 +34,8 @@ func completionFishCmd() *cobra.Command {
 	var completionCmd = &cobra.Command{
 		Use:    "fish",
 		Hidden: true,
-		Run: func(cmd *cobra.Command, args []string) {
-			rootCmd.GenFishCompletion(os.Stdout, true)
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return rootCmd.GenFishCompletion(os.Stdout, true)
 		},
 	}
 	return completionCmd
