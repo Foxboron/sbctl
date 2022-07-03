@@ -20,7 +20,9 @@ func ReadFileDatabase(dbpath string) (SigningEntries, error) {
 	}
 
 	files := make(SigningEntries)
-	json.Unmarshal(f, &files)
+	if err = json.Unmarshal(f, &files); err != nil {
+		return nil, fmt.Errorf("failed to parse json: %v", err)
+	}
 
 	return files, nil
 }

@@ -60,7 +60,9 @@ func GetEventlogChecksums(eventlog string) (*signature.SignatureDatabase, error)
 	for _, event := range events {
 		switch event.Type.String() {
 		case "EV_EFI_BOOT_SERVICES_DRIVER":
-			sigdb.Append(signature.CERT_SHA256_GUID, eventlogGUID, event.Digest)
+			if err = sigdb.Append(signature.CERT_SHA256_GUID, eventlogGUID, event.Digest); err != nil {
+				return nil, err
+			}
 		}
 	}
 	return sigdb, nil

@@ -42,7 +42,9 @@ func GetCerts(oem string) (*signature.SignatureDatabase, error) {
 			continue
 		}
 		buf, _ := content.ReadFile(path)
-		sigdb.Append(signature.CERT_X509_GUID, GUID, buf)
+		if err := sigdb.Append(signature.CERT_X509_GUID, GUID, buf); err != nil {
+			return nil, err
+		}
 	}
 	return sigdb, nil
 }
