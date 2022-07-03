@@ -41,7 +41,7 @@ func GetESP() (string, error) {
 	}
 
 	for _, location := range espLocations {
-		// "Touch" a file inside all candiadate locations to trigger an
+		// "Read" a file inside all candiadate locations to trigger an
 		// automount if there's an automount partition.
 		os.Stat(fmt.Sprintf("%s/does-not-exist", location))
 	}
