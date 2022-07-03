@@ -43,7 +43,7 @@ func GetESP() (string, error) {
 	for _, location := range espLocations {
 		// "Read" a file inside all candiadate locations to trigger an
 		// automount if there's an automount partition.
-		os.Stat(fmt.Sprintf("%s/does-not-exist", location))
+		_, _ = os.Stat(fmt.Sprintf("%s/does-not-exist", location))
 	}
 
 	out, err := exec.Command(
