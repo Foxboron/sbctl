@@ -113,8 +113,6 @@ func Sign(file, output string, enroll bool) error {
 		}
 	}
 
-	err = nil
-
 	files, err := ReadFileDatabase(DBPath)
 	if err != nil {
 		return fmt.Errorf("couldn't open database: %s", DBPath)
