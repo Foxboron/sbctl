@@ -17,7 +17,7 @@ jobs:
       container: voidlinux/voidlinux-musl
       steps:
          # update xbps, if necessary
-         - run: xbps-install -Syu || ( xbps-install -yu xbps && xbps-install -yu )
+         - run: xbps-install -Syu || ( xbps-install -yu xbps && xbps-install -Syu)
          - run: xbps-install -y make go asciidoc gcc git
          - uses: actions/checkout@v1
          - run: git config --global --add safe.directory $(pwd)
