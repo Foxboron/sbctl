@@ -96,7 +96,8 @@ func GetEfistub() (string, error) {
 func NewBundle() (bundle *Bundle, err error) {
 	esp, err := GetESP()
 	if err != nil {
-		return
+		// This is not critical, just use an empty default.
+		esp = ""
 	}
 
 	stub, err := GetEfistub()
