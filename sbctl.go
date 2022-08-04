@@ -120,22 +120,17 @@ func Sign(file, output string, enroll bool) error {
 		return fmt.Errorf("couldn't open database: %s", DBPath)
 	}
 	if entry, ok := files[file]; ok {
-		err = SignFile(DBKey, DBCert, entry.File, entry.OutputFile, entry.Checksum)
+		err = SignFile(DBKey, DBCert, entry.File, entry.OutputFile)
 		// return early if signing fails
 		if err != nil {
 			return err
 		}
-		checksum, err := ChecksumFile(file)
-		if err != nil {
-			return err
-		}
-		entry.Checksum = checksum
 		files[file] = entry
 		if err := WriteFileDatabase(DBPath, files); err != nil {
 			return err
 		}
 	} else {
-		err = SignFile(DBKey, DBCert, file, output, "")
+		err = SignFile(DBKey, DBCert, file, output)
 		// return early if signing fails
 		if err != nil {
 			return err
@@ -143,11 +138,7 @@ func Sign(file, output string, enroll bool) error {
 	}
 
 	if enroll {
-		checksum, err := ChecksumFile(file)
-		if err != nil {
-			return err
-		}
-		files[file] = &SigningEntry{File: file, OutputFile: output, Checksum: checksum}
+		files[file] = &SigningEntry{File: file, OutputFile: output}
 		if err := WriteFileDatabase(DBPath, files); err != nil {
 			return err
 		}

@@ -147,7 +147,7 @@ func VerifyFile(cert, file string) (bool, error) {
 
 var ErrAlreadySigned = errors.New("already signed file")
 
-func SignFile(key, cert, file, output, checksum string) error {
+func SignFile(key, cert, file, output string) error {
 
 	// Check file exists before we do anything
 	if _, err := os.Stat(file); errors.Is(err, os.ErrNotExist) {
@@ -164,11 +164,26 @@ func SignFile(key, cert, file, output, checksum string) error {
 		return err
 	}
 
-	chk, err := ChecksumFile(file)
+	peExisting, err := os.ReadFile(file)
 	if err != nil {
 		return err
 	}
-	if ok && chk == checksum {
+	ctxExisting := pecoff.PECOFFChecksum(peExisting)
+
+	peFile, err := os.ReadFile(file)
+	if err != nil {
+		return err
+	}
+
+	ctx := pecoff.PECOFFChecksum(peFile)
+
+	// XXX: I'm not 100% sure this is the best approach. A file corrupt in
+	// the right places might not be regenerated. Maybe it's best to strip
+	// the signature part of the destination and compare the non-signature
+	// part of the target file with the current one?
+	// TBH, this comparison is expensive enough that it might just be worth
+	// re-generating the target file even if it's up to date anyway.
+	if ok && bytes.Equal(ctxExisting.SigData.Bytes(), ctx.SigData.Bytes()) {
 		return ErrAlreadySigned
 	}
 
@@ -183,11 +198,6 @@ func SignFile(key, cert, file, output, checksum string) error {
 		return fmt.Errorf("failed signing file: %w", err)
 	}
 
-	peFile, err := os.ReadFile(file)
-	if err != nil {
-		return err
-	}
-
 	Cert, err := util.ReadCertFromFile(cert)
 	if err != nil {
 		return err
@@ -196,8 +206,6 @@ func SignFile(key, cert, file, output, checksum string) error {
 	if err != nil {
 		return err
 	}
-
-	ctx := pecoff.PECOFFChecksum(peFile)
 
 	sig, err := pecoff.CreateSignature(ctx, Cert, Key)
 	if err != nil {
