@@ -1,7 +1,6 @@
 tags
 releases/*
-sbctl
-!sbctl/
+/sbctl
 docs/*.8
 rootfs*
 bzImage
