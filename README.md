@@ -8,7 +8,7 @@ needs to be signed in the boot chain.
 It is written top-to-bottom in [Golang](https://golang.org/) using
 [go-uefi](https://github.com/Foxboron/go-uefi) for the API layer and doesn't
 rely on existing secure boot tooling. It also tries to sport some integration
-testing towards towards [tianocore](https://www.tianocore.org/) utilizing
+testing towards [tianocore](https://www.tianocore.org/) utilizing
 [vmtest](https://github.com/anatol/vmtest).
 
 ![](https://pkgbuild.com/~foxboron/sbctl_demo.gif)
