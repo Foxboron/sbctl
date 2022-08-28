@@ -172,7 +172,9 @@ func CopyFile(src, dst string) error {
 		return err
 	}
 	defer f.Close()
-	io.Copy(f, source)
+	if _, err = io.Copy(f, source); err != nil {
+		return err
+	}
 	si, err := os.Stat(src)
 	if err != nil {
 		return err

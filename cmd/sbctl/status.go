@@ -88,7 +88,9 @@ func RunStatus(cmd *cobra.Command, args []string) error {
 		stat.Vendors = keys
 	}
 	if cmdOptions.JsonOutput {
-		JsonOut(stat)
+		if err := JsonOut(stat); err != nil {
+			return err
+		}
 	} else {
 		PrintStatus(stat)
 	}

@@ -41,9 +41,9 @@ func GetESP() (string, error) {
 	}
 
 	for _, location := range espLocations {
-		// "Touch" a file inside all candiadate locations to trigger an
+		// "Read" a file inside all candiadate locations to trigger an
 		// automount if there's an automount partition.
-		os.Stat(fmt.Sprintf("%s/does-not-exist", location))
+		_, _ = os.Stat(fmt.Sprintf("%s/does-not-exist", location))
 	}
 
 	out, err := exec.Command(
@@ -55,7 +55,9 @@ func GetESP() (string, error) {
 	}
 
 	var lsblkRoot LsblkRoot
-	json.Unmarshal(out, &lsblkRoot)
+	if err = json.Unmarshal(out, &lsblkRoot); err != nil {
+		return "", fmt.Errorf("failed to parse json: %v", err)
+	}
 
 	var pathBootEntry *LsblkEntry
 	var pathBootEfiEntry *LsblkEntry
@@ -112,8 +114,6 @@ func Sign(file, output string, enroll bool) error {
 			return err
 		}
 	}
-
-	err = nil
 
 	files, err := ReadFileDatabase(DBPath)
 	if err != nil {
