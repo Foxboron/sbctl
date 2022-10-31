@@ -21,6 +21,9 @@ func ReadFileDatabase(dbpath string) (SigningEntries, error) {
 	}
 
 	files := make(SigningEntries)
+	if len(f) == 0 {
+		return files, nil
+	}
 	if err = json.Unmarshal(f, &files); err != nil {
 		return nil, fmt.Errorf("failed to parse json: %v", err)
 	}
