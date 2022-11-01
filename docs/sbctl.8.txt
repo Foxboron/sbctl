@@ -147,13 +147,13 @@ EFI binary commands
                         Help for bundle.
 
                 *-f* 'PATH', *--initramfs* 'PATH';;
-                        Initramfs location. (default "/efi/initramfs-linux.img")
+                        Initramfs location. (default "/boot/initramfs-linux.img")
 
                 *-i* 'PATH', *--intelucode* 'PATH';;
                         Intel microcode location.
 
                 *-k* 'PATH', *--kernel-img* 'PATH';;
-                        Kernel image location. (default "/efi/vmlinuz-linux")
+                        Kernel image location. (default "/boot/vmlinuz-linux")
 
                 *-o* 'PATH', *--os-release* 'PATH';;
                         OS Release file location. (default "/usr/lib/os-release")
