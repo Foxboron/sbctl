@@ -41,6 +41,7 @@ There are three flags that can be used:
 Please read the FAQ for more information: https://github.com/Foxboron/sbctl/wiki/FAQ#option-rom`
 	opromErrorMsg      = `Found OptionROM in the bootchain. This means we should not enroll keys into UEFI without some precautions.` + baseErrorMsg
 	noEventlogErrorMsg = `Could not find any TPM Eventlog in the system. This means we do not know if there is any OptionROM present on the system.` + baseErrorMsg
+	setupModeDisabled  = `Your system is not in Setup Mode! Please reboot your machine and reset secure boot keys before attempting to enroll the keys.`
 )
 
 func baseFlags(cmd *cobra.Command) {
@@ -95,6 +96,8 @@ func main() {
 			logging.Error(fmt.Errorf(opromErrorMsg))
 		} else if errors.Is(err, sbctl.ErrNoEventlog) {
 			logging.Error(fmt.Errorf(noEventlogErrorMsg))
+		} else if errors.Is(err, ErrSetupModeDisabled) {
+			logging.Error(fmt.Errorf(setupModeDisabled))
 		} else if !errors.Is(err, ErrSilent) {
 			logging.Error(err)
 		}

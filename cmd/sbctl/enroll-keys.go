@@ -1,10 +1,12 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
 
+	"github.com/foxboron/go-uefi/efi"
 	"github.com/foxboron/go-uefi/efi/signature"
 	"github.com/foxboron/go-uefi/efi/util"
 	"github.com/foxboron/sbctl"
@@ -28,6 +30,7 @@ var (
 		Short: "Enroll the current keys to EFI",
 		RunE:  RunEnrollKeys,
 	}
+	ErrSetupModeDisabled = errors.New("setup mode is disabled")
 )
 
 // Sync keys from a key directory into efivarfs
@@ -110,6 +113,11 @@ func KeySync(guid util.EFIGUID, keydir string, oems []string) error {
 }
 
 func RunEnrollKeys(cmd *cobra.Command, args []string) error {
+
+	if !efi.GetSetupMode() {
+		return ErrSetupModeDisabled
+	}
+
 	oems := []string{}
 	if enrollKeysCmdOptions.MicrosoftKeys {
 		oems = append(oems, "microsoft")
