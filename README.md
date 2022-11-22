@@ -70,6 +70,8 @@ Use "sbctl [command] --help" for more information about a command.
 ```
 
 ## Key creation and enrollment
+See [example enrollment](docs/workflow-example.md) for a workflow with
+screenshots of real firmware setup menus.
 
 ```
 # sbctl status
