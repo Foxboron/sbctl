@@ -213,10 +213,13 @@ See https://github.com/Foxboron/sbctl/wiki/FAQ#option-rom
 Usage
 -----
 
-'Note': To use Secure Boot it's important to reboot the machine, navigate through the
-BIOS menu into the 'Secure Boot' options and enable "User Mode". Please also
-ensure you have reset the current platform keys. If this step is not completed
-the following step might not work depending on the firmware.
+'Note': To use custom Secure Boot keys it's important to reboot into firmware setup
+(`systemctl reboot --firmware-setup`) and navigate into the 'Secure Boot' menu to
+enter 'Setup Mode'. This is normally achieved by deleting/clearing the secure boot keys
+(or at a minimum the Platform Key) while leaving secure boot mode enabled. Some firmwares
+have a 'Custom Mode' which only disables signature verification and should therefore
+not be enabled unless no other way to enter key management is provided.
+If this step is not completed enrolling custom keys will be rejected by the firmware.
 
 Next is creating the keys for secure boot. 'create-keys' creates the key
 hierarchy needed for secure boot into "/usr/share/secureboot".
@@ -266,9 +269,9 @@ we have signed the files we need.
         ✔ /efi/EFI/BOOT/BOOTX64.EFI is signed
         ✔ /efi/vmlinuz-linux is signed
 
-Once we have confirmed everything works, we can reboot. Remember to re enable
-Secure Boot in the BIOS menu. Once we have logged back inn we can very the state
-of the system.
+Once we have confirmed everything works, we can reboot. Once we have logged back
+in we can verify the state of the system. There should be no need to re-enable
+Secure Boot or enter User Mode in the firmware.
 
         $ sbctl status
         Installed:  ✓ sbctl is installed
