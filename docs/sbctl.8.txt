@@ -22,11 +22,11 @@ EFI signing commands
 
 **status**::
         Shows the current secure boot status of the system. It checks if you are
-        currently booted in UEFI with Secure Boot, and whether or not Setup Mode
+        currently booted in UEFI with Secure Boot, and whether Setup Mode
         has been enabled.
 
 **create-keys**::
-        Creates a set of signing keys used to sign EFI binaries. Currently it
+        Creates a set of signing keys used to sign EFI binaries. Currently, it
         will create the following keys:
         * Platform Key
         * Key Exchange key
@@ -64,7 +64,7 @@ EFI signing commands
                 certificates.
 
 **sign** <FILE>...::
-        Signs a EFI binary with the created key. The file will be checked for
+        Signs an EFI binary with the created key. The file will be checked for
         valid signatures to avoid duplicates.
 
         *-o* 'PATH', *--output* 'PATH';;
@@ -95,7 +95,7 @@ EFI signing commands
         *--pk-key* 'PATH' ;;
                 Path to a valid Platform Key (PK) private key.
         *--directory* 'PATH' ;;
-                Path to a key directory. The expected file locations inside this directory is
+                Path to a key directory. The expected file locations inside this directory are:
                         * PK/PK.key
                         * PK/PK.pem
                         * KEK/KEK.key
@@ -118,7 +118,7 @@ EFI signing commands
 
 **reset**::
         Resets the Platform Key. This sets the machine out of Secure Boot mode
-        and allows to rotate keys.
+        and allows key rotation.
 
 **help**::
         Displays a help message.
@@ -182,7 +182,7 @@ Options
 
 **-j**, **--json**::
         This enables supported commands to output their values in json instead
-        of human readable text. This is practical for parsing data with tools
+        of human-readable text. This is practical for parsing data with tools
         like `jq`.
 
 
@@ -219,7 +219,7 @@ enter 'Setup Mode'. This is normally achieved by deleting/clearing the secure bo
 (or at a minimum the Platform Key) while leaving secure boot mode enabled. Some firmwares
 have a 'Custom Mode' which only disables signature verification and should therefore
 not be enabled unless no other way to enter key management is provided.
-If this step is not completed enrolling custom keys will be rejected by the firmware.
+If this step is not completed, enrolling custom keys will be rejected by the firmware.
 
 Next is creating the keys for secure boot. 'create-keys' creates the key
 hierarchy needed for secure boot into "/usr/share/secureboot".
@@ -240,14 +240,14 @@ machine BIOS menu.
         Enrolling keys to EFI variables...✔
         Enrolled keys to the EFI variables!
 
-After we have successfully enrolled the keys we need to sign our current
+After we have successfully enrolled the keys, we need to sign our current
 boot chain. Traditionally on UEFI systems one can have an EFI System Partition
 ('ESP') on '/efi', '/boot' or '/boot/efi'. One can usually find the correct one by
-looking at mount points or finding the 'EFI" directory on the ESP.
+looking at mount points or finding the 'EFI' directory on the ESP.
 
 The most important file to sign is the kernel. This location differs between
 distributions but can usually be found on the ESP or /boot. We use '--save' to
-store the file path so we don't need to manually sign it later.
+store the file path, so we don't need to manually sign it later.
 
 Note that *sbctl* can only keep track of file paths. On versioned kernels this
 might prove tricky.
@@ -270,7 +270,7 @@ we have signed the files we need.
         ✔ /efi/vmlinuz-linux is signed
 
 Once we have confirmed everything works, we can reboot. Once we have logged back
-in we can verify the state of the system. There should be no need to re-enable
+in, we can verify the state of the system. There should be no need to re-enable
 Secure Boot or enter User Mode in the firmware.
 
         $ sbctl status
@@ -279,7 +279,7 @@ Secure Boot or enter User Mode in the firmware.
         Setup Mode: ✓ Disabled
         Secure Boot:    ✓ Enabled
 
-When we do system updated we can run 'sign-all' to resign all the saved files
+When we do a system update, we can run 'sign-all' to resign all the saved files
 from earlier.
 
         $ sbctl sign-all
@@ -293,8 +293,8 @@ instead of only signing the kernel.
 
         $ sbctl bundle -i /boot/intel-ucode.img
                        -l /usr/share/systemd/bootctl/splash-arch.bmp
-                       -k /boot/vmlinuz-linux 
-                       -f /boot/initramfs-linux-lts.img 
+                       -k /boot/vmlinuz-linux
+                       -f /boot/initramfs-linux-lts.img
                        -c /etc/kernel/cmdline
                        /efi/EFI/Linux/linux-linux.efi
 
