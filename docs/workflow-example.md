@@ -67,7 +67,7 @@ secure boot mode (this may only be reflected after a reboot):
     Secure Boot: ✘ Disabled
     ```
 
-13. **Sign your boot loader and kernels with `sbctl` before rebooting!**
+13. **Sign your bootloader and kernels with `sbctl` before rebooting!**
 
 13. Optionally, observe the secure boot state in the firmware menu after
 rebooting:
