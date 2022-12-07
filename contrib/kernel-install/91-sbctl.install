@@ -5,15 +5,33 @@ KERNEL_VERSION="$2"
 ENTRY_DIR_ABS="$3"
 KERNEL_IMAGE="$4"
 
+IMAGE_FILE="$ENTRY_DIR_ABS/linux"
+
+if [ "$KERNEL_INSTALL_LAYOUT" == "uki" ]; then
+	UKI_DIR="$KERNEL_INSTALL_BOOT_ROOT/EFI/Linux"
+	TRIES_FILE="${KERNEL_INSTALL_CONF_ROOT:-/etc/kernel}/tries"
+
+	if [ -f "$TRIES_FILE" ]; then
+		read -r TRIES <"$TRIES_FILE"
+		if ! echo "$TRIES" | grep -q '^[0-9][0-9]*$'; then
+			echo "$TRIES_FILE does not contain an integer." >&2
+			exit 1
+		fi
+		IMAGE_FILE="$UKI_DIR/$KERNEL_INSTALL_ENTRY_TOKEN-$KERNEL_VERSION+$TRIES.efi"
+	else
+		IMAGE_FILE="$UKI_DIR/$KERNEL_INSTALL_ENTRY_TOKEN-$KERNEL_VERSION.efi"
+	fi
+fi
+
 case "$COMMAND" in
 add)
 	[ "$KERNEL_INSTALL_VERBOSE" -gt 0 ] &&
-		printf 'Signing kernel %s\n' "$ENTRY_DIR_ABS/linux"
-	sbctl sign -s "$ENTRY_DIR_ABS/linux" 1>/dev/null
+		printf 'Signing kernel %s\n' "$IMAGE_FILE"
+	sbctl sign -s "$IMAGE_FILE" 1>/dev/null
 	;;
 remove)
 	[ "$KERNEL_INSTALL_VERBOSE" -gt 0 ] &&
-		printf 'Removing kernel %s from signing database\n' "$ENTRY_DIR_ABS/linux"
-	sbctl remove-file "$ENTRY_DIR_ABS/linux" 1>/dev/null
+		printf 'Removing kernel %s from signing database\n' "$IMAGE_FILE"
+	sbctl remove-file "$IMAGE_FILE" 1>/dev/null
 	;;
 esac
