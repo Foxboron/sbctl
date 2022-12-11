@@ -120,6 +120,14 @@ EFI signing commands
         Resets the Platform Key. This sets the machine out of Secure Boot mode
         and allows key rotation.
 
+**rotate-keys**::
+        Rotate the secure boot keys and replace them with newly generated keys.
+        Saves the old keys to a directory in /var/tmp and resigns any files from
+        the file database.
+
+        *--backup-dir* 'PATH';;
+                Choose backup directory for old keys.
+
 **help**::
         Displays a help message.
 
