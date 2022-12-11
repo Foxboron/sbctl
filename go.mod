@@ -5,7 +5,7 @@ go 1.17
 require (
 	github.com/anatol/vmtest v0.0.0-20210225191124-26540db15d49
 	github.com/fatih/color v1.13.0
-	github.com/foxboron/go-uefi v0.0.0-20221207092238-a27835c3dec7
+	github.com/foxboron/go-uefi v0.0.0-20221211185831-8b4d22f6813c
 	github.com/google/go-attestation v0.3.3-0.20210901195502-505680f536da
 	github.com/google/uuid v1.3.0
 	github.com/spf13/afero v1.6.0
