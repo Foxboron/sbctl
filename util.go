@@ -179,9 +179,26 @@ func CopyFile(src, dst string) error {
 	if err != nil {
 		return err
 	}
-	err = os.Chmod(dst, si.Mode())
-	if err != nil {
-		return err
-	}
-	return nil
+	return os.Chmod(dst, si.Mode())
+}
+
+// CopyDirectory moves files and creates directories
+func CopyDirectory(src, dst string) error {
+	return filepath.Walk(src, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		relPath := strings.TrimPrefix(path, src)
+		newPath := filepath.Join(dst, relPath)
+		if info.IsDir() {
+			if err := os.MkdirAll(newPath, info.Mode()); err != nil {
+				return err
+			}
+			return nil
+		}
+		if err := CopyFile(path, newPath); err != nil {
+			return err
+		}
+		return nil
+	})
 }
