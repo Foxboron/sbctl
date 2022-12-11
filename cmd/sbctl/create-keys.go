@@ -27,7 +27,8 @@ var createKeysCmd = &cobra.Command{
 				logging.NotOk("")
 				return fmt.Errorf("couldn't initialize secure boot: %w", err)
 			}
-			logging.Ok("\nSecure boot keys created!")
+			logging.Ok("")
+			logging.Println("Secure boot keys created!")
 		} else {
 			logging.Ok("Secure boot keys has already been created!")
 		}
