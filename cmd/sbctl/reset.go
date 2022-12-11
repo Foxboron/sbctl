@@ -19,7 +19,7 @@ var resetCmd = &cobra.Command{
 	RunE:  RunReset,
 }
 
-func RunReset(cmd *cobra.Command, args []string) error {
+func resetKey() error {
 	PKKey := filepath.Join(sbctl.KeysPath, "PK", "PK.key")
 	PKPem := filepath.Join(sbctl.KeysPath, "PK", "PK.pem")
 	key, err := util.ReadKeyFromFile(PKKey)
@@ -40,7 +40,13 @@ func RunReset(cmd *cobra.Command, args []string) error {
 		}
 		return err
 	}
+	return nil
+}
 
+func RunReset(cmd *cobra.Command, args []string) error {
+	if err := resetKey(); err != nil {
+		return err
+	}
 	logging.Ok("Removed Platform Key!")
 	logging.Println("Use `sbctl enroll-keys` to enroll the Platform Key again.")
 	return nil
