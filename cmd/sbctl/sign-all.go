@@ -23,36 +23,39 @@ var signAllCmd = &cobra.Command{
 				logging.Error(err)
 			}
 		}
+		return SignAll()
+	},
+}
 
-		files, err := sbctl.ReadFileDatabase(sbctl.DBPath)
+func SignAll() error {
+	files, err := sbctl.ReadFileDatabase(sbctl.DBPath)
+	if err != nil {
+		return err
+	}
+	for _, entry := range files {
+
+		err := sbctl.SignFile(sbctl.DBKey, sbctl.DBCert, entry.File, entry.OutputFile, entry.Checksum)
+		if errors.Is(err, sbctl.ErrAlreadySigned) {
+			logging.Print("File has already been signed %s\n", entry.OutputFile)
+		} else if err != nil {
+			return fmt.Errorf("failed signing %s: %w", entry.File, err)
+		} else {
+			logging.Ok("Signed %s", entry.OutputFile)
+		}
+
+		// Update checksum after we signed it
+		checksum, err := sbctl.ChecksumFile(entry.File)
 		if err != nil {
 			return err
 		}
-		for _, entry := range files {
-
-			err := sbctl.SignFile(sbctl.DBKey, sbctl.DBCert, entry.File, entry.OutputFile, entry.Checksum)
-			if errors.Is(err, sbctl.ErrAlreadySigned) {
-				logging.Print("File has already been signed %s\n", entry.OutputFile)
-			} else if err != nil {
-				return fmt.Errorf("failed signing %s: %w", entry.File, err)
-			} else {
-				logging.Ok("Signed %s", entry.OutputFile)
-			}
-
-			// Update checksum after we signed it
-			checksum, err := sbctl.ChecksumFile(entry.File)
-			if err != nil {
-				return err
-			}
-			entry.Checksum = checksum
-			files[entry.File] = entry
-			if err := sbctl.WriteFileDatabase(sbctl.DBPath, files); err != nil {
-				return err
-			}
-
+		entry.Checksum = checksum
+		files[entry.File] = entry
+		if err := sbctl.WriteFileDatabase(sbctl.DBPath, files); err != nil {
+			return err
 		}
-		return nil
-	},
+
+	}
+	return nil
 }
 
 func signAllCmdFlags(cmd *cobra.Command) {
