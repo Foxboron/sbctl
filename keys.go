@@ -254,9 +254,9 @@ func CheckIfKeysInitialized(output string) bool {
 
 // Initialize the secure boot keys needed to setup secure boot.
 // It creates the following keys:
-//	* Platform Key (PK)
-//	* Key Exchange Key (KEK)
-//	* db (database)
+//   - Platform Key (PK)
+//   - Key Exchange Key (KEK)
+//   - db (database)
 func InitializeSecureBootKeys(output string) error {
 	if CheckIfKeysInitialized(output) {
 		return nil
