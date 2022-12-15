@@ -121,17 +121,11 @@ func CheckImmutable() error {
 	return nil
 }
 
-func CheckMSDos(path string) (bool, error) {
-	r, err := os.Open(path)
-	if err != nil {
-		return false, err
-	}
-	defer r.Close()
-
+func CheckMSDos(r io.Reader) (bool, error) {
 	// We are looking for MS-DOS executables.
 	// They contain "MZ" as the two first bytes
 	var header [2]byte
-	if _, err = io.ReadFull(r, header[:]); err != nil {
+	if _, err := io.ReadFull(r, header[:]); err != nil {
 		// File is smaller than 2 bytes
 		if errors.Is(err, io.EOF) {
 			return false, nil

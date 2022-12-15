@@ -111,10 +111,11 @@ EFI signing commands
 **remove-file** <FILE>, **rm-file** <FILE>, **rm** <FILE>::
         Removes the file from the signing database.
 
-**verify**::
+**verify** [FILE...]::
         Looks for EFI binaries with the mime type application/x-dosexec in the
         ESP partition, and looks at the file database. Checks if they have been
-        signed with the Signature Database Key.
+        signed with the Signature Database Key. Takes an optional file argument
+        to check specific files.
 
 **reset**::
         Resets the Platform Key. This sets the machine out of Secure Boot mode
