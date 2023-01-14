@@ -29,15 +29,15 @@ func GetVendors() []string {
 	return oems
 }
 
-func GetCerts(oem string) (*signature.SignatureDatabase, error) {
+func GetCerts(oem string, variable string) (*signature.SignatureDatabase, error) {
 	GUID, ok := oemGUID[oem]
 	if !ok {
 		return nil, fmt.Errorf("invalid OEM")
 	}
 	sigdb := signature.NewSignatureDatabase()
-	files, _ := content.ReadDir(oem)
+	files, _ := content.ReadDir(filepath.Join(oem, variable))
 	for _, file := range files {
-		path := filepath.Join(oem, file.Name())
+		path := filepath.Join(oem, variable, file.Name())
 		if !file.Type().IsRegular() {
 			continue
 		}
@@ -49,10 +49,10 @@ func GetCerts(oem string) (*signature.SignatureDatabase, error) {
 	return sigdb, nil
 }
 
-func GetDefaultCerts() (*signature.SignatureDatabase, error) {
+func GetDefaultCerts(variable string) (*signature.SignatureDatabase, error) {
 	sigdb := signature.NewSignatureDatabase()
 	for _, oem := range defaultCerts {
-		db, err := GetCerts(oem)
+		db, err := GetCerts(oem, variable)
 		if err != nil {
 			return nil, err
 		}
