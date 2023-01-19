@@ -20,12 +20,12 @@ testing towards [tianocore](https://www.tianocore.org/) utilizing
 * Signing database to help keep track of files to sign
 * Verify ESP of files missing signatures
 * EFI stub generation
-* JSON Output
+* JSON output
 
 ## Roadmap to 1.0
 * Key rotation
-* TPM Support
-* Hardware Token support
+* TPM support
+* Hardware token support
 * Configuration Files
 * Automatic boot chain signing using the [Boot Loader Interface](https://systemd.io/BOOT_LOADER_INTERFACE/)
 
@@ -160,7 +160,7 @@ Output File:	/usr/lib/fwupd/efi/fwupdx64.efi.signed
 Signed:		✔ Signed
 ```
 
-## Generate EFI Stub
+## Generate EFI stub
 ```
 # sbctl bundle -s -i /boot/intel-ucode.img \
       -l /usr/share/systemd/bootctl/splash-arch.bmp \
