@@ -9,7 +9,6 @@ import (
 type SigningEntry struct {
 	File       string `json:"file"`
 	OutputFile string `json:"output_file"`
-	Checksum   string `json:"checksum"`
 }
 
 type SigningEntries map[string]*SigningEntry
