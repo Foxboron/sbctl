@@ -1,6 +1,6 @@
 module github.com/foxboron/sbctl
 
-go 1.17
+go 1.20
 
 require (
 	github.com/anatol/vmtest v0.0.0-20210225191124-26540db15d49
