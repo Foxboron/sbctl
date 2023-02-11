@@ -1,6 +1,7 @@
 package sbctl
 
 import (
+	"debug/pe"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -126,16 +127,64 @@ func NewBundle() (bundle *Bundle, err error) {
 	return
 }
 
+// Reference ukify from systemd:
+// https://github.com/systemd/systemd/blob/d09df6b94e0c4924ea7064c79ab0441f5aff469b/src/ukify/ukify.py
+
 func GenerateBundle(bundle *Bundle) (bool, error) {
-	args := []string{
-		"--add-section", fmt.Sprintf(".osrel=%s", bundle.OSRelease), "--change-section-vma", ".osrel=0x20000",
-		"--add-section", fmt.Sprintf(".cmdline=%s", bundle.Cmdline), "--change-section-vma", ".cmdline=0x30000",
-		"--add-section", fmt.Sprintf(".linux=%s", bundle.KernelImage), "--change-section-vma", ".linux=0x2000000",
-		"--add-section", fmt.Sprintf(".initrd=%s", bundle.Initramfs), "--change-section-vma", ".initrd=0x3000000",
+	type section struct {
+		section string
+		file    string
+	}
+	sections := []section{
+		{".osrel", bundle.OSRelease},
+		{".cmdline", bundle.Cmdline},
+		{".splash", bundle.Splash},
+		{".initrd", bundle.Initramfs},
+		{".linux", bundle.KernelImage},
 	}
 
-	if bundle.Splash != "" {
-		args = append(args, "--add-section", fmt.Sprintf(".splash=%s", bundle.Splash), "--change-section-vma", ".splash=0x40000")
+	e, err := pe.Open(bundle.EFIStub)
+	if err != nil {
+		return false, err
+	}
+	e.Close()
+	s := e.Sections[len(e.Sections)-1]
+
+	vma := uint64(s.VirtualAddress) + uint64(s.VirtualSize)
+	switch e := e.OptionalHeader.(type) {
+	case *pe.OptionalHeader32:
+		vma += uint64(e.ImageBase)
+	case *pe.OptionalHeader64:
+		vma += e.ImageBase
+	}
+	vma = roundUpToBlockSize(vma)
+
+	var args []string
+	for _, s := range sections {
+		if s.file == "" {
+			// optional sections
+			switch s.section {
+			case ".splash":
+				continue
+			}
+		}
+		fi, err := os.Stat(s.file)
+		if err != nil || fi.IsDir() {
+			return false, err
+		}
+		var flags string
+		switch s.section {
+		case ".linux":
+			flags = "code,readonly"
+		default:
+			flags = "data,readonly"
+		}
+		args = append(args,
+			"--add-section", fmt.Sprintf("%s=%s", s.section, s.file),
+			"--set-section-flags", fmt.Sprintf("%s=%s", s.section, flags),
+			"--change-section-vma", fmt.Sprintf("%s=%#x", s.section, vma),
+		)
+		vma += roundUpToBlockSize(uint64(fi.Size()))
 	}
 
 	args = append(args, bundle.EFIStub, bundle.Output)
@@ -151,4 +200,9 @@ func GenerateBundle(bundle *Bundle) (bool, error) {
 		}
 	}
 	return true, nil
+}
+
+func roundUpToBlockSize(size uint64) uint64 {
+	const blockSize = 4096
+	return ((size + blockSize - 1) / blockSize) * blockSize
 }
