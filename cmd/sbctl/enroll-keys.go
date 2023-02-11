@@ -82,7 +82,7 @@ func KeySync(guid util.EFIGUID, keydir string, oems []string) error {
 				sigdb.AppendDatabase(eventlogDB)
 			default:
 				logging.Print("\nWith vendor keys from %s...", oem)
-				oemSigDb, err := certs.GetCerts(oem)
+				oemSigDb, err := certs.GetCerts(oem, "db")
 				if err != nil {
 					return fmt.Errorf("could not enroll db keys: %w", err)
 				}
@@ -97,6 +97,18 @@ func KeySync(guid util.EFIGUID, keydir string, oems []string) error {
 	sigdb = signature.NewSignatureDatabase()
 	if err = sigdb.Append(signature.CERT_X509_GUID, guid, KEKPem); err != nil {
 		return err
+	}
+	for _, oem := range oems {
+		switch oem {
+		case "tpm-eventlog":
+		default:
+			logging.Print("\nWith vendor keys from %s...", oem)
+			oemSigDb, err := certs.GetCerts(oem, "KEK")
+			if err != nil {
+				return fmt.Errorf("could not enroll KEK keys: %w", err)
+			}
+			sigdb.AppendDatabase(oemSigDb)
+		}
 	}
 	if err := sbctl.Enroll(sigdb, KEKPem, PKKey, PKPem, "KEK"); err != nil {
 		return err
