@@ -35,8 +35,8 @@ var (
 
 // Sync keys from a key directory into efivarfs
 func KeySync(guid util.EFIGUID, keydir string, oems []string) error {
-	var sigdb *signature.SignatureDatabase
 
+	// Prepare all the keys we need
 	PKKey, err := os.ReadFile(filepath.Join(keydir, "PK", "PK.key"))
 	if err != nil {
 		return err
@@ -62,11 +62,23 @@ func KeySync(guid util.EFIGUID, keydir string, oems []string) error {
 		return err
 	}
 
-	sigdb = signature.NewSignatureDatabase()
+	// Create the signature databases
+	sigdb := signature.NewSignatureDatabase()
 	if err = sigdb.Append(signature.CERT_X509_GUID, guid, dbPem); err != nil {
 		return err
 	}
 
+	sigkek := signature.NewSignatureDatabase()
+	if err = sigkek.Append(signature.CERT_X509_GUID, guid, KEKPem); err != nil {
+		return err
+	}
+
+	sigpk := signature.NewSignatureDatabase()
+	if err = sigpk.Append(signature.CERT_X509_GUID, guid, PKPem); err != nil {
+		return err
+	}
+
+	// If we want OEM certs, we do that here
 	if len(oems) > 0 {
 		for _, oem := range oems {
 			switch oem {
@@ -80,45 +92,34 @@ func KeySync(guid util.EFIGUID, keydir string, oems []string) error {
 					return fmt.Errorf("could not find any OpROM entries in the TPM eventlog")
 				}
 				sigdb.AppendDatabase(eventlogDB)
-			default:
-				logging.Print("\nWith vendor keys from %s...", oem)
+			case "microsoft":
+				logging.Print("\nWith vendor keys from microsoft...")
+
+				// db
 				oemSigDb, err := certs.GetCerts(oem, "db")
 				if err != nil {
 					return fmt.Errorf("could not enroll db keys: %w", err)
 				}
 				sigdb.AppendDatabase(oemSigDb)
+
+				// KEK
+				oemSigKEK, err := certs.GetCerts(oem, "KEK")
+				if err != nil {
+					return fmt.Errorf("could not enroll KEK keys: %w", err)
+				}
+				sigkek.AppendDatabase(oemSigKEK)
+
+				// We are not enrolling PK keys from Microsoft
 			}
 		}
 	}
 	if err := sbctl.Enroll(sigdb, dbPem, KEKKey, KEKPem, "db"); err != nil {
 		return err
 	}
-
-	sigdb = signature.NewSignatureDatabase()
-	if err = sigdb.Append(signature.CERT_X509_GUID, guid, KEKPem); err != nil {
+	if err := sbctl.Enroll(sigkek, KEKPem, PKKey, PKPem, "KEK"); err != nil {
 		return err
 	}
-	for _, oem := range oems {
-		switch oem {
-		case "tpm-eventlog":
-		default:
-			logging.Print("\nWith vendor keys from %s...", oem)
-			oemSigDb, err := certs.GetCerts(oem, "KEK")
-			if err != nil {
-				return fmt.Errorf("could not enroll KEK keys: %w", err)
-			}
-			sigdb.AppendDatabase(oemSigDb)
-		}
-	}
-	if err := sbctl.Enroll(sigdb, KEKPem, PKKey, PKPem, "KEK"); err != nil {
-		return err
-	}
-
-	sigdb = signature.NewSignatureDatabase()
-	if err = sigdb.Append(signature.CERT_X509_GUID, guid, PKPem); err != nil {
-		return nil
-	}
-	if err := sbctl.Enroll(sigdb, PKPem, PKKey, PKPem, "PK"); err != nil {
+	if err := sbctl.Enroll(sigpk, PKPem, PKKey, PKPem, "PK"); err != nil {
 		return err
 	}
 	return nil
