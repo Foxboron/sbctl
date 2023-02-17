@@ -20,6 +20,7 @@ import (
 	"github.com/foxboron/go-uefi/efi/signature"
 	"github.com/foxboron/go-uefi/efi/util"
 	"github.com/foxboron/sbctl/certs"
+	"github.com/foxboron/sbctl/fs"
 	"golang.org/x/sys/unix"
 )
 
@@ -87,10 +88,10 @@ func CreateKey(name string) ([]byte, []byte, error) {
 }
 
 func SaveKey(k []byte, file string) error {
-	if err := os.MkdirAll(filepath.Dir(file), os.ModePerm); err != nil {
+	if err := fs.Fs.MkdirAll(filepath.Dir(file), os.ModePerm); err != nil {
 		return err
 	}
-	if err := os.WriteFile(file, k, 0400); err != nil {
+	if err := fs.WriteFile(file, k, 0400); err != nil {
 		return err
 	}
 	return nil
@@ -117,7 +118,7 @@ func VerifyFile(cert, file string) (bool, error) {
 		return false, fmt.Errorf("couldn't access %s: %w", cert, err)
 	}
 
-	peFile, err := os.ReadFile(file)
+	peFile, err := fs.ReadFile(file)
 	if err != nil {
 		return false, err
 	}
@@ -151,7 +152,7 @@ var ErrAlreadySigned = errors.New("already signed file")
 func SignFile(key, cert, file, output, checksum string) error {
 
 	// Check file exists before we do anything
-	if _, err := os.Stat(file); errors.Is(err, os.ErrNotExist) {
+	if _, err := fs.Fs.Stat(file); errors.Is(err, os.ErrNotExist) {
 		return fmt.Errorf("%s does not exist", file)
 	}
 
@@ -179,12 +180,12 @@ func SignFile(key, cert, file, output, checksum string) error {
 	}
 
 	// We want to write the file back with correct permissions
-	si, err := os.Stat(file)
+	si, err := fs.Fs.Stat(file)
 	if err != nil {
 		return fmt.Errorf("failed signing file: %w", err)
 	}
 
-	peFile, err := os.ReadFile(file)
+	peFile, err := fs.ReadFile(file)
 	if err != nil {
 		return err
 	}
@@ -209,7 +210,7 @@ func SignFile(key, cert, file, output, checksum string) error {
 	if err != nil {
 		return err
 	}
-	if err = os.WriteFile(output, b, si.Mode()); err != nil {
+	if err = fs.WriteFile(output, b, si.Mode()); err != nil {
 		return err
 	}
 
@@ -245,7 +246,7 @@ var SecureBootKeys = []struct {
 func CheckIfKeysInitialized(output string) bool {
 	for _, key := range SecureBootKeys {
 		path := filepath.Join(output, key.Key)
-		if _, err := os.Stat(path); errors.Is(err, os.ErrNotExist) {
+		if _, err := fs.Fs.Stat(path); errors.Is(err, os.ErrNotExist) {
 			return false
 		}
 	}

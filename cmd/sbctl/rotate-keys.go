@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"os"
 	"path/filepath"
 	"time"
 
@@ -10,6 +9,7 @@ import (
 	"github.com/foxboron/go-uefi/efi/signature"
 	"github.com/foxboron/go-uefi/efi/util"
 	"github.com/foxboron/sbctl"
+	"github.com/foxboron/sbctl/fs"
 	"github.com/foxboron/sbctl/logging"
 	"github.com/spf13/cobra"
 )
@@ -45,27 +45,27 @@ type Keys struct {
 func ReadKeysFromDir(src string) (*Keys, error) {
 	k := Keys{}
 	var err error
-	k.PKKey, err = os.ReadFile(filepath.Join(src, "PK", "PK.key"))
+	k.PKKey, err = fs.ReadFile(filepath.Join(src, "PK", "PK.key"))
 	if err != nil {
 		return &k, err
 	}
 
-	k.PKCert, err = os.ReadFile(filepath.Join(src, "PK", "PK.pem"))
+	k.PKCert, err = fs.ReadFile(filepath.Join(src, "PK", "PK.pem"))
 	if err != nil {
 		return &k, err
 	}
 
-	k.KEKKey, err = os.ReadFile(filepath.Join(src, "KEK", "KEK.key"))
+	k.KEKKey, err = fs.ReadFile(filepath.Join(src, "KEK", "KEK.key"))
 	if err != nil {
 		return &k, err
 	}
 
-	k.KEKCert, err = os.ReadFile(filepath.Join(src, "KEK", "KEK.pem"))
+	k.KEKCert, err = fs.ReadFile(filepath.Join(src, "KEK", "KEK.pem"))
 	if err != nil {
 		return &k, err
 	}
 
-	k.DbCert, err = os.ReadFile(filepath.Join(src, "db", "db.pem"))
+	k.DbCert, err = fs.ReadFile(filepath.Join(src, "db", "db.pem"))
 	if err != nil {
 		return &k, err
 	}
@@ -151,7 +151,7 @@ func RunRotateKeys(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	logging.Print("Backed up keys to %s\n", backupDir)
-	if err := os.RemoveAll(sbctl.KeysPath); err != nil {
+	if err := fs.Fs.RemoveAll(sbctl.KeysPath); err != nil {
 		return fmt.Errorf("failed removing old keys: %v", err)
 	}
 

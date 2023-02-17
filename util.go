@@ -11,12 +11,14 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/foxboron/sbctl/fs"
 	"github.com/foxboron/sbctl/logging"
+	"github.com/spf13/afero"
 )
 
 func ChecksumFile(file string) (string, error) {
 	hasher := sha256.New()
-	s, err := os.ReadFile(file)
+	s, err := fs.ReadFile(file)
 	if err != nil {
 		return "", err
 	}
@@ -26,7 +28,7 @@ func ChecksumFile(file string) (string, error) {
 }
 
 func CreateDirectory(path string) error {
-	_, err := os.Stat(path)
+	_, err := fs.Fs.Stat(path)
 	switch {
 	case errors.Is(err, os.ErrNotExist):
 		// Ignore this error
@@ -35,7 +37,7 @@ func CreateDirectory(path string) error {
 	case err != nil:
 		return err
 	}
-	if err := os.MkdirAll(path, os.ModePerm); err != nil {
+	if err := fs.Fs.MkdirAll(path, os.ModePerm); err != nil {
 		return err
 	}
 	return nil
@@ -43,18 +45,18 @@ func CreateDirectory(path string) error {
 
 func ReadOrCreateFile(filePath string) ([]byte, error) {
 	// Try to access or create the file itself
-	f, err := os.ReadFile(filePath)
+	f, err := fs.ReadFile(filePath)
 	if err != nil {
 		// Errors will mainly happen due to permissions or non-existing file
 		if os.IsNotExist(err) {
 			// First, guarantee the directory's existence
 			// os.MkdirAll simply returns nil if the directory already exists
 			fileDir := filepath.Dir(filePath)
-			if err = os.MkdirAll(fileDir, os.ModePerm); err != nil {
+			if err = fs.Fs.MkdirAll(fileDir, os.ModePerm); err != nil {
 				return nil, err
 			}
 
-			file, err := os.Create(filePath)
+			file, err := fs.Fs.Create(filePath)
 			if err != nil {
 				return nil, err
 			}
@@ -82,8 +84,17 @@ var EfivarFSFiles = []string{
 var ErrImmutable = errors.New("file is immutable")
 var ErrNotImmutable = errors.New("file is not immutable")
 
+var Immutable = false
+
 // Check if a given file has the immutable bit set
 func IsImmutable(file string) error {
+	// We can't actually do the syscall check. Implemented a workaround to test stuff instead
+	if _, ok := fs.Fs.(afero.OsFs); ok {
+		if Immutable {
+			return ErrImmutable
+		}
+		return ErrNotImmutable
+	}
 	f, err := os.Open(file)
 	// Files in efivarfs might not exist. Ignore them
 	if errors.Is(err, os.ErrNotExist) {
@@ -155,13 +166,13 @@ func InChecked(path string) bool {
 }
 
 func CopyFile(src, dst string) error {
-	source, err := os.Open(src)
+	source, err := fs.Fs.Open(src)
 	if err != nil {
 		return err
 	}
 	defer source.Close()
 
-	f, err := os.OpenFile(dst, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
+	f, err := fs.Fs.OpenFile(dst, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
 	if err != nil {
 		return err
 	}
@@ -169,23 +180,23 @@ func CopyFile(src, dst string) error {
 	if _, err = io.Copy(f, source); err != nil {
 		return err
 	}
-	si, err := os.Stat(src)
+	si, err := fs.Fs.Stat(src)
 	if err != nil {
 		return err
 	}
-	return os.Chmod(dst, si.Mode())
+	return fs.Fs.Chmod(dst, si.Mode())
 }
 
 // CopyDirectory moves files and creates directories
 func CopyDirectory(src, dst string) error {
-	return filepath.Walk(src, func(path string, info os.FileInfo, err error) error {
+	return afero.Walk(fs.Fs, src, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
 		relPath := strings.TrimPrefix(path, src)
 		newPath := filepath.Join(dst, relPath)
 		if info.IsDir() {
-			if err := os.MkdirAll(newPath, info.Mode()); err != nil {
+			if err := fs.Fs.MkdirAll(newPath, info.Mode()); err != nil {
 				return err
 			}
 			return nil

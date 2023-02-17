@@ -8,6 +8,8 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+
+	"github.com/foxboron/sbctl/fs"
 )
 
 // Functions that doesn't fit anywhere else
@@ -43,7 +45,7 @@ func GetESP() (string, error) {
 	for _, location := range espLocations {
 		// "Read" a file inside all candiadate locations to trigger an
 		// automount if there's an automount partition.
-		_, _ = os.Stat(fmt.Sprintf("%s/does-not-exist", location))
+		_, _ = fs.Fs.Stat(fmt.Sprintf("%s/does-not-exist", location))
 	}
 
 	out, err := exec.Command(
@@ -221,7 +223,7 @@ func CreateBundle(bundle Bundle) error {
 
 // Checks if sbctl is setup on this computer
 func CheckSbctlInstallation(path string) bool {
-	if _, err := os.Stat(path); errors.Is(err, os.ErrNotExist) {
+	if _, err := fs.Fs.Stat(path); errors.Is(err, os.ErrNotExist) {
 		return false
 	}
 	return true

@@ -9,6 +9,8 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+
+	"github.com/foxboron/sbctl/fs"
 )
 
 type Bundle struct {
@@ -48,7 +50,7 @@ func WriteBundleDatabase(dbpath string, bundles Bundles) error {
 	if err != nil {
 		return err
 	}
-	err = os.WriteFile(dbpath, data, 0644)
+	err = fs.WriteFile(dbpath, data, 0644)
 	if err != nil {
 		return err
 	}
@@ -92,7 +94,7 @@ func GetEfistub() (string, error) {
 	}
 
 	for _, f := range candidatePaths {
-		if _, err := os.Stat(f + stubName); err == nil {
+		if _, err := fs.Fs.Stat(f + stubName); err == nil {
 			return f + stubName, nil
 		}
 	}
@@ -168,7 +170,7 @@ func GenerateBundle(bundle *Bundle) (bool, error) {
 				continue
 			}
 		}
-		fi, err := os.Stat(s.file)
+		fi, err := fs.Fs.Stat(s.file)
 		if err != nil || fi.IsDir() {
 			return false, err
 		}

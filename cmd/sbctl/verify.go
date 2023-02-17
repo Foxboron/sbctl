@@ -4,10 +4,11 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"path/filepath"
 
 	"github.com/foxboron/sbctl"
+	"github.com/foxboron/sbctl/fs"
 	"github.com/foxboron/sbctl/logging"
+	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 )
 
@@ -21,7 +22,7 @@ var (
 )
 
 func VerifyOneFile(f string) error {
-	o, err := os.Open(f)
+	o, err := fs.Fs.Open(f)
 	if errors.Is(err, os.ErrNotExist) {
 		logging.Warn("%s does not exist", f)
 		return nil
@@ -81,11 +82,11 @@ func RunVerify(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	if err := filepath.Walk(espPath, func(path string, info os.FileInfo, err error) error {
+	if err := afero.Walk(fs.Fs, espPath, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			logging.Error(fmt.Errorf("failed to read path %s: %s", path, err))
 		}
-		if fi, _ := os.Stat(path); fi.IsDir() {
+		if fi, _ := fs.Fs.Stat(path); fi.IsDir() {
 			return nil
 		}
 		if sbctl.InChecked(path) {

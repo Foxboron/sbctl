@@ -3,7 +3,8 @@ package sbctl
 import (
 	"encoding/json"
 	"fmt"
-	"os"
+
+	"github.com/foxboron/sbctl/fs"
 )
 
 type SigningEntry struct {
@@ -36,7 +37,7 @@ func WriteFileDatabase(dbpath string, files SigningEntries) error {
 	if err != nil {
 		return err
 	}
-	err = os.WriteFile(dbpath, data, 0644)
+	err = fs.WriteFile(dbpath, data, 0644)
 	if err != nil {
 		return err
 	}

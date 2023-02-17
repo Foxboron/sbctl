@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/foxboron/sbctl/fs"
 	"github.com/google/uuid"
 )
 
@@ -15,14 +16,14 @@ func CreateUUID() []byte {
 func CreateGUID(output string) ([]byte, error) {
 	var uuid []byte
 	guidPath := filepath.Join(output, "GUID")
-	if _, err := os.Stat(guidPath); os.IsNotExist(err) {
+	if _, err := fs.Fs.Stat(guidPath); os.IsNotExist(err) {
 		uuid = CreateUUID()
-		err := os.WriteFile(guidPath, uuid, 0644)
+		err := fs.WriteFile(guidPath, uuid, 0644)
 		if err != nil {
 			return nil, err
 		}
 	} else {
-		uuid, err = os.ReadFile(guidPath)
+		uuid, err = fs.ReadFile(guidPath)
 		if err != nil {
 			return nil, err
 		}
@@ -31,7 +32,7 @@ func CreateGUID(output string) ([]byte, error) {
 }
 
 func GetGUID() (uuid.UUID, error) {
-	b, err := os.ReadFile(GUIDPath)
+	b, err := fs.ReadFile(GUIDPath)
 	if err != nil {
 		return [16]byte{}, err
 	}

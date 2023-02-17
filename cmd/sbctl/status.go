@@ -7,6 +7,7 @@ import (
 
 	"github.com/foxboron/go-uefi/efi"
 	"github.com/foxboron/sbctl"
+	"github.com/foxboron/sbctl/fs"
 	"github.com/foxboron/sbctl/logging"
 	"github.com/spf13/cobra"
 )
@@ -68,7 +69,7 @@ func PrintStatus(s *Status) {
 
 func RunStatus(cmd *cobra.Command, args []string) error {
 	stat := NewStatus()
-	if _, err := os.Stat("/sys/firmware/efi/efivars"); os.IsNotExist(err) {
+	if _, err := fs.Fs.Stat("/sys/firmware/efi/efivars"); os.IsNotExist(err) {
 		return fmt.Errorf("system is not booted with UEFI")
 	}
 	if sbctl.CheckSbctlInstallation(sbctl.DatabasePath) {

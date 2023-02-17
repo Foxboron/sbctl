@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 
 	"github.com/foxboron/sbctl"
+	"github.com/foxboron/sbctl/fs"
 	"github.com/foxboron/sbctl/logging"
 	"github.com/spf13/cobra"
 )
@@ -35,7 +36,7 @@ var bundleCmd = &cobra.Command{
 			if path == "" {
 				continue
 			}
-			if _, err := os.Stat(path); os.IsNotExist(err) {
+			if _, err := fs.Fs.Stat(path); os.IsNotExist(err) {
 				logging.Print("%s does not exist!\n", path)
 				os.Exit(1)
 			}

@@ -3,7 +3,6 @@ package main
 import (
 	"errors"
 	"fmt"
-	"os"
 	"path/filepath"
 
 	"github.com/foxboron/go-uefi/efi"
@@ -11,6 +10,7 @@ import (
 	"github.com/foxboron/go-uefi/efi/util"
 	"github.com/foxboron/sbctl"
 	"github.com/foxboron/sbctl/certs"
+	"github.com/foxboron/sbctl/fs"
 	"github.com/foxboron/sbctl/logging"
 	"github.com/spf13/cobra"
 )
@@ -37,27 +37,27 @@ var (
 func KeySync(guid util.EFIGUID, keydir string, oems []string) error {
 
 	// Prepare all the keys we need
-	PKKey, err := os.ReadFile(filepath.Join(keydir, "PK", "PK.key"))
+	PKKey, err := fs.ReadFile(filepath.Join(keydir, "PK", "PK.key"))
 	if err != nil {
 		return err
 	}
 
-	PKPem, err := os.ReadFile(filepath.Join(keydir, "PK", "PK.pem"))
+	PKPem, err := fs.ReadFile(filepath.Join(keydir, "PK", "PK.pem"))
 	if err != nil {
 		return err
 	}
 
-	KEKKey, err := os.ReadFile(filepath.Join(keydir, "KEK", "KEK.key"))
+	KEKKey, err := fs.ReadFile(filepath.Join(keydir, "KEK", "KEK.key"))
 	if err != nil {
 		return err
 	}
 
-	KEKPem, err := os.ReadFile(filepath.Join(keydir, "KEK", "KEK.pem"))
+	KEKPem, err := fs.ReadFile(filepath.Join(keydir, "KEK", "KEK.pem"))
 	if err != nil {
 		return err
 	}
 
-	dbPem, err := os.ReadFile(filepath.Join(keydir, "db", "db.pem"))
+	dbPem, err := fs.ReadFile(filepath.Join(keydir, "db", "db.pem"))
 	if err != nil {
 		return err
 	}

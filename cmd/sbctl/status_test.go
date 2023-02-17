@@ -1,9 +1,11 @@
 package main
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/foxboron/go-uefi/efi/efitest"
+	"github.com/foxboron/sbctl/fs"
 	"github.com/spf13/cobra"
 )
 
@@ -12,9 +14,7 @@ var (
 )
 
 func TestStatusOff(t *testing.T) {
-	efitest.NewFS().
-		With(efitest.SecureBootOff()).
-		SetFS()
+	SetFS(efitest.SecureBootOff())
 
 	if err := captureJsonOutput(&out, func() error {
 		return RunStatus(&cobra.Command{}, []string{})
@@ -28,9 +28,7 @@ func TestStatusOff(t *testing.T) {
 }
 
 func TestStatusOn(t *testing.T) {
-	efitest.NewFS().
-		With(efitest.SecureBootOn()).
-		SetFS()
+	SetFS(efitest.SecureBootOn())
 
 	if err := captureJsonOutput(&out, func() error {
 		return RunStatus(&cobra.Command{}, []string{})

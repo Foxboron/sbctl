@@ -9,6 +9,7 @@ import (
 
 	"github.com/foxboron/go-uefi/efi/util"
 	"github.com/foxboron/sbctl"
+	"github.com/foxboron/sbctl/fs"
 	"github.com/foxboron/sbctl/logging"
 	"github.com/spf13/cobra"
 )
@@ -58,7 +59,7 @@ func ImportKeysFromDirectory(dir string) error {
 	}
 	for _, f := range keys {
 		keyFile := path.Join(dir, f)
-		if _, err := os.Stat(keyFile); errors.Is(err, os.ErrNotExist) {
+		if _, err := fs.Fs.Stat(keyFile); errors.Is(err, os.ErrNotExist) {
 			return fmt.Errorf("file does not exist: %s", keyFile)
 		}
 	}
@@ -86,7 +87,7 @@ func RunImportKeys(cmd *cobra.Command, args []string) error {
 	}
 
 	if importKeysCmdOptions.Directory != "" {
-		_, err := os.Stat(sbctl.KeysPath)
+		_, err := fs.Fs.Stat(sbctl.KeysPath)
 		if err == nil && !importKeysCmdOptions.Force {
 			return fmt.Errorf("key directory exists. Use --force to overwrite the current directory")
 		}
@@ -97,7 +98,7 @@ func RunImportKeys(cmd *cobra.Command, args []string) error {
 			continue
 		}
 		for _, s := range []string{key.Key, key.Cert} {
-			if _, err = os.Stat(s); errors.Is(err, os.ErrNotExist) {
+			if _, err = fs.Fs.Stat(s); errors.Is(err, os.ErrNotExist) {
 				return fmt.Errorf("keyfile %s does not exist", s)
 			}
 		}

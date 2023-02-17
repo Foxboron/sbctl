@@ -5,6 +5,10 @@ import (
 	"encoding/json"
 	"os"
 
+	"testing/fstest"
+
+	"github.com/foxboron/go-uefi/efi/efitest"
+	"github.com/foxboron/sbctl/fs"
 	"github.com/foxboron/sbctl/logging"
 )
 
@@ -23,4 +27,12 @@ func captureJsonOutput(out any, f func() error) error {
 		return err
 	}
 	return json.Unmarshal(output, &out)
+}
+
+// Set filesystems for sbctl and go-uefi
+func SetFS(files ...fstest.MapFS) {
+	f := efitest.NewFS().
+		With(files...).
+		SetFS()
+	fs.SetFS(f.ToAfero())
 }
