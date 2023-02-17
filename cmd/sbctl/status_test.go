@@ -1,11 +1,9 @@
 package main
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/foxboron/go-uefi/efi/efitest"
-	"github.com/foxboron/sbctl/fs"
 	"github.com/spf13/cobra"
 )
 
