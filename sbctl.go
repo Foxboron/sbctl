@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 
 	"github.com/foxboron/sbctl/fs"
+	"github.com/spf13/afero"
 )
 
 // Functions that doesn't fit anywhere else
@@ -158,22 +159,22 @@ func Sign(file, output string, enroll bool) error {
 	return err
 }
 
-func CombineFiles(microcode, initramfs string) (*os.File, error) {
+func CombineFiles(microcode, initramfs string) (afero.File, error) {
 	for _, file := range []string{microcode, initramfs} {
-		if _, err := os.Stat(file); err != nil {
+		if _, err := fs.Fs.Stat(file); err != nil {
 			return nil, fmt.Errorf("%s: %w", file, errors.Unwrap(err))
 		}
 	}
 
-	tmpFile, err := os.CreateTemp("/var/tmp", "initramfs-")
+	tmpFile, err := afero.TempFile(fs.Fs, "/var/tmp", "initramfs-")
 	if err != nil {
 		return nil, err
 	}
 
-	one, _ := os.Open(microcode)
+	one, _ := fs.Fs.Open(microcode)
 	defer one.Close()
 
-	two, _ := os.Open(initramfs)
+	two, _ := fs.Fs.Open(initramfs)
 	defer two.Close()
 
 	_, err = io.Copy(tmpFile, one)
@@ -185,7 +186,6 @@ func CombineFiles(microcode, initramfs string) (*os.File, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to append initramfs file to output: %w", err)
 	}
-
 	return tmpFile, nil
 }
 
@@ -206,7 +206,7 @@ func CreateBundle(bundle Bundle) error {
 		if err != nil {
 			return err
 		}
-		defer os.Remove(tmpFile.Name())
+		defer fs.Fs.Remove(tmpFile.Name())
 		bundle.Initramfs = tmpFile.Name()
 	}
 

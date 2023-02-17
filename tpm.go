@@ -6,6 +6,7 @@ import (
 
 	"github.com/foxboron/go-uefi/efi/signature"
 	"github.com/foxboron/go-uefi/efi/util"
+	"github.com/foxboron/sbctl/fs"
 	"github.com/google/go-attestation/attest"
 )
 
@@ -19,13 +20,13 @@ var (
 )
 
 func GetEventlogEvents(eventlog string) ([]attest.Event, error) {
-	if _, err := os.Stat(eventlog); err != nil {
+	if _, err := fs.Fs.Stat(eventlog); err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 			return nil, ErrNoEventlog
 		}
 		return nil, err
 	}
-	b, err := os.ReadFile(eventlog)
+	b, err := fs.ReadFile(eventlog)
 	if err != nil {
 		return nil, err
 	}
