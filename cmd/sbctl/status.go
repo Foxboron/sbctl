@@ -65,7 +65,7 @@ func PrintStatus(s *Status) {
 	if len(s.Vendors) > 0 {
 		logging.Println(strings.Join(s.Vendors, " "))
 	} else {
-		logging.Println("n/a")
+		logging.Println("none")
 	}
 }
 
