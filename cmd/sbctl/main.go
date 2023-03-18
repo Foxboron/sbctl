@@ -65,7 +65,7 @@ func JsonOut(v interface{}) error {
 		return fmt.Errorf("could not marshal json: %w", err)
 	}
 	logging.PrintOn()
-	logging.Print(string(b))
+	logging.Println(string(b))
 	// Json should always be the last print call, but lets safe it :)
 	logging.PrintOff()
 	return nil
