@@ -9,6 +9,7 @@ import (
 	"github.com/foxboron/sbctl"
 	"github.com/foxboron/sbctl/fs"
 	"github.com/foxboron/sbctl/logging"
+	"github.com/foxboron/sbctl/quirks"
 	"github.com/spf13/cobra"
 )
 
@@ -19,20 +20,22 @@ var statusCmd = &cobra.Command{
 }
 
 type Status struct {
-	Installed  bool     `json:"installed"`
-	GUID       string   `json:"guid"`
-	SetupMode  bool     `json:"setup_mode"`
-	SecureBoot bool     `json:"secure_boot"`
-	Vendors    []string `json:"vendors"`
+	Installed      bool           `json:"installed"`
+	GUID           string         `json:"guid"`
+	SetupMode      bool           `json:"setup_mode"`
+	SecureBoot     bool           `json:"secure_boot"`
+	Vendors        []string       `json:"vendors"`
+	FirmwareQuirks []quirks.Quirk `json:"firmware_quirks"`
 }
 
 func NewStatus() *Status {
 	return &Status{
-		Installed:  false,
-		GUID:       "",
-		SetupMode:  false,
-		SecureBoot: false,
-		Vendors:    []string{},
+		Installed:      false,
+		GUID:           "",
+		SetupMode:      false,
+		SecureBoot:     false,
+		Vendors:        []string{},
+		FirmwareQuirks: []quirks.Quirk{},
 	}
 }
 
@@ -67,6 +70,13 @@ func PrintStatus(s *Status) {
 	} else {
 		logging.Println("none")
 	}
+	if len(s.FirmwareQuirks) > 0 {
+		logging.Print("Firmware:\t")
+		logging.Print(logging.Warnf("Your firmware has known quirks"))
+		for _, quirk := range s.FirmwareQuirks {
+			logging.Println("\t\t- " + quirk.ID + ": " + quirk.Name + " (" + quirk.Severity + ")\n\t\t  " + quirk.Link)
+		}
+	}
 }
 
 func RunStatus(cmd *cobra.Command, args []string) error {
@@ -90,6 +100,7 @@ func RunStatus(cmd *cobra.Command, args []string) error {
 	if keys := sbctl.GetEnrolledVendorCerts(); len(keys) > 0 {
 		stat.Vendors = keys
 	}
+	stat.FirmwareQuirks = quirks.CheckFirmwareQuirks()
 	if cmdOptions.JsonOutput {
 		if err := JsonOut(stat); err != nil {
 			return err
