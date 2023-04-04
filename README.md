@@ -34,15 +34,15 @@ testing towards [tianocore](https://www.tianocore.org/) utilizing
 * binutils (using `objcopy`)
 * Go >= 1.16
 
-## Available sbctl Packages
+## Available sbctl packages
 
-List of existing sbctl packages can be found
-[here](https://repology.org/project/sbctl/versions).
+You can find a list of [sbctl packages on
+Repology](https://repology.org/project/sbctl/versions).
 
-In addition, sbctl is also available for [openSUSE &
-Ubuntu](https://software.opensuse.org/package/sbctl?search_term=sbctl). Follow
-the `Expert Download` links to find installation instructions according to your
-operating system.
+In addition, sbctl is also available for [openSUSE (experimental) & Ubuntu
+(unofficial)](https://software.opensuse.org/package/sbctl?search_term=sbctl).
+Follow the `Expert Download` links to find installation instructions according
+to your operating system.
 
 # Support and development channel
 
