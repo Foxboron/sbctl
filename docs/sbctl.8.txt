@@ -51,7 +51,11 @@ EFI signing commands
                 database.
                 See **Option ROM***.
 
-                This feature is experimental.
+                This feature is experimental
+
+        *-c*, *--custom*;;
+                Enroll custom KEK and db certificates from "/usr/share/secureboot/keys/custom/KEK/"
+                and "/usr/share/secureboot/keys/custom/db/", respectively.
 
         *--yes-this-might-brick-my-machine*, **--yolo**;;
                 Ignore the Option ROM error and continue enrolling keys into the
@@ -360,6 +364,14 @@ Files
 
 **/usr/share/secureboot/keys/PK/PK.{pem,key}**::
         Contains the Platform Key.
+
+**/usr/share/secureboot/keys/custom/KEK/***::
+        Contains custom certificates which will be added to the firmware as
+        additional Key Exchange Keys.
+
+**/usr/share/secureboot/keys/custom/db/***::
+        Contains custom certificates which will be added to the firmware
+        Signature Database.
 
 
 See Also

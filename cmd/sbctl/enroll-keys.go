@@ -20,6 +20,7 @@ type EnrollKeysCmdOptions struct {
 	IgnoreImmutable      bool
 	Force                bool
 	TPMEventlogChecksums bool
+	Custom               bool
 }
 
 var (
@@ -96,20 +97,36 @@ func KeySync(guid util.EFIGUID, keydir string, oems []string) error {
 				logging.Print("\nWith vendor keys from microsoft...")
 
 				// db
-				oemSigDb, err := certs.GetCerts(oem, "db")
+				oemSigDb, err := certs.GetOEMCerts(oem, "db")
 				if err != nil {
 					return fmt.Errorf("could not enroll db keys: %w", err)
 				}
 				sigdb.AppendDatabase(oemSigDb)
 
 				// KEK
-				oemSigKEK, err := certs.GetCerts(oem, "KEK")
+				oemSigKEK, err := certs.GetOEMCerts(oem, "KEK")
 				if err != nil {
 					return fmt.Errorf("could not enroll KEK keys: %w", err)
 				}
 				sigkek.AppendDatabase(oemSigKEK)
 
 				// We are not enrolling PK keys from Microsoft
+			case "custom":
+				logging.Print("\nWith custom keys...")
+
+				// db
+				customSigDb, err := certs.GetCustomCerts(keydir, "db")
+				if err != nil {
+					return fmt.Errorf("could not enroll custom db keys: %w", err)
+				}
+				sigdb.AppendDatabase(customSigDb)
+
+				// KEK
+				customSigKEK, err := certs.GetCustomCerts(keydir, "KEK")
+				if err != nil {
+					return fmt.Errorf("could not enroll custom KEK keys: %w", err)
+				}
+				sigkek.AppendDatabase(customSigKEK)
 			}
 		}
 	}
@@ -137,6 +154,9 @@ func RunEnrollKeys(cmd *cobra.Command, args []string) error {
 	}
 	if enrollKeysCmdOptions.TPMEventlogChecksums {
 		oems = append(oems, "tpm-eventlog")
+	}
+	if enrollKeysCmdOptions.Custom {
+		oems = append(oems, "custom")
 	}
 	if !enrollKeysCmdOptions.IgnoreImmutable {
 		if err := sbctl.CheckImmutable(); err != nil {
@@ -166,6 +186,7 @@ func vendorFlags(cmd *cobra.Command) {
 	f := cmd.Flags()
 	f.BoolVarP(&enrollKeysCmdOptions.MicrosoftKeys, "microsoft", "m", false, "include microsoft keys into key enrollment")
 	f.BoolVarP(&enrollKeysCmdOptions.TPMEventlogChecksums, "tpm-eventlog", "t", false, "include TPM eventlog checksums into the db database")
+	f.BoolVarP(&enrollKeysCmdOptions.Custom, "custom", "c", false, "include custom db and KEK")
 }
 
 func enrollKeysCmdFlags(cmd *cobra.Command) {
