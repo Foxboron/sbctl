@@ -202,7 +202,9 @@ Signed:		✔ Signed
 
 **Note:** It is generally recommended to use the initramfs generator for this.
 `mkinitcpio` and `dracut` support this through their respective `--uki` and
-`--uefi` flags.
+`--uefi` flags, or the `ukify` tool from `systemd`.
+
+This feature is considered a second class citizen in `sbctl`.
 
 ```
 # sbctl bundle -s -i /boot/intel-ucode.img \
