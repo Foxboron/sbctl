@@ -34,9 +34,37 @@ testing towards [tianocore](https://www.tianocore.org/) utilizing
 * binutils (using `objcopy`)
 * Go >= 1.16
 
-## Available sbctl packages
+# Installation
 
-You can find a list of [sbctl packages on
+To fetch, build and install sbctl from the Github source:
+
+```
+$ go install github.com/foxboron/sbctl/cmd/sbctl@latest
+$ $(go env GOPATH)/bin/sbctl
+```
+
+To install through git:
+
+```
+$ git clone https://github.com/foxboron/sbctl.git
+$ cd sbctl
+$ make
+$ sbctl
+```
+
+### Available packages
+
+For Arch Linux:
+```
+$ pacman -S sbctl
+```
+
+For Alpine Linux:
+```
+$ apk add sbctl
+```
+
+You can find a updated list of [sbctl packages on
 Repology](https://repology.org/project/sbctl/versions).
 
 In addition, sbctl is also available for [openSUSE (experimental) & Ubuntu
@@ -170,7 +198,12 @@ Output File:	/usr/lib/fwupd/efi/fwupdx64.efi.signed
 Signed:		✔ Signed
 ```
 
-## Generate EFI stub
+## Generate Unified Kernel Images (UKI)
+
+**Note:** It is generally recommended to use the initramfs generator for this.
+`mkinitcpio` and `dracut` support this through their respective `--uki` and
+`--uefi` flags.
+
 ```
 # sbctl bundle -s -i /boot/intel-ucode.img \
       -l /usr/share/systemd/bootctl/splash-arch.bmp \
