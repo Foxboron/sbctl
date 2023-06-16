@@ -45,13 +45,31 @@ func (s *StringSet) Type() string {
 	return "[auth, esl]"
 }
 
+type FirmwareBuiltinFlags []string
+
+func (f *FirmwareBuiltinFlags) String() string {
+	return strings.Join(*f, ",")
+}
+
+// Set must have pointer receiver so it doesn't change the value of a copy
+func (f *FirmwareBuiltinFlags) Set(v string) error {
+	for _, val := range strings.Split(v, ",") {
+		*f = append(*f, val)
+	}
+	return nil
+}
+
+func (f *FirmwareBuiltinFlags) Type() string {
+	return ""
+}
+
 type EnrollKeysCmdOptions struct {
 	MicrosoftKeys        bool
 	IgnoreImmutable      bool
 	Force                bool
 	TPMEventlogChecksums bool
 	Custom               bool
-	BuiltinFirmwareCerts bool
+	BuiltinFirmwareCerts FirmwareBuiltinFlags
 	Export               StringSet
 }
 
@@ -114,60 +132,68 @@ func KeySync(guid util.EFIGUID, keydir string, oems []string) error {
 	}
 
 	// If we want OEM certs, we do that here
-	if len(oems) > 0 {
-		for _, oem := range oems {
-			switch oem {
-			case "tpm-eventlog":
-				logging.Print("\nWith checksums from the TPM Eventlog...")
-				eventlogDB, err := sbctl.GetEventlogChecksums(systemEventlog)
-				if err != nil {
-					return fmt.Errorf("could not enroll db keys: %w", err)
-				}
-				if len((*eventlogDB)) == 0 {
-					return fmt.Errorf("could not find any OpROM entries in the TPM eventlog")
-				}
-				sigdb.AppendDatabase(eventlogDB)
-			case "microsoft":
-				logging.Print("\nWith vendor keys from microsoft...")
+	for _, oem := range oems {
+		switch oem {
+		case "tpm-eventlog":
+			logging.Print("\nWith checksums from the TPM Eventlog...")
+			eventlogDB, err := sbctl.GetEventlogChecksums(systemEventlog)
+			if err != nil {
+				return fmt.Errorf("could not enroll db keys: %w", err)
+			}
+			if len((*eventlogDB)) == 0 {
+				return fmt.Errorf("could not find any OpROM entries in the TPM eventlog")
+			}
+			sigdb.AppendDatabase(eventlogDB)
+		case "microsoft":
+			logging.Print("\nWith vendor keys from microsoft...")
 
-				// db
-				oemSigDb, err := certs.GetOEMCerts(oem, "db")
-				if err != nil {
-					return fmt.Errorf("could not enroll db keys: %w", err)
-				}
-				sigdb.AppendDatabase(oemSigDb)
+			// db
+			oemSigDb, err := certs.GetOEMCerts(oem, "db")
+			if err != nil {
+				return fmt.Errorf("could not enroll db keys: %w", err)
+			}
+			sigdb.AppendDatabase(oemSigDb)
 
-				// KEK
-				oemSigKEK, err := certs.GetOEMCerts(oem, "KEK")
-				if err != nil {
-					return fmt.Errorf("could not enroll KEK keys: %w", err)
-				}
-				sigkek.AppendDatabase(oemSigKEK)
+			// KEK
+			oemSigKEK, err := certs.GetOEMCerts(oem, "KEK")
+			if err != nil {
+				return fmt.Errorf("could not enroll KEK keys: %w", err)
+			}
+			sigkek.AppendDatabase(oemSigKEK)
 
-				// We are not enrolling PK keys from Microsoft
-			case "custom":
-				logging.Print("\nWith custom keys...")
+			// We are not enrolling PK keys from Microsoft
+		case "custom":
+			logging.Print("\nWith custom keys...")
 
-				// db
-				customSigDb, err := certs.GetCustomCerts(keydir, "db")
-				if err != nil {
-					return fmt.Errorf("could not enroll custom db keys: %w", err)
-				}
-				sigdb.AppendDatabase(customSigDb)
+			// db
+			customSigDb, err := certs.GetCustomCerts(keydir, "db")
+			if err != nil {
+				return fmt.Errorf("could not enroll custom db keys: %w", err)
+			}
+			sigdb.AppendDatabase(customSigDb)
 
-				// KEK
-				customSigKEK, err := certs.GetCustomCerts(keydir, "KEK")
-				if err != nil {
-					return fmt.Errorf("could not enroll custom KEK keys: %w", err)
-				}
-				sigkek.AppendDatabase(customSigKEK)
-			case "firmware-builtin":
-				logging.Print("\nWith vendor certificates built into the firmware...")
-				builtinSigDb, err := certs.GetBuiltinCertificates()
+			// KEK
+			customSigKEK, err := certs.GetCustomCerts(keydir, "KEK")
+			if err != nil {
+				return fmt.Errorf("could not enroll custom KEK keys: %w", err)
+			}
+			sigkek.AppendDatabase(customSigKEK)
+		case "firmware-builtin":
+			logging.Print("\nWith vendor certificates built into the firmware...")
+
+			for _, cert := range enrollKeysCmdOptions.BuiltinFirmwareCerts {
+				builtinSigDb, err := certs.GetBuiltinCertificates(cert)
 				if err != nil {
 					return fmt.Errorf("could not enroll built-in firmware keys: %w", err)
 				}
-				sigdb.AppendDatabase(builtinSigDb)
+				switch cert {
+				case "db":
+					sigdb.AppendDatabase(builtinSigDb)
+				case "KEK":
+					sigkek.AppendDatabase(builtinSigDb)
+				case "PK":
+					sigpk.AppendDatabase(builtinSigDb)
+				}
 			}
 		}
 	}
@@ -238,7 +264,7 @@ func RunEnrollKeys(cmd *cobra.Command, args []string) error {
 	if enrollKeysCmdOptions.Custom {
 		oems = append(oems, "custom")
 	}
-	if enrollKeysCmdOptions.BuiltinFirmwareCerts {
+	if len(enrollKeysCmdOptions.BuiltinFirmwareCerts) >= 1 {
 		oems = append(oems, "firmware-builtin")
 	}
 	if !enrollKeysCmdOptions.IgnoreImmutable {
@@ -278,7 +304,9 @@ func vendorFlags(cmd *cobra.Command) {
 	f.BoolVarP(&enrollKeysCmdOptions.MicrosoftKeys, "microsoft", "m", false, "include microsoft keys into key enrollment")
 	f.BoolVarP(&enrollKeysCmdOptions.TPMEventlogChecksums, "tpm-eventlog", "t", false, "include TPM eventlog checksums into the db database")
 	f.BoolVarP(&enrollKeysCmdOptions.Custom, "custom", "c", false, "include custom db and KEK")
-	f.BoolVarP(&enrollKeysCmdOptions.BuiltinFirmwareCerts, "firmware-builtin", "f", false, "include keys indicated by the firmware as being part of the default database")
+	// f.BoolVarP(&enrollKeysCmdOptions.BuiltinFirmwareCerts, "firmware-builtin", "f", false, "include keys indicated by the firmware as being part of the default database")
+	l := f.VarPF(&enrollKeysCmdOptions.BuiltinFirmwareCerts, "firmware-builtin", "f", "include keys indicated by the firmware as being part of the default database")
+	l.NoOptDefVal = "db,KEK"
 }
 
 func enrollKeysCmdFlags(cmd *cobra.Command) {

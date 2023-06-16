@@ -7,6 +7,7 @@ import (
 
 	"github.com/foxboron/go-uefi/efi"
 	"github.com/foxboron/sbctl"
+	"github.com/foxboron/sbctl/certs"
 	"github.com/foxboron/sbctl/fs"
 	"github.com/foxboron/sbctl/logging"
 	"github.com/foxboron/sbctl/quirks"
@@ -99,6 +100,9 @@ func RunStatus(cmd *cobra.Command, args []string) error {
 	}
 	if keys := sbctl.GetEnrolledVendorCerts(); len(keys) > 0 {
 		stat.Vendors = keys
+	}
+	if keys, err := certs.BuiltinSignatureOwners(); err == nil {
+		stat.Vendors = append(stat.Vendors, keys...)
 	}
 	stat.FirmwareQuirks = quirks.CheckFirmwareQuirks()
 	if cmdOptions.JsonOutput {

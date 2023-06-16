@@ -57,6 +57,17 @@ EFI signing commands
                 Enroll custom KEK and db certificates from "/usr/share/secureboot/keys/custom/KEK/"
                 and "/usr/share/secureboot/keys/custom/db/", respectively.
 
+        *-f*, *--firmware-builtin*;;
+                Enroll signatures from dbDefault, KEKDefault or PKDefault. This
+                is usefull if sbctl does not vendor your OEM certificates, or
+                doesn't include all of them.
+
+                Valid values are "db", "KEK" or "PK" passed as a comma
+                delimitered string.
+
+                Default: "db,KEK"
+
+
         *--yes-this-might-brick-my-machine*, **--yolo**;;
                 Ignore the Option ROM error and continue enrolling keys into the
                 UEFI firmware.
