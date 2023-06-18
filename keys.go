@@ -97,16 +97,20 @@ func SaveKey(k []byte, file string) error {
 	return nil
 }
 
-func Enroll(sigdb *signature.SignatureDatabase, cert, signerKey, signerPem []byte, efivar string) error {
+func SignDatabase(sigdb *signature.SignatureDatabase, signerKey, signerPem []byte, efivar string) ([]byte, error) {
 	key, err := util.ReadKey(signerKey)
 	if err != nil {
-		return nil
+		return nil, err
 	}
 	crt, err := util.ReadCert(signerPem)
 	if err != nil {
-		return nil
+		return nil, err
 	}
-	signedBuf, err := efi.SignEFIVariable(key, crt, efivar, sigdb.Bytes())
+	return efi.SignEFIVariable(key, crt, efivar, sigdb.Bytes())
+}
+
+func Enroll(sigdb *signature.SignatureDatabase, signerKey, signerPem []byte, efivar string) error {
+	signedBuf, err := SignDatabase(sigdb, signerKey, signerPem, efivar)
 	if err != nil {
 		return err
 	}

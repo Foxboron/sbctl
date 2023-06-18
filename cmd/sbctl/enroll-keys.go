@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"path/filepath"
+	"strings"
 
 	"github.com/foxboron/go-uefi/efi"
 	"github.com/foxboron/go-uefi/efi/signature"
@@ -13,7 +14,36 @@ import (
 	"github.com/foxboron/sbctl/fs"
 	"github.com/foxboron/sbctl/logging"
 	"github.com/spf13/cobra"
+	"golang.org/x/exp/slices"
 )
+
+type StringSet struct {
+	Allowed []string
+	Value   string
+}
+
+func NewStringSet(allowed []string, d string) *StringSet {
+	return &StringSet{
+		Allowed: allowed,
+		Value:   d,
+	}
+}
+
+func (s StringSet) String() string {
+	return s.Value
+}
+
+func (s *StringSet) Set(p string) error {
+	if !slices.Contains(s.Allowed, p) {
+		return fmt.Errorf("%s is not included in %s", p, strings.Join(s.Allowed, ","))
+	}
+	s.Value = p
+	return nil
+}
+
+func (s *StringSet) Type() string {
+	return "[auth, esl]"
+}
 
 type EnrollKeysCmdOptions struct {
 	MicrosoftKeys        bool
@@ -21,12 +51,15 @@ type EnrollKeysCmdOptions struct {
 	Force                bool
 	TPMEventlogChecksums bool
 	Custom               bool
+	Export               StringSet
 }
 
 var (
 	systemEventlog       = "/sys/kernel/security/tpm0/binary_bios_measurements"
-	enrollKeysCmdOptions = EnrollKeysCmdOptions{}
-	enrollKeysCmd        = &cobra.Command{
+	enrollKeysCmdOptions = EnrollKeysCmdOptions{
+		Export: StringSet{Allowed: []string{"esl", "auth"}},
+	}
+	enrollKeysCmd = &cobra.Command{
 		Use:   "enroll-keys",
 		Short: "Enroll the current keys to EFI",
 		RunE:  RunEnrollKeys,
@@ -130,13 +163,52 @@ func KeySync(guid util.EFIGUID, keydir string, oems []string) error {
 			}
 		}
 	}
-	if err := sbctl.Enroll(sigdb, dbPem, KEKKey, KEKPem, "db"); err != nil {
+
+	if enrollKeysCmdOptions.Export.Value != "" {
+		if enrollKeysCmdOptions.Export.Value == "auth" {
+			logging.Print("\nExporting as auth files...")
+			sigdb, err := sbctl.SignDatabase(sigdb, KEKKey, KEKPem, "db")
+			if err != nil {
+				return err
+			}
+			sigkek, err := sbctl.SignDatabase(sigkek, PKKey, PKPem, "KEK")
+			if err != nil {
+				return err
+			}
+			sigpk, err := sbctl.SignDatabase(sigpk, PKKey, PKPem, "PK")
+			if err != nil {
+				return err
+			}
+			if err := fs.WriteFile("db.auth", sigdb, 0644); err != nil {
+				return err
+			}
+			if err := fs.WriteFile("KEK.auth", sigkek, 0644); err != nil {
+				return err
+			}
+			if err := fs.WriteFile("PK.auth", sigpk, 0644); err != nil {
+				return err
+			}
+		} else if enrollKeysCmdOptions.Export.Value == "esl" {
+			logging.Print("\nExporting as esl files...")
+			if err := fs.WriteFile("db.esl", sigdb.Bytes(), 0644); err != nil {
+				return err
+			}
+			if err := fs.WriteFile("KEK.esl", sigkek.Bytes(), 0644); err != nil {
+				return err
+			}
+			if err := fs.WriteFile("PK.esl", sigpk.Bytes(), 0644); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+	if err := sbctl.Enroll(sigdb, KEKKey, KEKPem, "db"); err != nil {
 		return err
 	}
-	if err := sbctl.Enroll(sigkek, KEKPem, PKKey, PKPem, "KEK"); err != nil {
+	if err := sbctl.Enroll(sigkek, PKKey, PKPem, "KEK"); err != nil {
 		return err
 	}
-	if err := sbctl.Enroll(sigpk, PKPem, PKKey, PKPem, "PK"); err != nil {
+	if err := sbctl.Enroll(sigpk, PKKey, PKPem, "PK"); err != nil {
 		return err
 	}
 	return nil
@@ -173,12 +245,20 @@ func RunEnrollKeys(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	guid := util.StringToGUID(uuid.String())
-	logging.Print("Enrolling keys to EFI variables...")
+	if enrollKeysCmdOptions.Export.Value != "" {
+		logging.Print("Exporting keys to EFI files...")
+	} else {
+		logging.Print("Enrolling keys to EFI variables...")
+	}
 	if err := KeySync(*guid, sbctl.KeysPath, oems); err != nil {
 		logging.NotOk("")
 		return fmt.Errorf("couldn't sync keys: %w", err)
 	}
-	logging.Ok("\nEnrolled keys to the EFI variables!")
+	if enrollKeysCmdOptions.Export.Value != "" {
+		logging.Ok("\nExported files!")
+	} else {
+		logging.Ok("\nEnrolled keys to the EFI variables!")
+	}
 	return nil
 }
 
@@ -195,6 +275,7 @@ func enrollKeysCmdFlags(cmd *cobra.Command) {
 	f.BoolVarP(&enrollKeysCmdOptions.Force, "yolo", "", false, "yolo")
 	f.MarkHidden("yolo")
 	f.BoolVarP(&enrollKeysCmdOptions.IgnoreImmutable, "ignore-immutable", "i", false, "ignore checking for immutable efivarfs files")
+	f.VarPF(&enrollKeysCmdOptions.Export, "export", "", "export the EFI database values to current directory instead of enrolling")
 }
 
 func init() {
