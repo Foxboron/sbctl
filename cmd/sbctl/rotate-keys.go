@@ -90,7 +90,7 @@ func rotateDb(oldKeys *Keys, newKeys *Keys) error {
 		return err
 	}
 	sl.Append(signature.CERT_X509_GUID, *guid, newKeys.DbCert)
-	return sbctl.Enroll(sl, newKeys.DbCert, newKeys.KEKKey, newKeys.KEKCert, "db")
+	return sbctl.Enroll(sl, newKeys.KEKKey, newKeys.KEKCert, "db")
 }
 
 func rotateKEK(oldKeys *Keys, newKeys *Keys) error {
@@ -111,7 +111,7 @@ func rotateKEK(oldKeys *Keys, newKeys *Keys) error {
 		return err
 	}
 	sl.Append(signature.CERT_X509_GUID, *guid, newKeys.KEKCert)
-	return sbctl.Enroll(sl, newKeys.KEKCert, newKeys.PKKey, newKeys.PKCert, "KEK")
+	return sbctl.Enroll(sl, newKeys.PKKey, newKeys.PKCert, "KEK")
 }
 
 func rotatePK(oldKeys *Keys, newKeys *Keys) error {
@@ -131,7 +131,7 @@ func rotatePK(oldKeys *Keys, newKeys *Keys) error {
 	// We have most likely reset the PK so we don't care about missing sigdata
 	sl.Remove(signature.CERT_X509_GUID, *guid, pkCert.Raw)
 	sl.Append(signature.CERT_X509_GUID, *guid, newKeys.PKCert)
-	return sbctl.Enroll(sl, newKeys.PKCert, oldKeys.PKKey, oldKeys.PKCert, "PK")
+	return sbctl.Enroll(sl, oldKeys.PKKey, oldKeys.PKCert, "PK")
 }
 
 func RunRotateKeys(cmd *cobra.Command, args []string) error {

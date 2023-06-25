@@ -67,6 +67,13 @@ EFI signing commands
                 files and unset the immutable attribute before enrolling
                 certificates.
 
+        *--export*;;
+                Export the keys we intend to enroll as EFI Signature Lists
+                (esl), or EFI Authenticated Variables (auth) into the current
+                working directory.
+
+                Valid values are: esl, auth.
+
 **sign** <FILE>...::
         Signs an EFI binary with the created key. The file will be checked for
         valid signatures to avoid duplicates.
