@@ -33,6 +33,7 @@ testing towards [tianocore](https://www.tianocore.org/) utilizing
 * util-linux (using `lsblk`)
 * binutils (using `objcopy`)
 * Go >= 1.16
+* asciidoc (only for building)
 
 # Installation
 
