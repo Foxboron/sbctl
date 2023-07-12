@@ -42,7 +42,15 @@ func (s *StringSet) Set(p string) error {
 }
 
 func (s *StringSet) Type() string {
-	return "[auth, esl]"
+	var allowedValues string
+
+	for _, allowedValue := range s.Allowed {
+		allowedValues += fmt.Sprintf("%v,", allowedValue)
+	}
+
+	allowedValues = strings.TrimRight(allowedValues, ",")
+
+	return fmt.Sprintf("[%v]", allowedValues)
 }
 
 type FirmwareBuiltinFlags []string
@@ -69,6 +77,7 @@ type EnrollKeysCmdOptions struct {
 	Force                bool
 	TPMEventlogChecksums bool
 	Custom               bool
+	Partial              StringSet
 	BuiltinFirmwareCerts FirmwareBuiltinFlags
 	Export               StringSet
 }
@@ -76,7 +85,8 @@ type EnrollKeysCmdOptions struct {
 var (
 	systemEventlog       = "/sys/kernel/security/tpm0/binary_bios_measurements"
 	enrollKeysCmdOptions = EnrollKeysCmdOptions{
-		Export: StringSet{Allowed: []string{"esl", "auth"}},
+		Partial: StringSet{Allowed: []string{"PK", "KEK", "db"}},
+		Export:  StringSet{Allowed: []string{"esl", "auth"}},
 	}
 	enrollKeysCmd = &cobra.Command{
 		Use:   "enroll-keys",
@@ -88,7 +98,6 @@ var (
 
 // Sync keys from a key directory into efivarfs
 func KeySync(guid util.EFIGUID, keydir string, oems []string) error {
-
 	// Prepare all the keys we need
 	PKKey, err := fs.ReadFile(filepath.Join(keydir, "PK", "PK.key"))
 	if err != nil {
@@ -213,29 +222,51 @@ func KeySync(guid util.EFIGUID, keydir string, oems []string) error {
 			if err != nil {
 				return err
 			}
-			if err := fs.WriteFile("db.auth", sigdb, 0644); err != nil {
+			if err := fs.WriteFile("db.auth", sigdb, 0o644); err != nil {
 				return err
 			}
-			if err := fs.WriteFile("KEK.auth", sigkek, 0644); err != nil {
+			if err := fs.WriteFile("KEK.auth", sigkek, 0o644); err != nil {
 				return err
 			}
-			if err := fs.WriteFile("PK.auth", sigpk, 0644); err != nil {
+			if err := fs.WriteFile("PK.auth", sigpk, 0o644); err != nil {
 				return err
 			}
 		} else if enrollKeysCmdOptions.Export.Value == "esl" {
 			logging.Print("\nExporting as esl files...")
-			if err := fs.WriteFile("db.esl", sigdb.Bytes(), 0644); err != nil {
+			if err := fs.WriteFile("db.esl", sigdb.Bytes(), 0o644); err != nil {
 				return err
 			}
-			if err := fs.WriteFile("KEK.esl", sigkek.Bytes(), 0644); err != nil {
+			if err := fs.WriteFile("KEK.esl", sigkek.Bytes(), 0o644); err != nil {
 				return err
 			}
-			if err := fs.WriteFile("PK.esl", sigpk.Bytes(), 0644); err != nil {
+			if err := fs.WriteFile("PK.esl", sigpk.Bytes(), 0o644); err != nil {
 				return err
 			}
 		}
 		return nil
 	}
+
+	if enrollKeysCmdOptions.Partial.Value != "" {
+		switch value := enrollKeysCmdOptions.Partial.Value; value {
+		case "db":
+			if err := sbctl.Enroll(sigdb, KEKKey, KEKPem, value); err != nil {
+				return err
+			}
+		case "KEK":
+			if err := sbctl.Enroll(sigkek, PKKey, PKPem, value); err != nil {
+				return err
+			}
+		case "PK":
+			if err := sbctl.Enroll(sigpk, PKKey, PKPem, value); err != nil {
+				return err
+			}
+		default:
+			return fmt.Errorf("unsupported key type to enroll: %s, allowed values are: %s", value, enrollKeysCmdOptions.Partial.Type())
+		}
+
+		return nil
+	}
+
 	if err := sbctl.Enroll(sigdb, KEKKey, KEKPem, "db"); err != nil {
 		return err
 	}
@@ -245,11 +276,11 @@ func KeySync(guid util.EFIGUID, keydir string, oems []string) error {
 	if err := sbctl.Enroll(sigpk, PKKey, PKPem, "PK"); err != nil {
 		return err
 	}
+
 	return nil
 }
 
 func RunEnrollKeys(cmd *cobra.Command, args []string) error {
-
 	if !efi.GetSetupMode() {
 		return ErrSetupModeDisabled
 	}
@@ -316,6 +347,7 @@ func enrollKeysCmdFlags(cmd *cobra.Command) {
 	f.MarkHidden("yolo")
 	f.BoolVarP(&enrollKeysCmdOptions.IgnoreImmutable, "ignore-immutable", "i", false, "ignore checking for immutable efivarfs files")
 	f.VarPF(&enrollKeysCmdOptions.Export, "export", "", "export the EFI database values to current directory instead of enrolling")
+	f.VarPF(&enrollKeysCmdOptions.Partial, "partial", "p", "enroll a partial set of keys")
 }
 
 func init() {
