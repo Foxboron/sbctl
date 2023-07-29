@@ -30,7 +30,7 @@ var createKeysCmd = &cobra.Command{
 			logging.Ok("")
 			logging.Println("Secure boot keys created!")
 		} else {
-			logging.Ok("Secure boot keys has already been created!")
+			logging.Ok("Secure boot keys have already been created!")
 		}
 		return nil
 	},
