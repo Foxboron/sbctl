@@ -135,7 +135,7 @@ func rotatePK(oldKeys *Keys, newKeys *Keys) error {
 }
 
 func RunRotateKeys(cmd *cobra.Command, args []string) error {
-	if err := resetKey(); err != nil {
+	if err := resetPK(); err != nil {
 		fmt.Println(err)
 	}
 
