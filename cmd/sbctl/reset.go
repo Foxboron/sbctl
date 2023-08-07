@@ -132,7 +132,7 @@ func RunReset(cmd *cobra.Command, args []string) error {
 
 func resetKeysCmdFlags(cmd *cobra.Command) {
 	f := cmd.Flags()
-	f.VarPF(&resetCmdOpts.Partial, "partial", "p", "enroll a partial set of keys")
+	f.VarPF(&resetCmdOpts.Partial, "partial", "p", "reset a partial set of keys")
 }
 
 func init() {

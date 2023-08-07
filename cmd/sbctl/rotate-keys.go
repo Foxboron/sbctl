@@ -10,182 +10,274 @@ import (
 	"github.com/foxboron/go-uefi/efi/util"
 	"github.com/foxboron/sbctl"
 	"github.com/foxboron/sbctl/fs"
+	"github.com/foxboron/sbctl/hierarchy"
 	"github.com/foxboron/sbctl/logging"
+	"github.com/foxboron/sbctl/stringset"
 	"github.com/spf13/cobra"
 )
 
-// TODO: Be more selective what you can rotate
 type RotateKeysCmdOptions struct {
-	BackupDir string
-	Db        bool
-	Kek       bool
-	PK        bool
-	All       bool
+	BackupDir  string
+	NewKeysDir string
+	Partial    stringset.StringSet
+	KeyFile    string
+	CertFile   string
 }
 
 var (
-	rotateKeysCmdOptions = RotateKeysCmdOptions{}
-	rotateKeysCmd        = &cobra.Command{
+	rotateKeysCmdOptions = RotateKeysCmdOptions{
+		Partial: stringset.StringSet{Allowed: []string{hierarchy.PK.String(), hierarchy.KEK.String(), hierarchy.Db.String()}},
+	}
+	rotateKeysCmd = &cobra.Command{
 		Use:   "rotate-keys",
 		Short: "Rotate secure boot keys with new keys.",
 		RunE:  RunRotateKeys,
 	}
 )
 
-// TODO: Abstract this to some common keyhandling abstractions
+type KeyCertPair struct {
+	Key  []byte
+	Cert []byte
+}
+
 type Keys struct {
-	PKKey   []byte
-	PKCert  []byte
-	KEKKey  []byte
-	KEKCert []byte
-	DbKey   []byte
-	DbCert  []byte
+	PK  *KeyCertPair
+	KEK *KeyCertPair
+	Db  *KeyCertPair
 }
 
 func ReadKeysFromDir(src string) (*Keys, error) {
 	k := Keys{}
 	var err error
-	k.PKKey, err = fs.ReadFile(filepath.Join(src, "PK", "PK.key"))
+
+	k.PK, err = ReadPair(src, hierarchy.PK)
 	if err != nil {
 		return &k, err
 	}
 
-	k.PKCert, err = fs.ReadFile(filepath.Join(src, "PK", "PK.pem"))
+	k.KEK, err = ReadPair(src, hierarchy.KEK)
 	if err != nil {
 		return &k, err
 	}
 
-	k.KEKKey, err = fs.ReadFile(filepath.Join(src, "KEK", "KEK.key"))
-	if err != nil {
-		return &k, err
-	}
-
-	k.KEKCert, err = fs.ReadFile(filepath.Join(src, "KEK", "KEK.pem"))
-	if err != nil {
-		return &k, err
-	}
-
-	k.DbCert, err = fs.ReadFile(filepath.Join(src, "db", "db.pem"))
+	k.Db, err = ReadPair(src, hierarchy.Db)
 	if err != nil {
 		return &k, err
 	}
 	return &k, err
 }
 
-func rotateDb(oldKeys *Keys, newKeys *Keys) error {
-	sl, err := efi.Getdb()
+func ReadPair(src string, hierarchy hierarchy.Hierarchy) (*KeyCertPair, error) {
+	var (
+		k   KeyCertPair
+		err error
+	)
+
+	k.Key, err = fs.ReadFile(filepath.Join(src, hierarchy.String(), fmt.Sprintf("%s.key", hierarchy.String())))
 	if err != nil {
-		return err
+		return &k, err
 	}
-	uuid, err := sbctl.GetGUID()
+
+	k.Cert, err = fs.ReadFile(filepath.Join(src, hierarchy.String(), fmt.Sprintf("%s.pem", hierarchy.String())))
 	if err != nil {
-		return err
+		return &k, err
 	}
-	guid := util.StringToGUID(uuid.String())
-	db, err := util.ReadCert(oldKeys.DbCert)
-	if err != nil {
-		return err
-	}
-	if err = sl.Remove(signature.CERT_X509_GUID, *guid, db.Raw); err != nil {
-		return err
-	}
-	sl.Append(signature.CERT_X509_GUID, *guid, newKeys.DbCert)
-	return sbctl.Enroll(sl, newKeys.KEKKey, newKeys.KEKCert, "db")
+
+	return &k, err
 }
 
-func rotateKEK(oldKeys *Keys, newKeys *Keys) error {
-	sl, err := efi.GetKEK()
-	if err != nil {
-		return err
-	}
-	uuid, err := sbctl.GetGUID()
-	if err != nil {
-		return err
-	}
-	guid := util.StringToGUID(uuid.String())
-	kekCert, err := util.ReadCert(oldKeys.KEKCert)
-	if err != nil {
-		return err
-	}
-	if err = sl.Remove(signature.CERT_X509_GUID, *guid, kekCert.Raw); err != nil {
-		return err
-	}
-	sl.Append(signature.CERT_X509_GUID, *guid, newKeys.KEKCert)
-	return sbctl.Enroll(sl, newKeys.PKKey, newKeys.PKCert, "KEK")
-}
+func rotateCerts(hiera hierarchy.Hierarchy, oldCert, newCert []byte, keyCertPair *KeyCertPair) error {
+	var (
+		sl  *signature.SignatureDatabase
+		err error
+	)
 
-func rotatePK(oldKeys *Keys, newKeys *Keys) error {
-	sl, err := efi.GetPK()
+	switch hiera {
+	case hierarchy.PK:
+		sl, err = efi.GetPK()
+	case hierarchy.KEK:
+		sl, err = efi.GetKEK()
+	case hierarchy.Db:
+		sl, err = efi.Getdb()
+	}
+
 	if err != nil {
 		return err
 	}
+
 	uuid, err := sbctl.GetGUID()
 	if err != nil {
 		return err
 	}
+
 	guid := util.StringToGUID(uuid.String())
-	pkCert, err := util.ReadCert(oldKeys.PKCert)
+
+	cert, err := util.ReadCert(oldCert)
 	if err != nil {
 		return err
 	}
-	// We have most likely reset the PK so we don't care about missing sigdata
-	sl.Remove(signature.CERT_X509_GUID, *guid, pkCert.Raw)
-	sl.Append(signature.CERT_X509_GUID, *guid, newKeys.PKCert)
-	return sbctl.Enroll(sl, oldKeys.PKKey, oldKeys.PKCert, "PK")
+
+	if err = sl.Remove(signature.CERT_X509_GUID, *guid, cert.Raw); err != nil {
+		return err
+	}
+
+	sl.Append(signature.CERT_X509_GUID, *guid, newCert)
+
+	return sbctl.Enroll(sl, keyCertPair.Key, keyCertPair.Cert, hiera.String())
 }
 
 func RunRotateKeys(cmd *cobra.Command, args []string) error {
-	if err := resetPK(); err != nil {
-		fmt.Println(err)
+	partial := rotateKeysCmdOptions.Partial.Value
+
+	// rotate all keys if no specific key should be replaced
+	if partial == "" {
+
+		if err := rotateAllKeys(rotateKeysCmdOptions.BackupDir, rotateKeysCmdOptions.NewKeysDir); err != nil {
+			return err
+		}
+
+		return nil
+	}
+
+	return rotateKey(partial, rotateKeysCmdOptions.KeyFile, rotateKeysCmdOptions.CertFile)
+}
+
+func rotateAllKeys(backupDir, newKeysDir string) error {
+	oldKeys, err := ReadKeysFromDir(sbctl.KeysPath)
+	if err != nil {
+		return fmt.Errorf("can't read old keys from dir: %v", err)
+	}
+
+	if backupDir == "" {
+		backupDir = filepath.Join("/var/tmp", fmt.Sprintf("sbctl_backup_keys_%d", time.Now().Unix()))
+	}
+
+	if err := sbctl.CopyDirectory(sbctl.KeysPath, backupDir); err != nil {
+		return err
+	}
+	logging.Print("Backed up keys to %s\n", backupDir)
+
+	if err := fs.Fs.RemoveAll(sbctl.KeysPath); err != nil {
+		return fmt.Errorf("failed removing old keys: %v", err)
+	}
+
+	var newKeys *Keys
+
+	if newKeysDir == "" {
+		logging.Print("Creating secure boot keys...")
+		if err = sbctl.InitializeSecureBootKeys(sbctl.KeysPath); err != nil {
+			logging.NotOk("")
+			return fmt.Errorf("couldn't initialize secure boot: %w", err)
+		}
+		logging.Ok("")
+		logging.Println("Secure boot keys created!")
+
+	} else {
+		logging.Print("Importing new secure boot keys from %s...", newKeysDir)
+		if err := ImportKeysFromDirectory(newKeysDir); err != nil {
+			logging.NotOk("")
+			return fmt.Errorf("couldn't import secure boot: %w", err)
+		}
+		logging.Ok("")
+		logging.Println("Secure boot keys updated!")
+
+	}
+
+	newKeys, err = ReadKeysFromDir(sbctl.KeysPath)
+	if err != nil {
+		return fmt.Errorf("can't read new keys from dir: %v", err)
+	}
+
+	if err := rotateCerts(hierarchy.PK, oldKeys.PK.Cert, newKeys.PK.Cert, oldKeys.PK); err != nil {
+		return fmt.Errorf("could not rotate PK: %v", err)
+	}
+
+	if err := rotateCerts(hierarchy.KEK, oldKeys.KEK.Cert, newKeys.KEK.Cert, newKeys.PK); err != nil {
+		return fmt.Errorf("could not rotate KEK: %v", err)
+	}
+
+	if err := rotateCerts(hierarchy.Db, oldKeys.Db.Cert, newKeys.Db.Cert, newKeys.KEK); err != nil {
+		return fmt.Errorf("could not rotate db: %v", err)
+	}
+
+	logging.Ok("Enrolled new keys into UEFI!")
+
+	if err := SignAll(); err != nil {
+		return fmt.Errorf("failed resigning files: %v", err)
+	}
+
+	return nil
+}
+
+func rotateKey(hiera string, keyPath, certPath string) error {
+	if keyPath == "" {
+		return fmt.Errorf("a new key needs to be provided for a partial reset of %s", hiera)
+	}
+
+	if certPath == "" {
+		return fmt.Errorf("a new certificate needs to be provided for a partial reset of %s", hiera)
 	}
 
 	oldKeys, err := ReadKeysFromDir(sbctl.KeysPath)
 	if err != nil {
 		return fmt.Errorf("can't read old keys from dir: %v", err)
 	}
-	backupDir := rotateKeysCmdOptions.BackupDir
-	if backupDir == "" {
-		backupDir = filepath.Join("/var/tmp", fmt.Sprintf("sbctl_backup_keys_%d", time.Now().Unix()))
-	}
-	if err := sbctl.CopyDirectory(sbctl.KeysPath, backupDir); err != nil {
-		return err
-	}
-	logging.Print("Backed up keys to %s\n", backupDir)
-	if err := fs.Fs.RemoveAll(sbctl.KeysPath); err != nil {
-		return fmt.Errorf("failed removing old keys: %v", err)
-	}
 
-	logging.Print("Creating secure boot keys...")
-	if err = sbctl.InitializeSecureBootKeys(sbctl.KeysPath); err != nil {
-		logging.NotOk("")
-		return fmt.Errorf("couldn't initialize secure boot: %w", err)
-	}
-	logging.Ok("")
-	logging.Println("Secure boot keys created!")
-	newKeys, err := ReadKeysFromDir(sbctl.KeysPath)
+	newCert, err := fs.ReadFile(certPath)
 	if err != nil {
-		return fmt.Errorf("can't read new keys from dir: %v", err)
+		return fmt.Errorf("can't read new certificate from path %s: %v", certPath, err)
 	}
-	if err := rotatePK(oldKeys, newKeys); err != nil {
-		return fmt.Errorf("could not rotate PK: %v", err)
-	}
-	if err := rotateKEK(oldKeys, newKeys); err != nil {
-		return fmt.Errorf("could not rotate KEK: %v", err)
-	}
-	if err := rotateDb(oldKeys, newKeys); err != nil {
-		return fmt.Errorf("could not rotate db: %v", err)
-	}
-	logging.Ok("Enrolled new keys into UEFI!")
 
-	if err := SignAll(); err != nil {
-		return fmt.Errorf("failed resigning files: %v", err)
+	var (
+		importKeyDst  string
+		importCertDst string
+	)
+
+	switch hiera {
+	case hierarchy.PK.String():
+		if err := rotateCerts(hierarchy.PK, oldKeys.PK.Cert, newCert, oldKeys.PK); err != nil {
+			return fmt.Errorf("could not rotate PK: %v", err)
+		}
+
+		importKeyDst = sbctl.PKKey
+		importCertDst = sbctl.PKCert
+	case hierarchy.KEK.String():
+		if err := rotateCerts(hierarchy.KEK, oldKeys.KEK.Cert, newCert, oldKeys.PK); err != nil {
+			return fmt.Errorf("could not rotate KEK: %v", err)
+		}
+
+		importKeyDst = sbctl.KEKKey
+		importCertDst = sbctl.KEKCert
+	case hierarchy.Db.String():
+		if err := rotateCerts(hierarchy.Db, oldKeys.Db.Cert, newCert, oldKeys.KEK); err != nil {
+			return fmt.Errorf("could not rotate db: %v", err)
+		}
+
+		importKeyDst = sbctl.DBKey
+		importCertDst = sbctl.DBCert
 	}
+	
+	logging.Ok("Enrolled new key of hierarchy %s into UEFI!", hiera)
+
+	// import new key and certificate
+	if err = Import(keyPath, importKeyDst); err != nil {
+		return fmt.Errorf("could not replace key: %s", err)
+	}
+
+	if err = Import(certPath, importCertDst); err != nil {
+		return fmt.Errorf("could not replace certificate: %s", err)
+	}
+
 	return nil
 }
 
 func rotateKeysCmdFlags(cmd *cobra.Command) {
 	f := cmd.Flags()
-	f.StringVarP(&rotateKeysCmdOptions.BackupDir, "backup-dir", "", "", "Backup keys to directory")
+	f.StringVarP(&rotateKeysCmdOptions.BackupDir, "backup-dir", "b", "", "Backup keys to directory")
+	f.StringVarP(&rotateKeysCmdOptions.NewKeysDir, "new-keys-dir", "n", "", "Provide new keys to enroll by directory")
+	f.VarPF(&rotateKeysCmdOptions.Partial, "partial", "p", "rotate a key of a specific hierarchy")
+	f.StringVarP(&rotateKeysCmdOptions.KeyFile, "key-file", "k", "", "key file to replace (only with partial flag)")
+	f.StringVarP(&rotateKeysCmdOptions.CertFile, "cert-file", "c", "", "certificate file to replace (only with partial flag)")
 }
 
 func init() {
