@@ -219,6 +219,8 @@ github.com/fortytw2/leaktest v1.2.0/go.mod h1:jDsjWgpAGjm2CA7WthBh/CdZYEPF31XHqu
 github.com/fortytw2/leaktest v1.3.0/go.mod h1:jDsjWgpAGjm2CA7WthBh/CdZYEPF31XHquHwclZch5g=
 github.com/foxboron/go-uefi v0.0.0-20230217160721-375279dfc837 h1:JAEqMMcWSvLghXL8W5w4Bp1mRL8x35pCW9OlpZnKOB0=
 github.com/foxboron/go-uefi v0.0.0-20230217160721-375279dfc837/go.mod h1:VdozURTQHi5Rs54l+4Szi3yIJQDMfXXYrRLAjKKowWI=
+github.com/foxboron/go-uefi v0.0.0-20230808201820-18b9ba9cd4c3 h1:SJMQFT74bCrP+kQ24oWhmuyPFHDTavrd3JMIe//2NhU=
+github.com/foxboron/go-uefi v0.0.0-20230808201820-18b9ba9cd4c3/go.mod h1:VdozURTQHi5Rs54l+4Szi3yIJQDMfXXYrRLAjKKowWI=
 github.com/franela/goblin v0.0.0-20200105215937-c9ffbefa60db/go.mod h1:7dvUGVsVBjqR7JHJk0brhHOZYGmfBYOrK0ZhYMEtBr4=
 github.com/franela/goreq v0.0.0-20171204163338-bcd34c9993f8/go.mod h1:ZhphrRTfi2rbfLwlschooIH4+wKKDR4Pdxhh+TRoA20=
 github.com/fsnotify/fsnotify v1.4.7/go.mod h1:jwhsz4b93w/PPRr/qN1Yymfu8t87LnFCMoQvtojpjFo=
@@ -320,7 +322,6 @@ github.com/google/go-cmp v0.5.4/go.mod h1:v8dTdLbMG2kIc/vJvl+f65V22dbkXbowE6jgT/
 github.com/google/go-cmp v0.5.5/go.mod h1:v8dTdLbMG2kIc/vJvl+f65V22dbkXbowE6jgT/gNBxE=
 github.com/google/go-cmp v0.5.6/go.mod h1:v8dTdLbMG2kIc/vJvl+f65V22dbkXbowE6jgT/gNBxE=
 github.com/google/go-cmp v0.5.8 h1:e6P7q2lk1O+qJJb4BtCQXlK8vWEO8V1ZeuEdJNOqZyg=
-github.com/google/go-cmp v0.5.8/go.mod h1:17dUlkBOakJ0+DkrSSNjCkIjxS6bF9zb3elmeNGIjoY=
 github.com/google/go-github/v28 v28.1.1/go.mod h1:bsqJWQX05omyWVmc00nEUql9mhQyv38lDZ8kPZcQVoM=
 github.com/google/go-licenses v0.0.0-20210329231322-ce1d9163b77d/go.mod h1:+TYOmkVoJOpwnS0wfdsJCV9CoD5nJYsHoFk/0CrTK4M=
 github.com/google/go-querystring v1.0.0/go.mod h1:odCYkC5MyYFN7vkCjXpyrEuKhc/BUO6wN/zVPAxq5ck=

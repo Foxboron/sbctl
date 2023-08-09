@@ -18,6 +18,8 @@ type ImportKeysCmdOptions struct {
 	Force     bool
 	DbCert    string
 	DbKey     string
+	DbxCert   string
+	DbxKey    string
 	KEKCert   string
 	KEKKey    string
 	PKCert    string
@@ -52,6 +54,8 @@ func ImportKeysFromDirectory(dir string) error {
 		"KEK/KEK.pem",
 		"db/db.key",
 		"db/db.pem",
+		"dbx/dbx.key",
+		"dbx/dbx.pem",
 	}
 	dir, err := filepath.Abs(dir)
 	if err != nil {
@@ -76,12 +80,13 @@ func ImportKeysFromDirectory(dir string) error {
 
 func RunImportKeys(cmd *cobra.Command, args []string) error {
 	var err error
-	var keypairs = []struct {
+	keypairs := []struct {
 		Type string
 		Key  string
 		Cert string
 	}{
 		{"db", importKeysCmdOptions.DbKey, importKeysCmdOptions.DbCert},
+		{"dbx", importKeysCmdOptions.DbxKey, importKeysCmdOptions.DbxCert},
 		{"KEK", importKeysCmdOptions.KEKKey, importKeysCmdOptions.KEKCert},
 		{"PK", importKeysCmdOptions.PKKey, importKeysCmdOptions.PKCert},
 	}
@@ -110,7 +115,8 @@ func RunImportKeys(cmd *cobra.Command, args []string) error {
 		}
 		for src, dst := range map[string]string{
 			key.Cert: path.Join(sbctl.KeysPath, key.Type, key.Type+".pem"),
-			key.Key:  path.Join(sbctl.KeysPath, key.Type, key.Type+".key")} {
+			key.Key:  path.Join(sbctl.KeysPath, key.Type, key.Type+".key"),
+		} {
 			srcFile, err := filepath.Abs(src)
 			if err != nil {
 				return err
@@ -127,6 +133,8 @@ func importKeysCmdFlags(cmd *cobra.Command) {
 	f := cmd.Flags()
 	f.StringVarP(&importKeysCmdOptions.DbCert, "db-cert", "", "", "Database (db) certificate")
 	f.StringVarP(&importKeysCmdOptions.DbKey, "db-key", "", "", "Database (db) key")
+	f.StringVarP(&importKeysCmdOptions.DbxCert, "dbx-cert", "", "", "Forbidden Database (dbx) certificate")
+	f.StringVarP(&importKeysCmdOptions.DbxKey, "dbx-key", "", "", "Forbidden Database (dbx) key")
 	f.StringVarP(&importKeysCmdOptions.KEKCert, "kek-cert", "", "", "Key Exchange Key (KEK) certificate")
 	f.StringVarP(&importKeysCmdOptions.KEKKey, "kek-key", "", "", "Key Exchange Key (KEK) key")
 	f.StringVarP(&importKeysCmdOptions.PKCert, "pk-cert", "", "", "Platform Key (PK) certificate")

@@ -20,7 +20,7 @@ type resetCmdOptions struct {
 
 var (
 	resetCmdOpts = resetCmdOptions{
-		Partial: stringset.StringSet{Allowed: []string{"PK", "KEK", "db"}},
+		Partial: stringset.StringSet{Allowed: []string{"PK", "KEK", "db", "dbx"}},
 	}
 	resetCmd = &cobra.Command{
 		Use:   "reset",
@@ -41,6 +41,10 @@ func resetKeys() error {
 	switch partial := resetCmdOpts.Partial.Value; partial {
 	case "db":
 		if err := resetDB(); err != nil {
+			return err
+		}
+	case "dbx":
+		if err := resetDBX(); err != nil {
 			return err
 		}
 	case "KEK":
@@ -68,6 +72,19 @@ func resetDB() error {
 
 	logging.Ok("Removed Signature Database!")
 	logging.Println("Use `sbctl enroll-keys` to enroll the Signature Database again.")
+	return nil
+}
+
+func resetDBX() error {
+	KEKKey := filepath.Join(sbctl.KeysPath, "KEK", "KEK.key")
+	KEKPem := filepath.Join(sbctl.KeysPath, "KEK", "KEK.pem")
+
+	if err := resetDatabase(KEKKey, KEKPem, "dbx"); err != nil {
+		return err
+	}
+
+	logging.Ok("Removed Fobidden Signature Database!")
+	logging.Println("Use `sbctl enroll-keys` to enroll the Forbidden Signature Database again.")
 	return nil
 }
 

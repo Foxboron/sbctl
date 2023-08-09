@@ -26,7 +26,7 @@ type RotateKeysCmdOptions struct {
 
 var (
 	rotateKeysCmdOptions = RotateKeysCmdOptions{
-		Partial: stringset.StringSet{Allowed: []string{hierarchy.PK.String(), hierarchy.KEK.String(), hierarchy.Db.String()}},
+		Partial: stringset.StringSet{Allowed: []string{hierarchy.PK.String(), hierarchy.KEK.String(), hierarchy.Db.String(), hierarchy.Dbx.String()}},
 	}
 	rotateKeysCmd = &cobra.Command{
 		Use:   "rotate-keys",
@@ -44,6 +44,7 @@ type Keys struct {
 	PK  *KeyCertPair
 	KEK *KeyCertPair
 	Db  *KeyCertPair
+	Dbx *KeyCertPair
 }
 
 func ReadKeysFromDir(src string) (*Keys, error) {
@@ -61,6 +62,11 @@ func ReadKeysFromDir(src string) (*Keys, error) {
 	}
 
 	k.Db, err = ReadPair(src, hierarchy.Db)
+	if err != nil {
+		return &k, err
+	}
+
+	k.Dbx, err = ReadPair(src, hierarchy.Dbx)
 	if err != nil {
 		return &k, err
 	}
@@ -99,6 +105,8 @@ func rotateCerts(hiera hierarchy.Hierarchy, oldCert, newCert []byte, keyCertPair
 		sl, err = efi.GetKEK()
 	case hierarchy.Db:
 		sl, err = efi.Getdb()
+	case hierarchy.Dbx:
+		sl, err = efi.Getdbx()
 	}
 
 	if err != nil {
@@ -200,6 +208,10 @@ func rotateAllKeys(backupDir, newKeysDir string) error {
 		return fmt.Errorf("could not rotate db: %v", err)
 	}
 
+	if err := rotateCerts(hierarchy.Dbx, oldKeys.Dbx.Cert, newKeys.Dbx.Cert, newKeys.KEK); err != nil {
+		return fmt.Errorf("could not rotate db: %v", err)
+	}
+
 	logging.Ok("Enrolled new keys into UEFI!")
 
 	if err := SignAll(); err != nil {
@@ -255,8 +267,15 @@ func rotateKey(hiera string, keyPath, certPath string) error {
 
 		importKeyDst = sbctl.DBKey
 		importCertDst = sbctl.DBCert
+	case hierarchy.Dbx.String():
+		if err := rotateCerts(hierarchy.Dbx, oldKeys.Dbx.Cert, newCert, oldKeys.KEK); err != nil {
+			return fmt.Errorf("could not rotate dbx: %v", err)
+		}
+
+		importKeyDst = sbctl.DBXKey
+		importCertDst = sbctl.DBXCert
 	}
-	
+
 	logging.Ok("Enrolled new key of hierarchy %s into UEFI!", hiera)
 
 	// import new key and certificate

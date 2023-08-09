@@ -49,7 +49,7 @@ type EnrollKeysCmdOptions struct {
 var (
 	systemEventlog       = "/sys/kernel/security/tpm0/binary_bios_measurements"
 	enrollKeysCmdOptions = EnrollKeysCmdOptions{
-		Partial: stringset.StringSet{Allowed: []string{"PK", "KEK", "db"}},
+		Partial: stringset.StringSet{Allowed: []string{"PK", "KEK", "db", "dbx"}},
 		Export:  stringset.StringSet{Allowed: []string{"esl", "auth"}},
 	}
 	enrollKeysCmd = &cobra.Command{
@@ -88,9 +88,19 @@ func KeySync(guid util.EFIGUID, keydir string, oems []string) error {
 		return err
 	}
 
+	dbxPem, err := fs.ReadFile(filepath.Join(keydir, "dbx", "dbx.pem"))
+	if err != nil {
+		return err
+	}
+
 	// Create the signature databases
 	sigdb := signature.NewSignatureDatabase()
 	if err = sigdb.Append(signature.CERT_X509_GUID, guid, dbPem); err != nil {
+		return err
+	}
+
+	sigdbx := signature.NewSignatureDatabase()
+	if err = sigdbx.Append(signature.CERT_X509_GUID, guid, dbxPem); err != nil {
 		return err
 	}
 
@@ -178,6 +188,12 @@ func KeySync(guid util.EFIGUID, keydir string, oems []string) error {
 			if err != nil {
 				return err
 			}
+
+			sigdbx, err := sbctl.SignDatabase(sigdbx, KEKKey, KEKPem, "dbx")
+			if err != nil {
+				return err
+			}
+
 			sigkek, err := sbctl.SignDatabase(sigkek, PKKey, PKPem, "KEK")
 			if err != nil {
 				return err
@@ -189,6 +205,9 @@ func KeySync(guid util.EFIGUID, keydir string, oems []string) error {
 			if err := fs.WriteFile("db.auth", sigdb, 0o644); err != nil {
 				return err
 			}
+			if err := fs.WriteFile("dbx.auth", sigdbx, 0o644); err != nil {
+				return err
+			}
 			if err := fs.WriteFile("KEK.auth", sigkek, 0o644); err != nil {
 				return err
 			}
@@ -198,6 +217,9 @@ func KeySync(guid util.EFIGUID, keydir string, oems []string) error {
 		} else if enrollKeysCmdOptions.Export.Value == "esl" {
 			logging.Print("\nExporting as esl files...")
 			if err := fs.WriteFile("db.esl", sigdb.Bytes(), 0o644); err != nil {
+				return err
+			}
+			if err := fs.WriteFile("dbx.esl", sigdbx.Bytes(), 0o644); err != nil {
 				return err
 			}
 			if err := fs.WriteFile("KEK.esl", sigkek.Bytes(), 0o644); err != nil {
@@ -216,6 +238,10 @@ func KeySync(guid util.EFIGUID, keydir string, oems []string) error {
 			if err := sbctl.Enroll(sigdb, KEKKey, KEKPem, value); err != nil {
 				return err
 			}
+		case "dbx":
+			if err := sbctl.Enroll(sigdbx, KEKKey, KEKPem, value); err != nil {
+				return err
+			}
 		case "KEK":
 			if err := sbctl.Enroll(sigkek, PKKey, PKPem, value); err != nil {
 				return err
@@ -232,6 +258,9 @@ func KeySync(guid util.EFIGUID, keydir string, oems []string) error {
 	}
 
 	if err := sbctl.Enroll(sigdb, KEKKey, KEKPem, "db"); err != nil {
+		return err
+	}
+	if err := sbctl.Enroll(sigdbx, KEKKey, KEKPem, "dbx"); err != nil {
 		return err
 	}
 	if err := sbctl.Enroll(sigkek, PKKey, PKPem, "KEK"); err != nil {

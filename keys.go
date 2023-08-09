@@ -35,8 +35,9 @@ var (
 	KEKCert      = filepath.Join(KeysPath, "KEK", "KEK.pem")
 	DBKey        = filepath.Join(KeysPath, "db", "db.key")
 	DBCert       = filepath.Join(KeysPath, "db", "db.pem")
-
-	DBPath = filepath.Join(DatabasePath, "files.db")
+	DBXKey       = filepath.Join(KeysPath, "dbx", "dbx.key")
+	DBXCert      = filepath.Join(KeysPath, "dbx", "dbx.pem")
+	DBPath       = filepath.Join(DatabasePath, "files.db")
 
 	GUIDPath = filepath.Join(DatabasePath, "GUID")
 )
@@ -91,7 +92,7 @@ func SaveKey(k []byte, file string) error {
 	if err := fs.Fs.MkdirAll(filepath.Dir(file), os.ModePerm); err != nil {
 		return err
 	}
-	if err := fs.WriteFile(file, k, 0400); err != nil {
+	if err := fs.WriteFile(file, k, 0o400); err != nil {
 		return err
 	}
 	return nil
@@ -154,7 +155,6 @@ func VerifyFile(cert, file string) (bool, error) {
 var ErrAlreadySigned = errors.New("already signed file")
 
 func SignFile(key, cert, file, output, checksum string) error {
-
 	// Check file exists before we do anything
 	if _, err := fs.Fs.Stat(file); errors.Is(err, os.ErrNotExist) {
 		return fmt.Errorf("%s does not exist", file)
@@ -238,12 +238,10 @@ var SecureBootKeys = []struct {
 		Key:         "db",
 		Description: "Database Key",
 	},
-	// Haven't used this yet so WIP
-	// {
-	// 	Key:         "dbx",
-	// 	Description: "Forbidden Database Key",
-	// 	SignedWith:  "KEK",
-	// },
+	{
+		Key:         "dbx",
+		Description: "Forbidden Database Key",
+	},
 }
 
 // Check if we have already intialized keys in the given output directory
@@ -262,6 +260,7 @@ func CheckIfKeysInitialized(output string) bool {
 //   - Platform Key (PK)
 //   - Key Exchange Key (KEK)
 //   - db (database)
+//   - dbx (forbidden database)
 func InitializeSecureBootKeys(output string) error {
 	if CheckIfKeysInitialized(output) {
 		return nil
