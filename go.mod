@@ -5,9 +5,8 @@ go 1.20
 require (
 	github.com/anatol/vmtest v0.0.0-20220413190228-7a42f1f6d7b8
 	github.com/fatih/color v1.13.0
-	github.com/foxboron/go-uefi v0.0.0-20230217160721-375279dfc837
+	github.com/foxboron/go-uefi v0.0.0-20230808201820-18b9ba9cd4c3
 	github.com/google/go-attestation v0.3.3-0.20210901195502-505680f536da
-	github.com/google/go-cmp v0.5.8
 	github.com/google/uuid v1.3.0
 	github.com/spf13/afero v1.9.3
 	github.com/spf13/cobra v1.1.3
