@@ -137,6 +137,13 @@ func KeySync(guid util.EFIGUID, keydir string, oems []string) error {
 			}
 			sigdb.AppendDatabase(oemSigDb)
 
+			// dbx
+			oemSigDbx, err := certs.GetOEMCerts(oem, "dbx")
+			if err != nil {
+				return fmt.Errorf("could not enroll db keys: %w", err)
+			}
+			sigdbx.AppendDatabase(oemSigDbx)
+
 			// KEK
 			oemSigKEK, err := certs.GetOEMCerts(oem, "KEK")
 			if err != nil {
@@ -155,6 +162,13 @@ func KeySync(guid util.EFIGUID, keydir string, oems []string) error {
 			}
 			sigdb.AppendDatabase(customSigDb)
 
+			// dbx
+			customSigDbx, err := certs.GetCustomCerts(keydir, "dbx")
+			if err != nil {
+				return fmt.Errorf("could not enroll custom dbx keys: %w", err)
+			}
+			sigdbx.AppendDatabase(customSigDbx)
+
 			// KEK
 			customSigKEK, err := certs.GetCustomCerts(keydir, "KEK")
 			if err != nil {
@@ -172,6 +186,8 @@ func KeySync(guid util.EFIGUID, keydir string, oems []string) error {
 				switch cert {
 				case "db":
 					sigdb.AppendDatabase(builtinSigDb)
+				case "dbx":
+					sigdbx.AppendDatabase(builtinSigDb)
 				case "KEK":
 					sigkek.AppendDatabase(builtinSigDb)
 				case "PK":
