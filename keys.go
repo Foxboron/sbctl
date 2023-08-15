@@ -118,6 +118,10 @@ func Enroll(sigdb *signature.SignatureDatabase, signerKey, signerPem []byte, efi
 	return efi.WriteEFIVariable(efivar, signedBuf)
 }
 
+func EnrollCustom(customBytes []byte, efivar string) error {
+	return efi.WriteEFIVariable(efivar, customBytes)
+}
+
 func VerifyFile(cert, file string) (bool, error) {
 	if err := unix.Access(cert, unix.R_OK); err != nil {
 		return false, fmt.Errorf("couldn't access %s: %w", cert, err)
