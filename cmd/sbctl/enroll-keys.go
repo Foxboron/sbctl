@@ -41,6 +41,7 @@ type EnrollKeysCmdOptions struct {
 	Force                bool
 	TPMEventlogChecksums bool
 	Custom               bool
+	CustomBytes          string
 	Partial              stringset.StringSet
 	BuiltinFirmwareCerts FirmwareBuiltinFlags
 	Export               stringset.StringSet
@@ -290,8 +291,29 @@ func KeySync(guid util.EFIGUID, keydir string, oems []string) error {
 }
 
 func RunEnrollKeys(cmd *cobra.Command, args []string) error {
-	if !efi.GetSetupMode() {
+	// SetupMode is not necessarily required on a partial enrollment
+	if !efi.GetSetupMode() && enrollKeysCmdOptions.Partial.Value == "" {
 		return ErrSetupModeDisabled
+	}
+
+	if enrollKeysCmdOptions.CustomBytes != "" {
+		if enrollKeysCmdOptions.Partial.Value == "" {
+			logging.NotOk("")
+
+			return fmt.Errorf("missing hierarchy to enroll custom bytes to (use --partial)")
+
+		}
+		logging.Print("Enrolling custom bytes to EFI variables...")
+
+		if err := customKey(enrollKeysCmdOptions.Partial.Value, enrollKeysCmdOptions.CustomBytes); err != nil {
+			logging.NotOk("")
+
+			return fmt.Errorf("couldn't roll out custom bytes from %s for hierarchy %s: %w", enrollKeysCmdOptions.CustomBytes, enrollKeysCmdOptions.Partial, err)
+		}
+
+		logging.Ok("\nEnrolled custom bytes to the EFI variables!")
+
+		return nil
 	}
 
 	oems := []string{}
@@ -339,6 +361,31 @@ func RunEnrollKeys(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
+// write custom key from a filePath into an efivar
+func customKey(hierarchy string, filePath string) error {
+	customBytes, err := fs.ReadFile(filePath)
+	if err != nil {
+		return err
+	}
+
+	switch hierarchy {
+	case "db":
+		fallthrough
+	case "dbx":
+		fallthrough
+	case "KEK":
+		fallthrough
+	case "PK":
+		if err := sbctl.EnrollCustom(customBytes, hierarchy); err != nil {
+			return err
+		}
+	default:
+		return fmt.Errorf("unsupported key type to enroll: %s, allowed values are: %s", hierarchy, enrollKeysCmdOptions.Partial.Type())
+	}
+
+	return nil
+}
+
 func vendorFlags(cmd *cobra.Command) {
 	f := cmd.Flags()
 	f.BoolVarP(&enrollKeysCmdOptions.MicrosoftKeys, "microsoft", "m", false, "include microsoft keys into key enrollment")
@@ -357,6 +404,7 @@ func enrollKeysCmdFlags(cmd *cobra.Command) {
 	f.BoolVarP(&enrollKeysCmdOptions.IgnoreImmutable, "ignore-immutable", "i", false, "ignore checking for immutable efivarfs files")
 	f.VarPF(&enrollKeysCmdOptions.Export, "export", "", "export the EFI database values to current directory instead of enrolling")
 	f.VarPF(&enrollKeysCmdOptions.Partial, "partial", "p", "enroll a partial set of keys")
+	f.StringVarP(&enrollKeysCmdOptions.CustomBytes, "custom-bytes", "", "", "path to the bytefile to be enrolled to efivar")
 }
 
 func init() {
