@@ -65,6 +65,14 @@ For Alpine Linux:
 $ apk add sbctl
 ```
 
+For Debian Linux:
+
+Add [Julian's repository](https://gitlab.com/julianfairfax/package-repo#how-to-add-repository-for-debian-based-linux-distributions), then run:
+```
+$ sudo apt update # after adding the repository
+$ sudo apt install sbctl
+```
+
 You can find a updated list of [sbctl packages on
 Repology](https://repology.org/project/sbctl/versions).
 
