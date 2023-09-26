@@ -38,6 +38,10 @@ var (
 
 func Import(src, dst string) error {
 	logging.Print("Importing %s...", src)
+	if err := os.MkdirAll(filepath.Dir(dst), 0777); err != nil {
+		logging.NotOk("")
+		return fmt.Errorf("could not create directory for %q: %w", dst, err)
+	}
 	if err := sbctl.CopyFile(src, dst); err != nil {
 		logging.NotOk("")
 		return fmt.Errorf("could not move %s: %w", src, err)
@@ -117,7 +121,7 @@ func RunImportKeys(cmd *cobra.Command, args []string) error {
 				return fmt.Errorf("invalid private key file")
 			}
 		}
-		
+
 		for src, dst := range map[string]string{
 			key.Cert: path.Join(sbctl.KeysPath, key.Type, key.Type+".pem"),
 			key.Key:  path.Join(sbctl.KeysPath, key.Type, key.Type+".key"),
