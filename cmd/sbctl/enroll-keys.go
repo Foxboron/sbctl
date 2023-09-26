@@ -36,6 +36,7 @@ func (f *FirmwareBuiltinFlags) Type() string {
 }
 
 type EnrollKeysCmdOptions struct {
+	Append               bool
 	MicrosoftKeys        bool
 	IgnoreImmutable      bool
 	Force                bool
@@ -95,22 +96,51 @@ func KeySync(guid util.EFIGUID, keydir string, oems []string) error {
 	}
 
 	// Create the signature databases
-	sigdb := signature.NewSignatureDatabase()
+	var sigdb, sigdbx, sigkek, sigpk *signature.SignatureDatabase
+
+	if !enrollKeysCmdOptions.Append {
+		sigdb = signature.NewSignatureDatabase()
+
+		sigdbx = signature.NewSignatureDatabase()
+
+		sigkek = signature.NewSignatureDatabase()
+
+		sigpk = signature.NewSignatureDatabase()
+		// on append use the existing signature db
+	} else {
+		sigdb, err = efi.Getdb()
+		if err != nil {
+			return err
+		}
+
+		sigdbx, err = efi.Getdbx()
+		if err != nil {
+			return err
+		}
+
+		sigkek, err = efi.GetKEK()
+		if err != nil {
+			return err
+		}
+
+		sigpk, err = efi.GetPK()
+		if err != nil {
+			return err
+		}
+	}
+
 	if err = sigdb.Append(signature.CERT_X509_GUID, guid, dbPem); err != nil {
 		return err
 	}
 
-	sigdbx := signature.NewSignatureDatabase()
 	if err = sigdbx.Append(signature.CERT_X509_GUID, guid, dbxPem); err != nil {
 		return err
 	}
 
-	sigkek := signature.NewSignatureDatabase()
 	if err = sigkek.Append(signature.CERT_X509_GUID, guid, KEKPem); err != nil {
 		return err
 	}
 
-	sigpk := signature.NewSignatureDatabase()
 	if err = sigpk.Append(signature.CERT_X509_GUID, guid, PKPem); err != nil {
 		return err
 	}
@@ -405,6 +435,7 @@ func enrollKeysCmdFlags(cmd *cobra.Command) {
 	f.VarPF(&enrollKeysCmdOptions.Export, "export", "", "export the EFI database values to current directory instead of enrolling")
 	f.VarPF(&enrollKeysCmdOptions.Partial, "partial", "p", "enroll a partial set of keys")
 	f.StringVarP(&enrollKeysCmdOptions.CustomBytes, "custom-bytes", "", "", "path to the bytefile to be enrolled to efivar")
+	f.BoolVarP(&enrollKeysCmdOptions.Append, "append", "a", false, "append the key to the existing ones")
 }
 
 func init() {

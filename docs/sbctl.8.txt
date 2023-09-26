@@ -85,6 +85,17 @@ EFI signing commands
 
                 Valid values are: esl, auth.
 
+        *-p*, *--partial*;;
+               Enroll keys only for the hierarchy specified.
+               
+               Valid values are: db, dbx, KEK, PK.
+
+        *--custom-bytes*;;
+               Enroll a custom bytefile provided by its path to the efivar specified by partial. 
+
+        *-a*, *--append*;;
+               Instead of replacing the currently enrolled keys, append the provided one.
+
 **sign** <FILE>...::
         Signs an EFI binary with the created key. The file will be checked for
         valid signatures to avoid duplicates.
@@ -143,6 +154,11 @@ EFI signing commands
         Resets the Platform Key. This sets the machine out of Secure Boot mode
         and allows key rotation.
 
+        *-p*, *--partial*;;
+               Reset keys only for the hierarchy specified.
+               
+               Valid values are: db, dbx, KEK, PK.
+
 **rotate-keys**::
         Rotate the secure boot keys and replace them with newly generated keys.
         Saves the old keys to a directory in /var/tmp and resigns any files from
@@ -151,6 +167,17 @@ EFI signing commands
         *--backup-dir* 'PATH';;
                 Choose backup directory for old keys.
 
+        *-p*, *--partial*;;
+               Rotate keys only for the hierarchy specified.
+               
+               Valid values are: db, dbx, KEK, PK.
+
+        *-k*, *--key-file*;;
+               Key file to be appended for the specified hierarchy.
+
+        *-c*, *--cert-file*;;
+               Certificate file to be appended for the specified hierarchy.
+         
 **help**::
         Displays a help message.
 
