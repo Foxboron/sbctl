@@ -98,7 +98,7 @@ func GetEfistub() (string, error) {
 			return f + stubName, nil
 		}
 	}
-	return "", fmt.Errorf("no EFI stub found")
+	return "", nil
 }
 
 func NewBundle() (bundle *Bundle, err error) {
@@ -110,7 +110,7 @@ func NewBundle() (bundle *Bundle, err error) {
 
 	stub, err := GetEfistub()
 	if err != nil {
-		return nil, fmt.Errorf("no EFISTUB file found. Please install systemd-boot or gummiboot! %v", err)
+		return nil, fmt.Errorf("failed to get default EFI stub location: %v", err)
 	}
 
 	bundle = &Bundle{
@@ -143,6 +143,10 @@ func GenerateBundle(bundle *Bundle) (bool, error) {
 		{".splash", bundle.Splash},
 		{".initrd", bundle.Initramfs},
 		{".linux", bundle.KernelImage},
+	}
+
+	if bundle.EFIStub == "" {
+		return false, fmt.Errorf("could not find EFI stub binary, please install systemd-boot or provide --efi-stub on the command line")
 	}
 
 	e, err := pe.Open(bundle.EFIStub)
