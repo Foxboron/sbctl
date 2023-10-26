@@ -171,10 +171,16 @@ func CombineFiles(microcode, initramfs string) (afero.File, error) {
 		return nil, err
 	}
 
-	one, _ := fs.Fs.Open(microcode)
+	one, err := fs.Fs.Open(microcode)
+	if err != nil {
+		return nil, err
+	}
 	defer one.Close()
 
-	two, _ := fs.Fs.Open(initramfs)
+	two, err := fs.Fs.Open(initramfs)
+	if err != nil {
+		return nil, err
+	}
 	defer two.Close()
 
 	_, err = io.Copy(tmpFile, one)
