@@ -54,8 +54,9 @@ EFI signing commands
                 This feature is experimental
 
         *-c*, *--custom*;;
-                Enroll custom KEK and db certificates from "/usr/share/secureboot/keys/custom/KEK/"
-                and "/usr/share/secureboot/keys/custom/db/", respectively.
+                Enroll custom KEK and db certificates from "/usr/share/secureboot/keys/custom/KEK/",
+                "/usr/share/secureboot/keys/custom/db/" and "/usr/share/secureboot/keys/custom/dbx/",
+                respectively.
 
         *-f*, *--firmware-builtin*;;
                 Enroll signatures from dbDefault, KEKDefault or PKDefault. This
