@@ -29,8 +29,18 @@ EFI signing commands
         Creates a set of signing keys used to sign EFI binaries. Currently, it
         will create the following keys:
         * Platform Key
-        * Key Exchange key
+        * Key Exchange Key
         * Signature Database Key
+
+        *-e*, *--export*;;
+                The directory to persist the exported keys.
+
+                Default: "/usr/share/secureboot/keys/"
+
+        *-d*, *--database-path*;;
+                Path to save the GUID file when generating keys.
+
+                Default: "/usr/share/secureboot/"
 
 **enroll-keys**::
         Enrolls the creates key into the EFI variables. This puts the computer
