@@ -24,7 +24,6 @@ func CreateKey() ([]byte, []byte) {
 		SignatureAlgorithm: x509.SHA256WithRSA,
 		NotBefore:          time.Now(),
 		NotAfter:           time.Now().AddDate(5, 0, 0),
-		KeyUsage:           x509.KeyUsageDigitalSignature,
 		Subject: pkix.Name{
 			Country:    []string{"Test Suite Key"},
 			CommonName: "Test Suite",
