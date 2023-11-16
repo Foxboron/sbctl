@@ -57,12 +57,17 @@ $ sbctl
 
 For Arch Linux:
 ```
-$ pacman -S sbctl
+# pacman -S sbctl
 ```
 
 For Alpine Linux:
 ```
-$ apk add sbctl
+# apk add sbctl
+```
+
+For Gentoo Linux:
+```
+# emerge --ask app-crypt/sbctl
 ```
 
 You can find a updated list of [sbctl packages on
