@@ -65,7 +65,7 @@ EFI signing commands
 
         *-c*, *--custom*;;
                 Enroll custom KEK and db certificates from "/usr/share/secureboot/keys/custom/KEK/",
-                "/usr/share/secureboot/keys/custom/db/" and "/usr/share/secureboot/keys/custom/dbx/",
+                "/usr/share/secureboot/keys/custom/db/",
                 respectively.
 
         *-f*, *--firmware-builtin*;;
@@ -99,7 +99,7 @@ EFI signing commands
         *-p*, *--partial*;;
                Enroll keys only for the hierarchy specified.
                
-               Valid values are: db, dbx, KEK, PK.
+               Valid values are: db, KEK, PK.
 
         *--custom-bytes*;;
                Enroll a custom bytefile provided by its path to the efivar specified by partial. 
@@ -168,7 +168,7 @@ EFI signing commands
         *-p*, *--partial*;;
                Reset keys only for the hierarchy specified.
                
-               Valid values are: db, dbx, KEK, PK.
+               Valid values are: db, KEK, PK.
 
 **rotate-keys**::
         Rotate the secure boot keys and replace them with newly generated keys.
@@ -181,7 +181,7 @@ EFI signing commands
         *-p*, *--partial*;;
                Rotate keys only for the hierarchy specified.
                
-               Valid values are: db, dbx, KEK, PK.
+               Valid values are: db, KEK, PK.
 
         *-k*, *--key-file*;;
                Key file to be appended for the specified hierarchy.

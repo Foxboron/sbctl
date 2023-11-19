@@ -35,8 +35,6 @@ var (
 	KEKCert      = filepath.Join(KeysPath, "KEK", "KEK.pem")
 	DBKey        = filepath.Join(KeysPath, "db", "db.key")
 	DBCert       = filepath.Join(KeysPath, "db", "db.pem")
-	DBXKey       = filepath.Join(KeysPath, "dbx", "dbx.key")
-	DBXCert      = filepath.Join(KeysPath, "dbx", "dbx.pem")
 	DBPath       = filepath.Join(DatabasePath, "files.db")
 
 	GUIDPath = filepath.Join(DatabasePath, "GUID")
@@ -241,10 +239,10 @@ var SecureBootKeys = []struct {
 		Key:         "db",
 		Description: "Database Key",
 	},
-	{
-		Key:         "dbx",
-		Description: "Forbidden Database Key",
-	},
+	// {
+	// 	Key:         "dbx",
+	// 	Description: "Forbidden Database Key",
+	// },
 }
 
 // Check if we have already intialized keys in the given output directory
