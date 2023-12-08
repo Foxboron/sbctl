@@ -1,8 +1,10 @@
 #!/bin/sh
+#  This file is part of sbctl.
 
 COMMAND="$1"
 KERNEL_VERSION="$2"
 ENTRY_DIR_ABS="$3"
+# shellcheck disable=SC2034  # Unused variables left for readability
 KERNEL_IMAGE="$4"
 
 IMAGE_FILE="$ENTRY_DIR_ABS/linux"
@@ -25,13 +27,12 @@ fi
 
 case "$COMMAND" in
 add)
-	[ "$KERNEL_INSTALL_VERBOSE" -gt 0 ] &&
-		printf 'Signing kernel %s\n' "$IMAGE_FILE"
+	printf 'sbctl: Signing kernel %s\n' "$IMAGE_FILE"
 	sbctl sign -s "$IMAGE_FILE" 1>/dev/null
 	;;
 remove)
 	[ "$KERNEL_INSTALL_VERBOSE" -gt 0 ] &&
-		printf 'Removing kernel %s from signing database\n' "$IMAGE_FILE"
+		printf 'sbctl: Removing kernel %s from signing database\n' "$IMAGE_FILE"
 	sbctl remove-file "$IMAGE_FILE" 1>/dev/null
 	;;
 esac
