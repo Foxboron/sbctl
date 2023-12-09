@@ -43,8 +43,8 @@ var createKeysCmd = &cobra.Command{
 
 func createKeysCmdFlags(cmd *cobra.Command) {
 	f := cmd.Flags()
-	f.StringVarP(&exportPath, "export", "e", "", "export file path. defaults to "+sbctl.KeysPath)
-	f.StringVarP(&databasePath, "database-path", "d", "", "location to create GUID file. defaults to "+sbctl.DatabasePath)
+	f.StringVarP(&exportPath, "export", "e", sbctl.KeysPath, "export file path. defaults to "+sbctl.KeysPath)
+	f.StringVarP(&databasePath, "database-path", "d", sbctl.DatabasePath, "location to create GUID file. defaults to "+sbctl.DatabasePath)
 }
 
 func init() {
