@@ -272,7 +272,7 @@ func KeySync(guid util.EFIGUID, keydir string, oems []string) error {
 
 func RunEnrollKeys(cmd *cobra.Command, args []string) error {
 	// SetupMode is not necessarily required on a partial enrollment
-	if !efi.GetSetupMode() && enrollKeysCmdOptions.Partial.Value == "" {
+	if !efi.GetSetupMode() && enrollKeysCmdOptions.Partial.Value == "" && enrollKeysCmdOptions.Export.Value == "" {
 		return ErrSetupModeDisabled
 	}
 
@@ -309,7 +309,7 @@ func RunEnrollKeys(cmd *cobra.Command, args []string) error {
 	if len(enrollKeysCmdOptions.BuiltinFirmwareCerts) >= 1 {
 		oems = append(oems, "firmware-builtin")
 	}
-	if !enrollKeysCmdOptions.IgnoreImmutable {
+	if !enrollKeysCmdOptions.IgnoreImmutable && enrollKeysCmdOptions.Export.Value == "" {
 		if err := sbctl.CheckImmutable(); err != nil {
 			return err
 		}
