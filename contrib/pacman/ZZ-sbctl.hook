@@ -7,7 +7,6 @@ Target = boot/*
 Target = efi/*
 Target = usr/lib/modules/*/vmlinuz
 Target = usr/lib/modules/*/extramodules/*
-Target = usr/lib/initcpio/*
 Target = usr/lib/**/efi/*.efi*
 
 [Action]
