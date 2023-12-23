@@ -43,8 +43,7 @@ EFI signing commands
                 Default: "/usr/share/secureboot/"
 
 **enroll-keys**::
-        Enrolls the creates key into the EFI variables. This puts the computer
-        out of SetupMode and enables Secure Boot.
+        Enrolls the created key into the EFI variables. 
 
         Note that some devices have hardware firmware that is signed and
         validated when Secure Boot is enabled. Failing to validate this firmware
