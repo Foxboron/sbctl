@@ -70,6 +70,12 @@ For Gentoo Linux:
 # emerge --ask app-crypt/sbctl
 ```
 
+For Fedora Linux (unofficial package):
+```
+# dnf copr enable chenxiaolong/sbctl
+# dnf install sbctl
+```
+
 You can find a updated list of [sbctl packages on
 Repology](https://repology.org/project/sbctl/versions).
 
