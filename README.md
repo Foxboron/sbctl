@@ -70,6 +70,11 @@ For Gentoo Linux:
 # emerge --ask app-crypt/sbctl
 ```
 
+For openSUSE:
+```
+# zypper install sbctl
+```
+
 For Fedora Linux (unofficial package):
 ```
 # dnf copr enable chenxiaolong/sbctl
@@ -79,7 +84,7 @@ For Fedora Linux (unofficial package):
 You can find a updated list of [sbctl packages on
 Repology](https://repology.org/project/sbctl/versions).
 
-In addition, sbctl is also available for [openSUSE (experimental) & Ubuntu
+In addition, sbctl is also available for [Ubuntu
 (unofficial)](https://software.opensuse.org/package/sbctl?search_term=sbctl).
 Follow the `Expert Download` links to find installation instructions according
 to your operating system.
