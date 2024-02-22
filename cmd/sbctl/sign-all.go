@@ -38,7 +38,8 @@ func SignAll() error {
 		if errors.Is(err, sbctl.ErrAlreadySigned) {
 			logging.Print("File has already been signed %s\n", entry.OutputFile)
 		} else if err != nil {
-			return fmt.Errorf("failed signing %s: %w", entry.File, err)
+			logging.Error(fmt.Errorf("failed signing %s: %w", entry.File, err))
+			continue
 		} else {
 			logging.Ok("Signed %s", entry.OutputFile)
 		}
