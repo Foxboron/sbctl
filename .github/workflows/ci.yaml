@@ -14,7 +14,7 @@ jobs:
          - run: GOBIN=/usr/bin make lint
    void:
       runs-on: ubuntu-latest
-      container: voidlinux/voidlinux-musl
+      container: ghcr.io/void-linux/void-musl
       steps:
          # update xbps, if necessary
          - run: xbps-install -Syu || ( xbps-install -yu xbps && xbps-install -Syu)
