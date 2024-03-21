@@ -39,8 +39,10 @@ add)
 	sbctl sign -s "$IMAGE_FILE" 1>/dev/null
 	;;
 remove)
-	[ "$KERNEL_INSTALL_VERBOSE" -gt 0 ] &&
+	if [[ -e "$IMAGE_FILE" ]]; then
+	    [ "$KERNEL_INSTALL_VERBOSE" -gt 0 ] &&
 		printf 'sbctl: Removing kernel %s from signing database\n' "$IMAGE_FILE"
-	sbctl remove-file "$IMAGE_FILE" 1>/dev/null
+	    sbctl remove-file "$IMAGE_FILE" 1>/dev/null
+	fi
 	;;
 esac
