@@ -154,6 +154,9 @@ EFI signing commands
 **remove-file** <FILE>, **rm-file** <FILE>, **rm** <FILE>::
         Removes the file from the signing database.
 
+**list-enrolled-keys**, **ls-enrolled-keys**::
+        Lists all enrolled keys on the system.
+
 **verify** [FILE...]::
         Looks for EFI binaries with the mime type application/x-dosexec in the
         ESP partition, and looks at the file database. Checks if they have been
