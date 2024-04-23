@@ -29,7 +29,7 @@ func StartOVMF(conf TestConfig) *vmtest.Qemu {
 	}
 	opts := vmtest.QemuOptions{
 		Params:  params,
-		Verbose: false, //testing.Verbose(),
+		Verbose: testing.Verbose(),
 		Timeout: 50 * time.Second,
 	}
 	// Run QEMU instance
@@ -73,8 +73,8 @@ func StartVM(conf *TestConfig) *TestVM {
 		Kernel:          "kernel/bzImage",
 		Params:          params,
 		Disks:           []vmtest.QemuDisk{{Path: "kernel/rootfs.cow", Format: "qcow2"}},
-		Append:          []string{"root=/dev/sda", "quiet", "rw"},
-		Verbose:         false, //testing.Verbose()
+		Append:          []string{"root=/dev/vda", "quiet", "rw"},
+		Verbose:         testing.Verbose(),
 		Timeout:         50 * time.Second,
 	}
 	// Run QEMU instance

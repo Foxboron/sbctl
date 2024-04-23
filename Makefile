@@ -64,6 +64,10 @@ lint:
 test:
 	go test -v ./...
 
+.PHONY: prepare-integration
+prepare-integration:
+	docker run --privileged -v ${PWD}/tests/:/workdir -w /workdir archlinux ./make_image.sh
+
 .PHONY: integration
 integration:
 	go test -v tests/integration_test.go

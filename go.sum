@@ -217,8 +217,6 @@ github.com/form3tech-oss/jwt-go v3.2.2+incompatible/go.mod h1:pbq4aXjuKjdthFRnoD
 github.com/form3tech-oss/jwt-go v3.2.3+incompatible/go.mod h1:pbq4aXjuKjdthFRnoDwaVPLA+WlJuPGy+QneDUgJi2k=
 github.com/fortytw2/leaktest v1.2.0/go.mod h1:jDsjWgpAGjm2CA7WthBh/CdZYEPF31XHquHwclZch5g=
 github.com/fortytw2/leaktest v1.3.0/go.mod h1:jDsjWgpAGjm2CA7WthBh/CdZYEPF31XHquHwclZch5g=
-github.com/foxboron/go-uefi v0.0.0-20230217160721-375279dfc837 h1:JAEqMMcWSvLghXL8W5w4Bp1mRL8x35pCW9OlpZnKOB0=
-github.com/foxboron/go-uefi v0.0.0-20230217160721-375279dfc837/go.mod h1:VdozURTQHi5Rs54l+4Szi3yIJQDMfXXYrRLAjKKowWI=
 github.com/foxboron/go-uefi v0.0.0-20230808201820-18b9ba9cd4c3 h1:SJMQFT74bCrP+kQ24oWhmuyPFHDTavrd3JMIe//2NhU=
 github.com/foxboron/go-uefi v0.0.0-20230808201820-18b9ba9cd4c3/go.mod h1:VdozURTQHi5Rs54l+4Szi3yIJQDMfXXYrRLAjKKowWI=
 github.com/franela/goblin v0.0.0-20200105215937-c9ffbefa60db/go.mod h1:7dvUGVsVBjqR7JHJk0brhHOZYGmfBYOrK0ZhYMEtBr4=
