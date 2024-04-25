@@ -3,4 +3,3 @@ releases/*
 /sbctl
 docs/*.8
 rootfs*
-bzImage
