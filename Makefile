@@ -66,7 +66,9 @@ test:
 
 .PHONY: integration
 integration:
-	go test -v tests/integration_test.go
+	# vmtest doesn't allow provide a way to pass --tags to the command that compiles
+	# the test (see: vmtest.RunGoTestsInVM) so we pass it as an env variable.
+	GOFLAGS=--tags=integration go test -v tests/integration_test.go
 
 .PHONY: local-aur
 .ONESHELL:
