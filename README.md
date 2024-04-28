@@ -149,7 +149,7 @@ Owner GUID:	a9fbbdb7-a05f-48d5-b63a-08c5df45ee70
 Setup Mode:	✔ Disabled
 Secure Boot:	✘ Disabled
 
-// Reboot!
+// Reboot and enable secure boot in the bios!
 # sbctl status
 Installed:	✔ Sbctl is installed
 Owner GUID:	a9fbbdb7-a05f-48d5-b63a-08c5df45ee70
