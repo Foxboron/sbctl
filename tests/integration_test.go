@@ -62,6 +62,7 @@ func TestEnrollement(t *testing.T) {
 		t.Run("Enroll keys", vm.RunTests("github.com/foxboron/sbctl/tests/integrations/enroll_keys"))
 		t.Run("Secure boot enabled", vm.RunTests("github.com/foxboron/sbctl/tests/integrations/secure_boot_enabled"))
 		t.Run("List enrolled keys", vm.RunTests("github.com/foxboron/sbctl/tests/integrations/list_enrolled_keys"))
+		t.Run("Export enrolled keys", vm.RunTests("github.com/foxboron/sbctl/tests/integrations/export_enrolled_keys"))
 	})
 }
 
