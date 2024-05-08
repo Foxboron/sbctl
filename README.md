@@ -32,7 +32,7 @@ testing towards [tianocore](https://www.tianocore.org/) utilizing
 ## Dependencies
 * util-linux (using `lsblk`)
 * binutils (using `objcopy`)
-* Go >= 1.16
+* Go >= 1.20
 * asciidoc (only for building)
 
 # Installation
@@ -50,7 +50,7 @@ To install through git:
 $ git clone https://github.com/foxboron/sbctl.git
 $ cd sbctl
 $ make
-$ sbctl
+$ ./sbctl
 ```
 
 ### Available packages
