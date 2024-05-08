@@ -190,7 +190,19 @@ EFI signing commands
 
         *-c*, *--cert-file*;;
                Certificate file to be appended for the specified hierarchy.
-         
+
+**export-enrolled-keys**::
+        Export already enrolled keys from the system.
+
+        *--dir* 'PATH';;
+                Output directory for the exported keys.
+
+        *--format* 'TYPE';;
+                Format of the exported keys.
+
+                Default: der
+                Valid values: esl, auth.
+
 **help**::
         Displays a help message.
 
