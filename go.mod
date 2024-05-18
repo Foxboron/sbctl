@@ -1,10 +1,12 @@
 module github.com/foxboron/sbctl
 
-go 1.20
+go 1.21
+
+toolchain go1.22.3
 
 require (
 	github.com/fatih/color v1.13.0
-	github.com/foxboron/go-uefi v0.0.0-20230808201820-18b9ba9cd4c3
+	github.com/foxboron/go-uefi v0.0.0-20240516213015-35289af04a75
 	github.com/google/go-attestation v0.5.1
 	github.com/google/uuid v1.3.0
 	github.com/hugelgupf/vmtest v0.0.0-20240110072021-f6f07acb7aa1

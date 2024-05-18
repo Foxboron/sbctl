@@ -124,7 +124,7 @@ func rotateCerts(hiera hierarchy.Hierarchy, oldCert, newCert []byte, keyCertPair
 
 	sl.Append(signature.CERT_X509_GUID, *guid, newCert)
 
-	return sbctl.Enroll(sl, keyCertPair.Key, keyCertPair.Cert, hiera.String())
+	return sbctl.Enroll(sl, keyCertPair.Key, keyCertPair.Cert, hiera.Efivar())
 }
 
 func RunRotateKeys(cmd *cobra.Command, args []string) error {

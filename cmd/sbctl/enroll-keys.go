@@ -9,6 +9,7 @@ import (
 	"github.com/foxboron/go-uefi/efi"
 	"github.com/foxboron/go-uefi/efi/signature"
 	"github.com/foxboron/go-uefi/efi/util"
+	"github.com/foxboron/go-uefi/efivar"
 	"github.com/foxboron/sbctl"
 	"github.com/foxboron/sbctl/certs"
 	"github.com/foxboron/sbctl/fs"
@@ -199,16 +200,16 @@ func KeySync(guid util.EFIGUID, keydir string, oems []string) error {
 	if enrollKeysCmdOptions.Export.Value != "" {
 		if enrollKeysCmdOptions.Export.Value == "auth" {
 			logging.Print("\nExporting as auth files...")
-			sigdb, err := sbctl.SignDatabase(sigdb, KEKKey, KEKPem, "db")
+			sigdb, err := sbctl.SignDatabase(sigdb, KEKKey, KEKPem, efivar.Db)
 			if err != nil {
 				return err
 			}
 
-			sigkek, err := sbctl.SignDatabase(sigkek, PKKey, PKPem, "KEK")
+			sigkek, err := sbctl.SignDatabase(sigkek, PKKey, PKPem, efivar.KEK)
 			if err != nil {
 				return err
 			}
-			sigpk, err := sbctl.SignDatabase(sigpk, PKKey, PKPem, "PK")
+			sigpk, err := sbctl.SignDatabase(sigpk, PKKey, PKPem, efivar.PK)
 			if err != nil {
 				return err
 			}
@@ -239,15 +240,15 @@ func KeySync(guid util.EFIGUID, keydir string, oems []string) error {
 	if enrollKeysCmdOptions.Partial.Value != "" {
 		switch value := enrollKeysCmdOptions.Partial.Value; value {
 		case "db":
-			if err := sbctl.Enroll(sigdb, KEKKey, KEKPem, value); err != nil {
+			if err := sbctl.Enroll(sigdb, KEKKey, KEKPem, efivar.Db); err != nil {
 				return err
 			}
 		case "KEK":
-			if err := sbctl.Enroll(sigkek, PKKey, PKPem, value); err != nil {
+			if err := sbctl.Enroll(sigkek, PKKey, PKPem, efivar.KEK); err != nil {
 				return err
 			}
 		case "PK":
-			if err := sbctl.Enroll(sigpk, PKKey, PKPem, value); err != nil {
+			if err := sbctl.Enroll(sigpk, PKKey, PKPem, efivar.PK); err != nil {
 				return err
 			}
 		default:
@@ -257,13 +258,13 @@ func KeySync(guid util.EFIGUID, keydir string, oems []string) error {
 		return nil
 	}
 
-	if err := sbctl.Enroll(sigdb, KEKKey, KEKPem, "db"); err != nil {
+	if err := sbctl.Enroll(sigdb, KEKKey, KEKPem, efivar.Db); err != nil {
 		return err
 	}
-	if err := sbctl.Enroll(sigkek, PKKey, PKPem, "KEK"); err != nil {
+	if err := sbctl.Enroll(sigkek, PKKey, PKPem, efivar.KEK); err != nil {
 		return err
 	}
-	if err := sbctl.Enroll(sigpk, PKKey, PKPem, "PK"); err != nil {
+	if err := sbctl.Enroll(sigpk, PKKey, PKPem, efivar.PK); err != nil {
 		return err
 	}
 

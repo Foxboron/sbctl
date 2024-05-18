@@ -14,11 +14,11 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/foxboron/go-uefi/authenticode"
 	"github.com/foxboron/go-uefi/efi"
-	"github.com/foxboron/go-uefi/efi/pecoff"
-	"github.com/foxboron/go-uefi/efi/pkcs7"
 	"github.com/foxboron/go-uefi/efi/signature"
 	"github.com/foxboron/go-uefi/efi/util"
+	"github.com/foxboron/go-uefi/efivar"
 	"github.com/foxboron/sbctl/certs"
 	"github.com/foxboron/sbctl/fs"
 	"golang.org/x/sys/unix"
@@ -95,7 +95,7 @@ func SaveKey(k []byte, file string) error {
 	return nil
 }
 
-func SignDatabase(sigdb *signature.SignatureDatabase, signerKey, signerPem []byte, efivar string) ([]byte, error) {
+func SignDatabase(sigdb *signature.SignatureDatabase, signerKey, signerPem []byte, evar efivar.Efivar) ([]byte, error) {
 	key, err := util.ReadKey(signerKey)
 	if err != nil {
 		return nil, err
@@ -104,15 +104,20 @@ func SignDatabase(sigdb *signature.SignatureDatabase, signerKey, signerPem []byt
 	if err != nil {
 		return nil, err
 	}
-	return efi.SignEFIVariable(key, crt, efivar, sigdb.Bytes())
+	_, em, err := signature.SignEFIVariable(evar, sigdb, key, crt)
+	if err != nil {
+		return nil, err
+	}
+	return em.Bytes(), nil
 }
 
-func Enroll(sigdb *signature.SignatureDatabase, signerKey, signerPem []byte, efivar string) error {
+func Enroll(sigdb *signature.SignatureDatabase, signerKey, signerPem []byte, efivar efivar.Efivar) error {
 	signedBuf, err := SignDatabase(sigdb, signerKey, signerPem, efivar)
 	if err != nil {
 		return err
 	}
-	return efi.WriteEFIVariable(efivar, signedBuf)
+	//TODO: Remove this for the new functions
+	return efi.WriteEFIVariable(efivar.Name, signedBuf)
 }
 
 func EnrollCustom(customBytes []byte, efivar string) error {
@@ -124,7 +129,7 @@ func VerifyFile(cert, file string) (bool, error) {
 		return false, fmt.Errorf("couldn't access %s: %w", cert, err)
 	}
 
-	peFile, err := fs.ReadFile(file)
+	peFile, err := fs.Fs.Open(file)
 	if err != nil {
 		return false, err
 	}
@@ -133,24 +138,22 @@ func VerifyFile(cert, file string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	sigs, err := pecoff.GetSignatures(peFile)
+
+	peBinary, err := authenticode.Parse(peFile)
+	if err != nil {
+		return false, err
+	}
+
+	sigs, err := peBinary.Signatures()
 	if err != nil {
 		return false, fmt.Errorf("%s: %w", file, err)
 	}
+
 	if len(sigs) == 0 {
 		return false, nil
 	}
-	for _, signature := range sigs {
-		ok, err := pkcs7.VerifySignature(x509Cert, signature.Certificate)
-		if err != nil {
-			return false, err
-		}
-		if ok {
-			return true, nil
-		}
-	}
-	// If we come this far we haven't found a signature that matches the cert
-	return false, nil
+
+	return peBinary.Verify(x509Cert)
 }
 
 var ErrAlreadySigned = errors.New("already signed file")
@@ -190,7 +193,7 @@ func SignFile(key, cert, file, output, checksum string) error {
 		return fmt.Errorf("failed signing file: %w", err)
 	}
 
-	peFile, err := fs.ReadFile(file)
+	peFile, err := fs.Fs.Open(file)
 	if err != nil {
 		return err
 	}
@@ -204,18 +207,17 @@ func SignFile(key, cert, file, output, checksum string) error {
 		return err
 	}
 
-	ctx := pecoff.PECOFFChecksum(peFile)
-
-	sig, err := pecoff.CreateSignature(ctx, Cert, Key)
+	peBinary, err := authenticode.Parse(peFile)
 	if err != nil {
 		return err
 	}
 
-	b, err := pecoff.AppendToBinary(ctx, sig)
+	_, err = peBinary.Sign(Key, Cert)
 	if err != nil {
 		return err
 	}
-	if err = fs.WriteFile(output, b, si.Mode()); err != nil {
+
+	if err = fs.WriteFile(output, peBinary.Bytes(), si.Mode()); err != nil {
 		return err
 	}
 

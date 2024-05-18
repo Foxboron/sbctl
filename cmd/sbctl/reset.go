@@ -10,6 +10,7 @@ import (
 	"github.com/foxboron/go-uefi/efi"
 	"github.com/foxboron/go-uefi/efi/signature"
 	"github.com/foxboron/go-uefi/efi/util"
+	"github.com/foxboron/go-uefi/efivar"
 	"github.com/foxboron/sbctl"
 	"github.com/foxboron/sbctl/fs"
 	"github.com/foxboron/sbctl/logging"
@@ -72,7 +73,7 @@ func resetDB(certPaths ...string) error {
 	KEKKey := filepath.Join(sbctl.KeysPath, "KEK", "KEK.key")
 	KEKPem := filepath.Join(sbctl.KeysPath, "KEK", "KEK.pem")
 
-	if err := resetDatabase(KEKKey, KEKPem, "db", certPaths...); err != nil {
+	if err := resetDatabase(KEKKey, KEKPem, efivar.Db, certPaths...); err != nil {
 		return err
 	}
 
@@ -85,7 +86,7 @@ func resetKEK(certPaths ...string) error {
 	PKKey := filepath.Join(sbctl.KeysPath, "PK", "PK.key")
 	PKPem := filepath.Join(sbctl.KeysPath, "PK", "PK.pem")
 
-	if err := resetDatabase(PKKey, PKPem, "KEK", certPaths...); err != nil {
+	if err := resetDatabase(PKKey, PKPem, efivar.KEK, certPaths...); err != nil {
 		return err
 	}
 
@@ -98,7 +99,7 @@ func resetPK(certPaths ...string) error {
 	PKKey := filepath.Join(sbctl.KeysPath, "PK", "PK.key")
 	PKPem := filepath.Join(sbctl.KeysPath, "PK", "PK.pem")
 
-	if err := resetDatabase(PKKey, PKPem, "PK", certPaths...); err != nil {
+	if err := resetDatabase(PKKey, PKPem, efivar.PK, certPaths...); err != nil {
 		return err
 	}
 
@@ -107,8 +108,8 @@ func resetPK(certPaths ...string) error {
 	return nil
 }
 
-func resetDatabase(signerKey, signerPem string, efivar string, certPaths ...string) error {
-	var buf []byte
+func resetDatabase(signerKey, signerPem string, efivar efivar.Efivar, certPaths ...string) error {
+	var db *signature.SignatureDatabase
 
 	key, err := util.ReadKeyFromFile(signerKey)
 	if err != nil {
@@ -122,11 +123,10 @@ func resetDatabase(signerKey, signerPem string, efivar string, certPaths ...stri
 
 	if len(certPaths) != 0 {
 		var (
-			db  *signature.SignatureDatabase
 			err error
 		)
 
-		switch efivar {
+		switch efivar.Name {
 		case "db":
 			db, err = efi.Getdb()
 		case "KEK":
@@ -161,20 +161,15 @@ func resetDatabase(signerKey, signerPem string, efivar string, certPaths ...stri
 			}
 
 		}
-
-		buf = db.Bytes()
-	} else {
-		buf = []byte{}
 	}
-
-	signedBuf, err := efi.SignEFIVariable(key, crt, efivar, buf)
+	_, evar, err := signature.SignEFIVariable(efivar, db, key, crt)
 	if err != nil {
 		return err
 	}
 
-	if err := efi.WriteEFIVariable(efivar, signedBuf); err != nil {
+	if err := efi.WriteEFIVariable(efivar.Name, evar.Bytes()); err != nil {
 		if errors.Is(err, syscall.EIO) {
-			return fmt.Errorf("%s already reset or not enrolled", efivar)
+			return fmt.Errorf("%s already reset or not enrolled", efivar.Name)
 		}
 		return err
 	}
