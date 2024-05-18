@@ -1,9 +1,14 @@
 #!/usr/bin/bash
 
-KERENEL_FILE="$1"
+KERNEL_FILE="$1"
 UKI_FILE="$3"
 
-IMAGE_FILE="$KERENEL_FILE"
+if [ ! -f /usr/share/secureboot/keys/db/db.pem ]; then
+    echo "No keys found for signing"
+    exit 0
+fi
+
+IMAGE_FILE="$KERNEL_FILE"
 if [ -n "$KERNELDESTINATION" ] && [ -f "$KERNELDESTINATION" ]; then
     IMAGE_FILE="$KERNELDESTINATION"
 fi
