@@ -170,6 +170,9 @@ func SignFile(key, cert, file, output, checksum string) error {
 		// if the file does not exist and file is not the same as output
 		// then we just catch the error and continue. This is expected
 		// behaviour
+	} else if errors.Is(err, authenticode.ErrNoValidSignatures) {
+		// If we tried to verify the file, but it has signatures but nothing signed
+		// by our key, we catch the error and continue.
 	} else if err != nil {
 		return err
 	}
