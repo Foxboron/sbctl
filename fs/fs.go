@@ -7,23 +7,9 @@ import (
 	"github.com/spf13/afero"
 )
 
-// Storage backend
-var (
-	Fs = afero.NewOsFs()
-)
-
-func SetFS(f afero.Fs) {
-	Fs = f
-}
-
-func GetFS() afero.Fs {
-	return Fs
-}
-
 // Afero misses a few functions. So copy-pasted os/file.go functions here
-
-func WriteFile(name string, data []byte, perm os.FileMode) error {
-	f, err := Fs.OpenFile(name, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, perm)
+func WriteFile(fs afero.Fs, name string, data []byte, perm os.FileMode) error {
+	f, err := fs.OpenFile(name, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, perm)
 	if err != nil {
 		return err
 	}
@@ -34,8 +20,8 @@ func WriteFile(name string, data []byte, perm os.FileMode) error {
 	return err
 }
 
-func ReadFile(name string) ([]byte, error) {
-	f, err := Fs.Open(name)
+func ReadFile(fs afero.Fs, name string) ([]byte, error) {
+	f, err := fs.Open(name)
 	if err != nil {
 		return nil, err
 	}

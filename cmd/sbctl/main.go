@@ -1,14 +1,18 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
 	"strings"
 
+	"github.com/foxboron/go-uefi/efivarfs"
 	"github.com/foxboron/sbctl"
+	"github.com/foxboron/sbctl/config"
 	"github.com/foxboron/sbctl/logging"
+	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 )
 
@@ -78,6 +82,15 @@ func main() {
 
 	baseFlags(rootCmd)
 
+	state := &config.State{
+		Fs:     afero.NewOsFs(),
+		Config: config.DefaultConfig(),
+		Efivarfs: efivarfs.NewFS().
+			CheckImmutable().
+			Open(),
+	}
+	ctx := context.WithValue(context.Background(), "state", state)
+
 	// This returns i the flag is not found with a specific error
 	rootCmd.SetFlagErrorFunc(func(cmd *cobra.Command, err error) error {
 		cmd.Println(err)
@@ -85,7 +98,7 @@ func main() {
 		return ErrSilent
 	})
 
-	if err := rootCmd.Execute(); err != nil {
+	if err := rootCmd.ExecuteContext(ctx); err != nil {
 		if strings.HasPrefix(err.Error(), "unknown command") {
 			logging.Println(err.Error())
 		} else if errors.Is(err, os.ErrPermission) {

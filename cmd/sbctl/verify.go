@@ -6,7 +6,9 @@ import (
 	"os"
 
 	"github.com/foxboron/sbctl"
-	"github.com/foxboron/sbctl/fs"
+	"github.com/foxboron/sbctl/backend"
+	"github.com/foxboron/sbctl/config"
+	"github.com/foxboron/sbctl/hierarchy"
 	"github.com/foxboron/sbctl/logging"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
@@ -21,8 +23,8 @@ var (
 	}
 )
 
-func VerifyOneFile(f string) error {
-	o, err := fs.Fs.Open(f)
+func VerifyOneFile(state *config.State, f string) error {
+	o, err := state.Fs.Open(f)
 	if errors.Is(err, os.ErrNotExist) {
 		logging.Warn("%s does not exist", f)
 		return nil
@@ -38,7 +40,13 @@ func VerifyOneFile(f string) error {
 	if !ok {
 		return ErrInvalidHeader
 	}
-	ok, err = sbctl.VerifyFile(sbctl.DBCert, f)
+
+	kh, err := backend.GetKeyHierarchy(state.Config)
+	if err != nil {
+		return err
+	}
+
+	ok, err = sbctl.VerifyFile(state, kh, hierarchy.Db, f)
 	if err != nil {
 		return err
 	}
@@ -51,17 +59,16 @@ func VerifyOneFile(f string) error {
 }
 
 func RunVerify(cmd *cobra.Command, args []string) error {
+	state := cmd.Context().Value("state").(*config.State)
+
 	// Exit early if we can't verify files
-	if err := sbctl.CanVerifyFiles(); err != nil {
-		return err
-	}
-	espPath, err := sbctl.GetESP()
+	espPath, err := sbctl.GetESP(state.Fs)
 	if err != nil {
 		return err
 	}
 	if len(args) > 0 {
 		for _, file := range args {
-			if err := VerifyOneFile(file); err != nil {
+			if err := VerifyOneFile(state, file); err != nil {
 				if errors.Is(ErrInvalidHeader, err) {
 					logging.Error(fmt.Errorf("%s is not a valid EFI binary", file))
 					return nil
@@ -72,9 +79,9 @@ func RunVerify(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 	logging.Print("Verifying file database and EFI images in %s...\n", espPath)
-	if err := sbctl.SigningEntryIter(func(file *sbctl.SigningEntry) error {
+	if err := sbctl.SigningEntryIter(state, func(file *sbctl.SigningEntry) error {
 		sbctl.AddChecked(file.OutputFile)
-		if err := VerifyOneFile(file.OutputFile); err != nil {
+		if err := VerifyOneFile(state, file.OutputFile); err != nil {
 			return err
 		}
 		return nil
@@ -82,17 +89,17 @@ func RunVerify(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	if err := afero.Walk(fs.Fs, espPath, func(path string, info os.FileInfo, err error) error {
+	if err := afero.Walk(state.Fs, espPath, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			logging.Error(fmt.Errorf("failed to read path %s: %s", path, err))
 		}
-		if fi, _ := fs.Fs.Stat(path); fi.IsDir() {
+		if fi, _ := state.Fs.Stat(path); fi.IsDir() {
 			return nil
 		}
 		if sbctl.InChecked(path) {
 			return nil
 		}
-		if err = VerifyOneFile(path); err != nil {
+		if err = VerifyOneFile(state, path); err != nil {
 			// We are scanning the ESP, so ignore invalid files
 			if errors.Is(ErrInvalidHeader, err) {
 				return nil

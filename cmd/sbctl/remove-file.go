@@ -4,6 +4,7 @@ import (
 	"os"
 
 	"github.com/foxboron/sbctl"
+	"github.com/foxboron/sbctl/config"
 	"github.com/foxboron/sbctl/logging"
 	"github.com/spf13/cobra"
 )
@@ -16,11 +17,13 @@ var removeFileCmd = &cobra.Command{
 	},
 	Short: "Remove file from database",
 	RunE: func(cmd *cobra.Command, args []string) error {
+		state := cmd.Context().Value("state").(*config.State)
+
 		if len(args) < 1 {
 			logging.Println("Need to specify file")
 			os.Exit(1)
 		}
-		files, err := sbctl.ReadFileDatabase(sbctl.DBPath)
+		files, err := sbctl.ReadFileDatabase(state.Fs, state.Config.FilesDb)
 		if err != nil {
 			return err
 		}
@@ -29,7 +32,7 @@ var removeFileCmd = &cobra.Command{
 			os.Exit(1)
 		}
 		delete(files, args[0])
-		if err := sbctl.WriteFileDatabase(sbctl.DBPath, files); err != nil {
+		if err := sbctl.WriteFileDatabase(state.Fs, state.Config.FilesDb, files); err != nil {
 			return err
 		}
 		logging.Print("Removed %s from the database.\n", args[0])

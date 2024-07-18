@@ -5,6 +5,9 @@ import (
 	"fmt"
 
 	"github.com/foxboron/sbctl"
+	"github.com/foxboron/sbctl/backend"
+	"github.com/foxboron/sbctl/config"
+	"github.com/foxboron/sbctl/hierarchy"
 	"github.com/foxboron/sbctl/logging"
 	"github.com/spf13/cobra"
 )
@@ -17,24 +20,30 @@ var signAllCmd = &cobra.Command{
 	Use:   "sign-all",
 	Short: "Sign all enrolled files with secure boot keys",
 	RunE: func(cmd *cobra.Command, args []string) error {
+		state := cmd.Context().Value("state").(*config.State)
 		if generate {
 			sign = true
 			if err := generateBundlesCmd.RunE(cmd, args); err != nil {
 				logging.Error(err)
 			}
 		}
-		return SignAll()
+		return SignAll(state)
 	},
 }
 
-func SignAll() error {
-	files, err := sbctl.ReadFileDatabase(sbctl.DBPath)
+func SignAll(state *config.State) error {
+	files, err := sbctl.ReadFileDatabase(state.Fs, state.Config.FilesDb)
 	if err != nil {
 		return err
 	}
 	for _, entry := range files {
 
-		err := sbctl.SignFile(sbctl.DBKey, sbctl.DBCert, entry.File, entry.OutputFile, entry.Checksum)
+		kh, err := backend.GetKeyHierarchy(state.Config)
+		if err != nil {
+			return err
+		}
+
+		err = sbctl.SignFile(state, kh, hierarchy.Db, entry.File, entry.OutputFile)
 		if errors.Is(err, sbctl.ErrAlreadySigned) {
 			logging.Print("File has already been signed %s\n", entry.OutputFile)
 		} else if err != nil {
@@ -45,13 +54,8 @@ func SignAll() error {
 		}
 
 		// Update checksum after we signed it
-		checksum, err := sbctl.ChecksumFile(entry.File)
-		if err != nil {
-			return err
-		}
-		entry.Checksum = checksum
 		files[entry.File] = entry
-		if err := sbctl.WriteFileDatabase(sbctl.DBPath, files); err != nil {
+		if err := sbctl.WriteFileDatabase(state.Fs, state.Config.FilesDb, files); err != nil {
 			return err
 		}
 

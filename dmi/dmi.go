@@ -4,6 +4,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/foxboron/sbctl/config"
 	"github.com/foxboron/sbctl/fs"
 )
 
@@ -25,13 +26,13 @@ type DMI struct {
 	SystemVendor    string    `json:"system_vendor"`
 }
 
-func readValue(filename string) string {
-	f, _ := fs.ReadFile("/sys/devices/virtual/dmi/id/" + filename)
-	return strings.TrimSpace(string(f))
-}
-
-func ParseDMI() DMI {
+func ParseDMI(state *config.State) DMI {
 	dmi := DMI{}
+
+	readValue := func(filename string) string {
+		f, _ := fs.ReadFile(state.Fs, "/sys/devices/virtual/dmi/id/"+filename)
+		return strings.TrimSpace(string(f))
+	}
 
 	dmi.BoardName = readValue("board_name")
 	dmi.BoardVendor = readValue("board_vendor")

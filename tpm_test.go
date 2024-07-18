@@ -3,6 +3,8 @@ package sbctl
 import (
 	"errors"
 	"testing"
+
+	"github.com/spf13/afero"
 )
 
 var (
@@ -36,7 +38,7 @@ var (
 
 func TestParseEventlog(t *testing.T) {
 	for _, test := range tests {
-		err := CheckEventlogOprom(test.File)
+		err := CheckEventlogOprom(afero.NewOsFs(), test.File)
 		if !errors.Is(err, test.Result) {
 			t.Fatalf("Test case file '%s' not correct. Expected '%s', got '%s'", test.File, test.Result, err.Error())
 		}
@@ -45,7 +47,7 @@ func TestParseEventlog(t *testing.T) {
 
 func TestEventlogChecksums(t *testing.T) {
 	for _, test := range tests {
-		digests, err := GetEventlogChecksums(test.File)
+		digests, err := GetEventlogChecksums(afero.NewOsFs(), test.File)
 		if err != nil {
 			continue
 		}

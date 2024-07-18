@@ -5,8 +5,9 @@ import (
 	"path/filepath"
 
 	"github.com/foxboron/sbctl"
-	"github.com/foxboron/sbctl/fs"
+	"github.com/foxboron/sbctl/config"
 	"github.com/foxboron/sbctl/logging"
+	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 )
 
@@ -27,6 +28,8 @@ var bundleCmd = &cobra.Command{
 	Use:   "bundle",
 	Short: "Bundle the needed files for an EFI stub image",
 	RunE: func(cmd *cobra.Command, args []string) error {
+		state := cmd.Context().Value("state").(*config.State)
+
 		if len(args) < 1 {
 			logging.Print("Requires a file to sign...\n")
 			os.Exit(1)
@@ -36,12 +39,12 @@ var bundleCmd = &cobra.Command{
 			if path == "" {
 				continue
 			}
-			if _, err := fs.Fs.Stat(path); os.IsNotExist(err) {
+			if _, err := state.Fs.Stat(path); os.IsNotExist(err) {
 				logging.Print("%s does not exist!\n", path)
 				os.Exit(1)
 			}
 		}
-		bundle, err := sbctl.NewBundle()
+		bundle, err := sbctl.NewBundle(state.Fs)
 		if err != nil {
 			return err
 		}
@@ -54,7 +57,7 @@ var bundleCmd = &cobra.Command{
 		if saveBundle {
 			// "err" needs to have been declared before this, otherwise it's necessary
 			// to use ":=", which shadows the "bundles" variable
-			bundles, err = sbctl.ReadBundleDatabase(sbctl.BundleDBPath)
+			bundles, err = sbctl.ReadBundleDatabase(state.Fs, state.Config.BundlesDb)
 			if err != nil {
 				return err
 			}
@@ -69,13 +72,13 @@ var bundleCmd = &cobra.Command{
 		bundle.OSRelease = osRelease
 		bundle.EFIStub = efiStub
 		bundle.ESP = espPath
-		if err = sbctl.CreateBundle(*bundle); err != nil {
+		if err = sbctl.CreateBundle(state, *bundle); err != nil {
 			return err
 		}
 		logging.Print("Wrote EFI bundle %s\n", bundle.Output)
 		if saveBundle {
 			bundles[bundle.Output] = bundle
-			err := sbctl.WriteBundleDatabase(sbctl.BundleDBPath, bundles)
+			err := sbctl.WriteBundleDatabase(state.Fs, state.Config.BundlesDb, bundles)
 			if err != nil {
 				return err
 			}
@@ -85,7 +88,7 @@ var bundleCmd = &cobra.Command{
 }
 
 func bundleCmdFlags(cmd *cobra.Command) {
-	esp, _ := sbctl.GetESP()
+	esp, _ := sbctl.GetESP(afero.NewOsFs())
 	f := cmd.Flags()
 	f.StringVarP(&amducode, "amducode", "a", "", "AMD microcode location")
 	f.StringVarP(&intelucode, "intelucode", "i", "", "Intel microcode location")

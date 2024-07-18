@@ -7,7 +7,6 @@ import (
 
 	"github.com/foxboron/go-uefi/efi/efitest"
 	"github.com/foxboron/sbctl/quirks"
-	"github.com/spf13/cobra"
 )
 
 var (
@@ -15,10 +14,10 @@ var (
 )
 
 func TestStatusOff(t *testing.T) {
-	SetFS(efitest.SecureBootOff())
+	cmd := SetFS(efitest.SecureBootOff())
 
 	if err := captureJsonOutput(&out, func() error {
-		return RunStatus(&cobra.Command{}, []string{})
+		return RunStatus(cmd, []string{})
 	}); err != nil {
 		t.Fatal(err)
 	}
@@ -29,10 +28,10 @@ func TestStatusOff(t *testing.T) {
 }
 
 func TestStatusOn(t *testing.T) {
-	SetFS(efitest.SecureBootOn())
+	cmd := SetFS(efitest.SecureBootOn())
 
 	if err := captureJsonOutput(&out, func() error {
-		return RunStatus(&cobra.Command{}, []string{})
+		return RunStatus(cmd, []string{})
 	}); err != nil {
 		t.Fatal(err)
 	}
@@ -43,7 +42,7 @@ func TestStatusOn(t *testing.T) {
 }
 
 func TestFQ0001DateMethod(t *testing.T) {
-	SetFS(
+	cmd := SetFS(
 		fstest.MapFS{"/sys/devices/virtual/dmi/id/bios_date": {Data: []byte("01/06/2023\n")}},
 		fstest.MapFS{"/sys/devices/virtual/dmi/id/bios_version": {Data: []byte("A.30\n")}},
 		fstest.MapFS{"/sys/devices/virtual/dmi/id/board_name": {Data: []byte("PRO Z790-A WIFI (MS-7E07)\n")}},
@@ -54,7 +53,7 @@ func TestFQ0001DateMethod(t *testing.T) {
 	)
 
 	if err := captureJsonOutput(&out, func() error {
-		return RunStatus(&cobra.Command{}, []string{})
+		return RunStatus(cmd, []string{})
 	}); err != nil {
 		t.Fatal(err)
 	}
@@ -74,7 +73,7 @@ func TestFQ0001DateMethod(t *testing.T) {
 }
 
 func TestFQ0001DeviceMethod(t *testing.T) {
-	SetFS(
+	cmd := SetFS(
 		fstest.MapFS{"/sys/devices/virtual/dmi/id/bios_date": {Data: []byte("12/29/2021\n")}},
 		fstest.MapFS{"/sys/devices/virtual/dmi/id/bios_version": {Data: []byte("1.80\n")}},
 		fstest.MapFS{"/sys/devices/virtual/dmi/id/board_name": {Data: []byte("MAG X570 TOMAHAWK WIFI (MS-7C84)\n")}},
@@ -85,7 +84,7 @@ func TestFQ0001DeviceMethod(t *testing.T) {
 	)
 
 	if err := captureJsonOutput(&out, func() error {
-		return RunStatus(&cobra.Command{}, []string{})
+		return RunStatus(cmd, []string{})
 	}); err != nil {
 		t.Fatal(err)
 	}
@@ -105,7 +104,7 @@ func TestFQ0001DeviceMethod(t *testing.T) {
 }
 
 func TestFQ0001ExplicitlyUnaffected(t *testing.T) {
-	SetFS(
+	cmd := SetFS(
 		fstest.MapFS{"/sys/devices/virtual/dmi/id/bios_date": {Data: []byte("03/31/2022\n")}},
 		fstest.MapFS{"/sys/devices/virtual/dmi/id/bios_version": {Data: []byte("1.B0\n")}},
 		fstest.MapFS{"/sys/devices/virtual/dmi/id/board_name": {Data: []byte("MAG Z490 TOMAHAWK (MS-7C80)\n")}},
@@ -116,7 +115,7 @@ func TestFQ0001ExplicitlyUnaffected(t *testing.T) {
 	)
 
 	if err := captureJsonOutput(&out, func() error {
-		return RunStatus(&cobra.Command{}, []string{})
+		return RunStatus(cmd, []string{})
 	}); err != nil {
 		t.Fatal(err)
 	}
@@ -134,7 +133,7 @@ func TestFQ0001ExplicitlyUnaffected(t *testing.T) {
 }
 
 func TestFQ0001WrongChassis(t *testing.T) {
-	SetFS(
+	cmd := SetFS(
 		fstest.MapFS{"/sys/devices/virtual/dmi/id/bios_date": {Data: []byte("01/06/2023\n")}},
 		fstest.MapFS{"/sys/devices/virtual/dmi/id/bios_version": {Data: []byte("A.30\n")}},
 		fstest.MapFS{"/sys/devices/virtual/dmi/id/board_name": {Data: []byte("PRO Z790-A WIFI (MS-7E07)\n")}},
@@ -145,7 +144,7 @@ func TestFQ0001WrongChassis(t *testing.T) {
 	)
 
 	if err := captureJsonOutput(&out, func() error {
-		return RunStatus(&cobra.Command{}, []string{})
+		return RunStatus(cmd, []string{})
 	}); err != nil {
 		t.Fatal(err)
 	}
@@ -163,7 +162,7 @@ func TestFQ0001WrongChassis(t *testing.T) {
 }
 
 func TestFQ0001WrongVendor(t *testing.T) {
-	SetFS(
+	cmd := SetFS(
 		fstest.MapFS{"/sys/devices/virtual/dmi/id/bios_date": {Data: []byte("01/06/2023\n")}},
 		fstest.MapFS{"/sys/devices/virtual/dmi/id/bios_version": {Data: []byte("A.30\n")}},
 		fstest.MapFS{"/sys/devices/virtual/dmi/id/board_name": {Data: []byte("PRO Z790-A WIFI (MS-7E07)\n")}},
@@ -174,7 +173,7 @@ func TestFQ0001WrongVendor(t *testing.T) {
 	)
 
 	if err := captureJsonOutput(&out, func() error {
-		return RunStatus(&cobra.Command{}, []string{})
+		return RunStatus(cmd, []string{})
 	}); err != nil {
 		t.Fatal(err)
 	}

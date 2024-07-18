@@ -2,8 +2,6 @@ package sbctl
 
 import (
 	"bytes"
-	"crypto/sha256"
-	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
@@ -16,19 +14,8 @@ import (
 	"github.com/spf13/afero"
 )
 
-func ChecksumFile(file string) (string, error) {
-	hasher := sha256.New()
-	s, err := fs.ReadFile(file)
-	if err != nil {
-		return "", err
-	}
-	hasher.Write(s)
-
-	return hex.EncodeToString(hasher.Sum(nil)), nil
-}
-
-func CreateDirectory(path string) error {
-	_, err := fs.Fs.Stat(path)
+func CreateDirectory(vfs afero.Fs, path string) error {
+	_, err := vfs.Stat(path)
 	switch {
 	case errors.Is(err, os.ErrNotExist):
 		// Ignore this error
@@ -37,26 +24,26 @@ func CreateDirectory(path string) error {
 	case err != nil:
 		return err
 	}
-	if err := fs.Fs.MkdirAll(path, os.ModePerm); err != nil {
+	if err := vfs.MkdirAll(path, os.ModePerm); err != nil {
 		return err
 	}
 	return nil
 }
 
-func ReadOrCreateFile(filePath string) ([]byte, error) {
+func ReadOrCreateFile(vfs afero.Fs, filePath string) ([]byte, error) {
 	// Try to access or create the file itself
-	f, err := fs.ReadFile(filePath)
+	f, err := fs.ReadFile(vfs, filePath)
 	if err != nil {
 		// Errors will mainly happen due to permissions or non-existing file
 		if os.IsNotExist(err) {
 			// First, guarantee the directory's existence
 			// os.MkdirAll simply returns nil if the directory already exists
 			fileDir := filepath.Dir(filePath)
-			if err = fs.Fs.MkdirAll(fileDir, os.ModePerm); err != nil {
+			if err = vfs.MkdirAll(fileDir, os.ModePerm); err != nil {
 				return nil, err
 			}
 
-			file, err := fs.Fs.Create(filePath)
+			file, err := vfs.Create(filePath)
 			if err != nil {
 				return nil, err
 			}
@@ -87,9 +74,9 @@ var ErrNotImmutable = errors.New("file is not immutable")
 var Immutable = false
 
 // Check if a given file has the immutable bit set
-func IsImmutable(file string) error {
+func IsImmutable(vfs afero.Fs, file string) error {
 	// We can't actually do the syscall check. Implemented a workaround to test stuff instead
-	if _, ok := fs.Fs.(afero.OsFs); ok {
+	if _, ok := vfs.(afero.OsFs); ok {
 		if Immutable {
 			return ErrImmutable
 		}
@@ -114,10 +101,10 @@ func IsImmutable(file string) error {
 }
 
 // Check if any files in efivarfs has the immutable bit set
-func CheckImmutable() error {
+func CheckImmutable(vfs afero.Fs) error {
 	var isImmutable bool
 	for _, file := range EfivarFSFiles {
-		err := IsImmutable(file)
+		err := IsImmutable(vfs, file)
 		if errors.Is(err, ErrImmutable) {
 			isImmutable = true
 			logging.Warn("File is immutable: %s", file)
@@ -166,14 +153,14 @@ func InChecked(path string) bool {
 	return checked[normalized]
 }
 
-func CopyFile(src, dst string) error {
-	source, err := fs.Fs.Open(src)
+func CopyFile(vfs afero.Fs, src, dst string) error {
+	source, err := vfs.Open(src)
 	if err != nil {
 		return err
 	}
 	defer source.Close()
 
-	f, err := fs.Fs.OpenFile(dst, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
+	f, err := vfs.OpenFile(dst, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
 	if err != nil {
 		return err
 	}
@@ -181,28 +168,28 @@ func CopyFile(src, dst string) error {
 	if _, err = io.Copy(f, source); err != nil {
 		return err
 	}
-	si, err := fs.Fs.Stat(src)
+	si, err := vfs.Stat(src)
 	if err != nil {
 		return err
 	}
-	return fs.Fs.Chmod(dst, si.Mode())
+	return vfs.Chmod(dst, si.Mode())
 }
 
 // CopyDirectory moves files and creates directories
-func CopyDirectory(src, dst string) error {
-	return afero.Walk(fs.Fs, src, func(path string, info os.FileInfo, err error) error {
+func CopyDirectory(vfs afero.Fs, src, dst string) error {
+	return afero.Walk(vfs, src, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
 		relPath := strings.TrimPrefix(path, src)
 		newPath := filepath.Join(dst, relPath)
 		if info.IsDir() {
-			if err := fs.Fs.MkdirAll(newPath, info.Mode()); err != nil {
+			if err := vfs.MkdirAll(newPath, info.Mode()); err != nil {
 				return err
 			}
 			return nil
 		}
-		if err := CopyFile(path, newPath); err != nil {
+		if err := CopyFile(vfs, path, newPath); err != nil {
 			return err
 		}
 		return nil

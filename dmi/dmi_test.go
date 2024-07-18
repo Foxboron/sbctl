@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/foxboron/go-uefi/efi/efitest"
-	"github.com/foxboron/sbctl/fs"
+	"github.com/foxboron/sbctl/config"
 )
 
 func TestDMIParse(t *testing.T) {
@@ -26,9 +26,8 @@ func TestDMIParse(t *testing.T) {
 		fstest.MapFS{"/sys/devices/virtual/dmi/id/sys_vendor": {Data: []byte("EvilSystemVendor\n")}},
 		efitest.SecureBootOn(),
 	).SetFS()
-	fs.SetFS(f.ToAfero())
 
-	dmiTable := ParseDMI()
+	dmiTable := ParseDMI(&config.State{Fs: f.ToAfero()})
 
 	if dmiTable.BoardName != "BadBoardName" {
 		t.Fatal("BoardName: expected 'BadBoardName', got '" + dmiTable.BoardName + "'")
