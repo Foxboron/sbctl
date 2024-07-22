@@ -7,7 +7,9 @@ toolchain go1.22.3
 require (
 	github.com/fatih/color v1.17.0
 	github.com/foxboron/go-uefi v0.0.0-20240516213015-35289af04a75
+	github.com/goccy/go-yaml v1.11.3
 	github.com/google/go-attestation v0.5.1
+	github.com/google/go-tpm v0.9.0
 	github.com/google/uuid v1.4.0
 	github.com/hugelgupf/vmtest v0.0.0-20240110072021-f6f07acb7aa1
 	github.com/onsi/gomega v1.7.1
@@ -21,9 +23,7 @@ require (
 	github.com/Netflix/go-expect v0.0.0-20220104043353-73e0943537d2 // indirect
 	github.com/creack/pty v1.1.21 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
-	github.com/goccy/go-yaml v1.11.3 // indirect
 	github.com/google/certificate-transparency-go v1.1.2 // indirect
-	github.com/google/go-tpm v0.9.0 // indirect
 	github.com/google/go-tspi v0.3.0 // indirect
 	github.com/google/goterm v0.0.0-20200907032337-555d40f16ae2 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
