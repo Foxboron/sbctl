@@ -86,7 +86,6 @@ func main() {
 		Fs:     afero.NewOsFs(),
 		Config: config.DefaultConfig(),
 		Efivarfs: efivarfs.NewFS().
-			CheckImmutable().
 			Open(),
 	}
 	ctx := context.WithValue(context.Background(), "state", state)

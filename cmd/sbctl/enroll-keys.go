@@ -88,7 +88,7 @@ func KeySync(state *config.State, oems []string) error {
 	var efistate *sbctl.EFIVariables
 
 	if !enrollKeysCmdOptions.Append {
-		efistate = sbctl.NewEFIVariables()
+		efistate = sbctl.NewEFIVariables(state.Efivarfs)
 	} else {
 		efistate, err = sbctl.SystemEFIVariables(state.Efivarfs)
 		if err != nil {

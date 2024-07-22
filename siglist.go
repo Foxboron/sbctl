@@ -48,8 +48,9 @@ func (e *EFIVariables) EnrollAllKeys(hier *backend.KeyHierarchy) error {
 	return nil
 }
 
-func NewEFIVariables() *EFIVariables {
+func NewEFIVariables(fs *efivarfs.Efivarfs) *EFIVariables {
 	return &EFIVariables{
+		fs:  fs,
 		PK:  signature.NewSignatureDatabase(),
 		KEK: signature.NewSignatureDatabase(),
 		Db:  signature.NewSignatureDatabase(),
