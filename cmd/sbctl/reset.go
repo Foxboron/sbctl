@@ -156,7 +156,7 @@ func resetDatabase(state *config.State, ev efivar.Efivar, certPaths ...string) e
 }
 
 func RunReset(cmd *cobra.Command, args []string) error {
-	state := cmd.Context().Value("state").(*config.State)
+	state := cmd.Context().Value(stateDataKey{}).(*config.State)
 	if err := resetKeys(state); err != nil {
 		return err
 	}

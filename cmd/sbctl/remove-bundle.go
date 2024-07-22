@@ -16,7 +16,7 @@ var removeBundleCmd = &cobra.Command{
 	},
 	Short: "Remove bundle from database",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		state := cmd.Context().Value("state").(*config.State)
+		state := cmd.Context().Value(stateDataKey{}).(*config.State)
 
 		if len(args) < 1 {
 			logging.Print("Need to specify file\n")

@@ -25,6 +25,8 @@ type cliCommand struct {
 	Cmd *cobra.Command
 }
 
+type stateDataKey struct{}
+
 var (
 	cmdOptions  = CmdOptions{}
 	CliCommands = []cliCommand{}
@@ -88,7 +90,7 @@ func main() {
 		Efivarfs: efivarfs.NewFS().
 			Open(),
 	}
-	ctx := context.WithValue(context.Background(), "state", state)
+	ctx := context.WithValue(context.Background(), stateDataKey{}, state)
 
 	// This returns i the flag is not found with a specific error
 	rootCmd.SetFlagErrorFunc(func(cmd *cobra.Command, err error) error {

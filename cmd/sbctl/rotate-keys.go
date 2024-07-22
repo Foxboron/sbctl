@@ -69,7 +69,7 @@ func rotateCerts(state *config.State, hier hierarchy.Hierarchy, oldkeys *backend
 }
 
 func RunRotateKeys(cmd *cobra.Command, args []string) error {
-	state := cmd.Context().Value("state").(*config.State)
+	state := cmd.Context().Value(stateDataKey{}).(*config.State)
 	partial := rotateKeysCmdOptions.Partial.Value
 
 	// rotate all keys if no specific key should be replaced

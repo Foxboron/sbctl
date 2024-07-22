@@ -28,7 +28,7 @@ var bundleCmd = &cobra.Command{
 	Use:   "bundle",
 	Short: "Bundle the needed files for an EFI stub image",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		state := cmd.Context().Value("state").(*config.State)
+		state := cmd.Context().Value(stateDataKey{}).(*config.State)
 
 		if len(args) < 1 {
 			logging.Print("Requires a file to sign...\n")

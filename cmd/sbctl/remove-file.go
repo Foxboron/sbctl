@@ -17,7 +17,7 @@ var removeFileCmd = &cobra.Command{
 	},
 	Short: "Remove file from database",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		state := cmd.Context().Value("state").(*config.State)
+		state := cmd.Context().Value(stateDataKey{}).(*config.State)
 
 		if len(args) < 1 {
 			logging.Println("Need to specify file")

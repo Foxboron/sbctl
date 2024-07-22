@@ -24,7 +24,7 @@ var listBundlesCmd = &cobra.Command{
 	},
 	Short: "List stored bundles",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		state := cmd.Context().Value("state").(*config.State)
+		state := cmd.Context().Value(stateDataKey{}).(*config.State)
 
 		bundles := []JsonBundle{}
 		var isSigned bool

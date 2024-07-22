@@ -22,7 +22,7 @@ var createKeysCmd = &cobra.Command{
 	Use:   "create-keys",
 	Short: "Create a set of secure boot signing keys",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		state := cmd.Context().Value("state").(*config.State)
+		state := cmd.Context().Value(stateDataKey{}).(*config.State)
 
 		// Overrides keydir or GUID location
 		if exportPath != "" {

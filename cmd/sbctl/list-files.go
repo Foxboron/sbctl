@@ -27,7 +27,7 @@ type JsonFile struct {
 }
 
 func RunList(cmd *cobra.Command, args []string) error {
-	state := cmd.Context().Value("state").(*config.State)
+	state := cmd.Context().Value(stateDataKey{}).(*config.State)
 
 	files := []JsonFile{}
 	var isSigned bool

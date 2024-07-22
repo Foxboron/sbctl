@@ -20,7 +20,7 @@ var signAllCmd = &cobra.Command{
 	Use:   "sign-all",
 	Short: "Sign all enrolled files with secure boot keys",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		state := cmd.Context().Value("state").(*config.State)
+		state := cmd.Context().Value(stateDataKey{}).(*config.State)
 		if generate {
 			sign = true
 			if err := generateBundlesCmd.RunE(cmd, args); err != nil {

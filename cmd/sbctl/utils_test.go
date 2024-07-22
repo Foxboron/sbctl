@@ -42,7 +42,7 @@ func SetFS(files ...fstest.MapFS) *cobra.Command {
 
 	state := &config.State{Fs: fs, Config: config.DefaultConfig()}
 	cmd := &cobra.Command{}
-	ctx := context.WithValue(context.Background(), "state", state)
+	ctx := context.WithValue(context.Background(), stateDataKey{}, state)
 	cmd.SetContext(ctx)
 	return cmd
 }

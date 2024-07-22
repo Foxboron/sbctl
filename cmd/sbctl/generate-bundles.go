@@ -20,7 +20,7 @@ var generateBundlesCmd = &cobra.Command{
 	Use:   "generate-bundles",
 	Short: "Generate all EFI stub bundles",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		state := cmd.Context().Value("state").(*config.State)
+		state := cmd.Context().Value(stateDataKey{}).(*config.State)
 
 		logging.Println("Generating EFI bundles....")
 		out_create := true

@@ -244,7 +244,7 @@ func KeySync(state *config.State, oems []string) error {
 }
 
 func RunEnrollKeys(cmd *cobra.Command, args []string) error {
-	state := cmd.Context().Value("state").(*config.State)
+	state := cmd.Context().Value(stateDataKey{}).(*config.State)
 
 	// SetupMode is not necessarily required on a partial enrollment
 	if !efi.GetSetupMode() && enrollKeysCmdOptions.Partial.Value == "" && enrollKeysCmdOptions.Export.Value == "" {

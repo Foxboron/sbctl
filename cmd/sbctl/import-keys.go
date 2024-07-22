@@ -91,7 +91,7 @@ func RunImportKeys(cmd *cobra.Command, args []string) error {
 		{"PK", importKeysCmdOptions.PKKey, importKeysCmdOptions.PKCert},
 	}
 
-	state := cmd.Context().Value("state").(*config.State)
+	state := cmd.Context().Value(stateDataKey{}).(*config.State)
 
 	if importKeysCmdOptions.Directory != "" {
 		_, err := state.Fs.Stat(state.Config.Keydir)

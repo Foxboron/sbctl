@@ -81,7 +81,7 @@ func PrintStatus(s *Status) {
 }
 
 func RunStatus(cmd *cobra.Command, args []string) error {
-	state := cmd.Context().Value("state").(*config.State)
+	state := cmd.Context().Value(stateDataKey{}).(*config.State)
 
 	stat := NewStatus()
 	if _, err := state.Fs.Stat("/sys/firmware/efi/efivars"); os.IsNotExist(err) {

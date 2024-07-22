@@ -59,7 +59,7 @@ func VerifyOneFile(state *config.State, f string) error {
 }
 
 func RunVerify(cmd *cobra.Command, args []string) error {
-	state := cmd.Context().Value("state").(*config.State)
+	state := cmd.Context().Value(stateDataKey{}).(*config.State)
 
 	// Exit early if we can't verify files
 	espPath, err := sbctl.GetESP(state.Fs)

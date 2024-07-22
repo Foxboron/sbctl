@@ -26,7 +26,7 @@ var signCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		state := cmd.Context().Value("state").(*config.State)
+		state := cmd.Context().Value(stateDataKey{}).(*config.State)
 
 		// Ensure we have absolute paths
 		file, err := filepath.Abs(args[0])
