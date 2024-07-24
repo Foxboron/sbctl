@@ -102,6 +102,7 @@ func IsImmutable(file string) error {
 	} else if err != nil {
 		return err
 	}
+	defer f.Close()
 	attr, err := GetAttr(f)
 	if err != nil {
 		return err
