@@ -22,4 +22,4 @@ if [ -z "$IMAGE_FILE" ]; then
 fi
 
 echo "Signing $IMAGE_FILE"
-sbctl sign -s "$IMAGE_FILE"
+sbctl sign "$IMAGE_FILE"
