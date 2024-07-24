@@ -3,8 +3,8 @@
 KERNEL_FILE="$1"
 UKI_FILE="$3"
 
-if [ ! -f /usr/share/secureboot/keys/db/db.pem ]; then
-    echo "No keys found for signing"
+if ! [ "$(sbctl setup --print-state --json | grep installed | awk '{print $2}')" = "true" ]; then
+    echo "Secureboot key directory doesn't exist, not signing!"
     exit 0
 fi
 
