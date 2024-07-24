@@ -203,6 +203,29 @@ EFI signing commands
                 Default: der
                 Valid values: esl, auth.
 
+**setup**::
+        Print metadata about the current sbctl setup. This will list the current
+        configuraiton settings used by sbctl, and the installation state of
+        sbctl.
+
+        *--migrate*;;
+                Migrate the configuration and setup of sbctl to a new iteration.
+                +
+                Currently the only migration for sbctl is moving from
+                /usr/share/secureboot to /var/lib/sbctl.
+
+        *--print-config*;;
+                Prints a serialized version of the current configuration of
+                sbctl.
+                +
+                See linkman:sbctl.conf[5] for details.
+
+        *--print-state*;;
+                Prints the state of the sbctl installation. Currently only
+                prints whether or not sbctl has been installed on the system.
+                +
+                Note: This option requires passing --json.
+
 **help**::
         Displays a help message.
 
@@ -267,6 +290,10 @@ Options
         This enables supported commands to output their values in json instead
         of human-readable text. This is practical for parsing data with tools
         like `jq`.
+
+**-c**, **--config**::
+        An optionally provided path to the configuration file that should be
+        used by sbctl.
 
 
 Bundles
@@ -451,6 +478,7 @@ See Also
 --------
 linkman:bootctl[1]
 linkman:jq[1]
+linkman:sbctl.conf[5]
 
 Authors
 -------

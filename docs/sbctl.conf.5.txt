@@ -1,0 +1,140 @@
+sbctl.conf(5)
+=============
+
+Name
+----
+sbctl.conf - the sbctl configuration file
+
+Synopsis
+--------
+
+/etc/sbctl/sbctl.conf
+
+Description
+-----------
+
+The sbctl configuration file is a YAML file. It is read on startup if present.
+
+The file can be used for initial setup of a sbctl installation.
+
+
+Configuration directories and precedence
+----------------------------------------
+
+The configuration file is currently only read from /etc/sbctl. This might change
+in the future.
+
+
+Options
+-------
+
+*keydir:* /path/to/key/dir ::
+    Defines the directory where sbctl will look for keys.
+    +
+    Default: /var/lib/sbctl/keys
+
+*guid:* /path/to/guid/file ::
+    The location of the file that defines the user created GUID.
+    +
+    The GUID is used to unique identify the list of certificates stored in the
+    EFI variables.
+    +
+    Default: /var/lib/sbctl/GUID
+
+*files_db:* /path/to/files/json ::
+    The location of the json file storing the files sbctl will sign.
+    +
+    Default: /var/lib/sbctl/files.json
+
+*bundles_db:* /path/to/bundles/json ::
+    The location of the json file storing the bundles sbctl will sign.
+    +
+    Default: /var/lib/sbctl/bundles.json
+
+*files:* [ [*path:* /path/to/file *output:* /path/to/output ], ... ]::
+    A list of files sbctl will sign upon setup. It will be used to seed the
+    files_db during initial setup.
+    +
+    *path*;;
+        Absolute path to a file that sbctl should sign.
+    +
+    *output*;;
+        An optional absolute output path for the signed file.
+
+*keys:* {*pk:* {...}, *kek:* {...}, *db:* {...}} ::
+    A key-value pair for all the keys in the key hierarchy used for Secure Boot.
+    It is used for the initial bootstrap during setup.
+
+    * pk
+    * kek
+    * db
+
+    :: Each of the hierarchies can specify key type and location for the private
+    key and certificate file independent of each other. This allows users to
+    keep some keys on different storage mediums depending on needs.
+    An example would be to keep the db key as an unencrypted file easily
+    accessible for signing and the PK on a hardware backed enclave to be better
+    secure the key material.
+    +
+
+    *privkey:* /path/to/privatekey/file ;;
+        Path to the private key.
+        +
+        Defaults:
+            * *pk:* /var/lib/sbctl/keys/PK/PK.key
+            * *kek:* /var/lib/sbctl/keys/KEK/KEK.key
+            * *db*: /var/lib/sbctl/keys/db/db.key
+
+    *pubkey:* /path/to/certificate/file ;;
+        Path to the public key.
+        +
+        Default:
+            * *pk:* /var/lib/sbctl/keys/PK/PK.pem
+            * *kek:* /var/lib/sbctl/keys/KEK/KEK.pem
+            * *db*: /var/lib/sbctl/keys/db/db.pem
+
+    *type:* file ;;
+        The type of key used for this signing key.
+        +
+        Only the key type of *file* is currently supported by sbctl.
+        +
+        Default: file
+
+
+Example
+-------
+
+An example of a /etc/sbctl/sbctl.conf file with the default values.
+
+    ---
+    keydir: /var/lib/sbctl/keys
+    guid: /var/lib/sbctl/GUID
+    files_db: /var/lib/sbctl/files.json
+    bundles_db: /var/lib/sbctl/bundles.json
+    files:
+    - path: /boot/vmlinuz-linux
+      output: /boot/vmlinuz-linux
+    - path: /efi/EFI/Linux/arch-linux.efi
+      output: /efi/EFI/Linux/arch-linux.efi
+    keys:
+      pk:
+        privkey: /var/lib/sbctl/keys/PK/PK.key
+        pubkey: /var/lib/sbctl/keys/PK/PK.pem
+        type: file
+      kek:
+        privkey: /var/lib/sbctl/keys/KEK/KEK.key
+        pubkey: /var/lib/sbctl/keys/KEK/KEK.pem
+        type: file
+      db:
+        privkey: /var/lib/sbctl/keys/db/db.key
+        pubkey: /var/lib/sbctl/keys/db/db.pem
+        type: file
+
+See Also
+--------
+linkman:sbctl[8]
+
+Authors
+-------
+
+* Morten Linderud <morten@linderud.pw>
