@@ -71,12 +71,12 @@ func (c *Config) GetGUID(vfs afero.Fs) (*util.EFIGUID, error) {
 	return guid, err
 }
 
-func DefaultConfig() *Config {
+func MkConfig(dir string) *Config {
 	conf := &Config{
-		GUID:      "/var/lib/sbctl/GUID",
-		Keydir:    "/var/lib/sbctl/keys",
-		FilesDb:   "/var/lib/sbctl/files.db",
-		BundlesDb: "/var/lib/sbctl/bundles.db",
+		GUID:      path.Join(dir, "GUID"),
+		Keydir:    path.Join(dir, "keys"),
+		FilesDb:   path.Join(dir, "files.json"),
+		BundlesDb: path.Join(dir, "bundles.json"),
 	}
 	conf.Keys = &Keys{
 		PK: &KeyConfig{
@@ -96,6 +96,28 @@ func DefaultConfig() *Config {
 		},
 	}
 	return conf
+}
+
+func DefaultConfig() *Config {
+	return MkConfig("/var/lib/sbctl")
+}
+
+func OldConfig(dir string) *Config {
+	c := MkConfig(dir)
+	// Rename databases to the old names
+	c.FilesDb = strings.Replace(c.FilesDb, ".json", ".db", 1)
+	c.BundlesDb = strings.Replace(c.BundlesDb, ".json", ".db", 1)
+	return c
+}
+
+func HasOldConfig(fs afero.Fs, dir string) bool {
+	_, err := fs.Stat(dir)
+	return !os.IsNotExist(err)
+}
+
+func HasConfigurationFile(fs afero.Fs, file string) bool {
+	_, err := fs.Stat(file)
+	return !os.IsNotExist(err)
 }
 
 func NewConfig(b []byte) (*Config, error) {

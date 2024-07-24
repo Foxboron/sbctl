@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"os"
 	"strings"
 
@@ -19,6 +20,7 @@ import (
 type CmdOptions struct {
 	JsonOutput  bool
 	QuietOutput bool
+	Config      string
 }
 
 type cliCommand struct {
@@ -54,6 +56,7 @@ func baseFlags(cmd *cobra.Command) {
 	flags := cmd.PersistentFlags()
 	flags.BoolVar(&cmdOptions.JsonOutput, "json", false, "Output as json")
 	flags.BoolVar(&cmdOptions.QuietOutput, "quiet", false, "Mute info from logging")
+	flags.StringVarP(&cmdOptions.Config, "config", "", "", "Path to configuration file")
 
 	cmd.PersistentPreRun = func(cmd *cobra.Command, args []string) {
 		if cmdOptions.JsonOutput {
@@ -82,11 +85,31 @@ func main() {
 		rootCmd.AddCommand(cmd.Cmd)
 	}
 
+	var conf *config.Config
+
+	fs := afero.NewOsFs()
+
+	if config.HasOldConfig(fs, sbctl.DatabasePath) && !config.HasConfigurationFile(fs, "/etc/sbctl/sbctl.conf") {
+		logging.Error(fmt.Errorf("old configuration detected. Please use `sbctl setup --migrate`"))
+		conf = config.OldConfig(sbctl.DatabasePath)
+	} else if ok, _ := afero.Exists(fs, "/etc/sbctl/sbctl.conf"); ok {
+		b, err := os.ReadFile("/etc/sbctl/sbctl.conf")
+		if err != nil {
+			log.Fatal(err)
+		}
+		conf, err = config.NewConfig(b)
+		if err != nil {
+			log.Fatal(err)
+		}
+	} else {
+		conf = config.DefaultConfig()
+	}
+
 	baseFlags(rootCmd)
 
 	state := &config.State{
-		Fs:     afero.NewOsFs(),
-		Config: config.DefaultConfig(),
+		Fs:     fs,
+		Config: conf,
 		Efivarfs: efivarfs.NewFS().
 			Open(),
 	}

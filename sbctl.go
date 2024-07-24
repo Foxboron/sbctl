@@ -15,6 +15,13 @@ import (
 	"github.com/spf13/afero"
 )
 
+// TODO: Remove this at some point
+//       Only here for legacy reasons to denote the old path
+
+var (
+	DatabasePath = "/usr/share/secureboot/"
+)
+
 // Functions that doesn't fit anywhere else
 
 type LsblkEntry struct {
