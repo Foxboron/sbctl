@@ -1,25 +1,33 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"os"
 	"strings"
 
+	"github.com/foxboron/go-uefi/efivarfs"
 	"github.com/foxboron/sbctl"
+	"github.com/foxboron/sbctl/config"
 	"github.com/foxboron/sbctl/logging"
+	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 )
 
 type CmdOptions struct {
 	JsonOutput  bool
 	QuietOutput bool
+	Config      string
 }
 
 type cliCommand struct {
 	Cmd *cobra.Command
 }
+
+type stateDataKey struct{}
 
 var (
 	cmdOptions  = CmdOptions{}
@@ -48,6 +56,7 @@ func baseFlags(cmd *cobra.Command) {
 	flags := cmd.PersistentFlags()
 	flags.BoolVar(&cmdOptions.JsonOutput, "json", false, "Output as json")
 	flags.BoolVar(&cmdOptions.QuietOutput, "quiet", false, "Mute info from logging")
+	flags.StringVarP(&cmdOptions.Config, "config", "", "", "Path to configuration file")
 
 	cmd.PersistentPreRun = func(cmd *cobra.Command, args []string) {
 		if cmdOptions.JsonOutput {
@@ -76,7 +85,35 @@ func main() {
 		rootCmd.AddCommand(cmd.Cmd)
 	}
 
+	var conf *config.Config
+
+	fs := afero.NewOsFs()
+
+	if config.HasOldConfig(fs, sbctl.DatabasePath) && !config.HasConfigurationFile(fs, "/etc/sbctl/sbctl.conf") {
+		logging.Error(fmt.Errorf("old configuration detected. Please use `sbctl setup --migrate`"))
+		conf = config.OldConfig(sbctl.DatabasePath)
+	} else if ok, _ := afero.Exists(fs, "/etc/sbctl/sbctl.conf"); ok {
+		b, err := os.ReadFile("/etc/sbctl/sbctl.conf")
+		if err != nil {
+			log.Fatal(err)
+		}
+		conf, err = config.NewConfig(b)
+		if err != nil {
+			log.Fatal(err)
+		}
+	} else {
+		conf = config.DefaultConfig()
+	}
+
 	baseFlags(rootCmd)
+
+	state := &config.State{
+		Fs:     fs,
+		Config: conf,
+		Efivarfs: efivarfs.NewFS().
+			Open(),
+	}
+	ctx := context.WithValue(context.Background(), stateDataKey{}, state)
 
 	// This returns i the flag is not found with a specific error
 	rootCmd.SetFlagErrorFunc(func(cmd *cobra.Command, err error) error {
@@ -85,7 +122,7 @@ func main() {
 		return ErrSilent
 	})
 
-	if err := rootCmd.Execute(); err != nil {
+	if err := rootCmd.ExecuteContext(ctx); err != nil {
 		if strings.HasPrefix(err.Error(), "unknown command") {
 			logging.Println(err.Error())
 		} else if errors.Is(err, os.ErrPermission) {

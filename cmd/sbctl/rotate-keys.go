@@ -5,10 +5,10 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/foxboron/go-uefi/efi"
 	"github.com/foxboron/go-uefi/efi/signature"
-	"github.com/foxboron/go-uefi/efi/util"
 	"github.com/foxboron/sbctl"
+	"github.com/foxboron/sbctl/backend"
+	"github.com/foxboron/sbctl/config"
 	"github.com/foxboron/sbctl/fs"
 	"github.com/foxboron/sbctl/hierarchy"
 	"github.com/foxboron/sbctl/logging"
@@ -35,138 +35,90 @@ var (
 	}
 )
 
-type KeyCertPair struct {
-	Key  []byte
-	Cert []byte
-}
-
-type Keys struct {
-	PK  *KeyCertPair
-	KEK *KeyCertPair
-	Db  *KeyCertPair
-}
-
-func ReadKeysFromDir(src string) (*Keys, error) {
-	k := Keys{}
-	var err error
-
-	k.PK, err = ReadPair(src, hierarchy.PK)
+func rotateCerts(state *config.State, hier hierarchy.Hierarchy, oldkeys *backend.KeyHierarchy, newkeys *backend.KeyHierarchy, efistate *sbctl.EFIVariables) error {
+	guid, err := state.Config.GetGUID(state.Fs)
 	if err != nil {
-		return &k, err
+		return err
 	}
 
-	k.KEK, err = ReadPair(src, hierarchy.KEK)
-	if err != nil {
-		return &k, err
-	}
-
-	k.Db, err = ReadPair(src, hierarchy.Db)
-	if err != nil {
-		return &k, err
-	}
-
-	return &k, err
-}
-
-func ReadPair(src string, hierarchy hierarchy.Hierarchy) (*KeyCertPair, error) {
-	var (
-		k   KeyCertPair
-		err error
-	)
-
-	k.Key, err = fs.ReadFile(filepath.Join(src, hierarchy.String(), fmt.Sprintf("%s.key", hierarchy.String())))
-	if err != nil {
-		return &k, err
-	}
-
-	k.Cert, err = fs.ReadFile(filepath.Join(src, hierarchy.String(), fmt.Sprintf("%s.pem", hierarchy.String())))
-	if err != nil {
-		return &k, err
-	}
-
-	return &k, err
-}
-
-func rotateCerts(hiera hierarchy.Hierarchy, oldCert, newCert []byte, keyCertPair *KeyCertPair) error {
-	var (
-		sl  *signature.SignatureDatabase
-		err error
-	)
-
-	switch hiera {
+	switch hier {
 	case hierarchy.PK:
-		sl, err = efi.GetPK()
+		cert := oldkeys.PK.CertificateBytes()
+		if err := efistate.PK.Remove(signature.CERT_X509_GUID, *guid, cert); err != nil {
+			return fmt.Errorf("can't remove old key from PK siglist: %v", err)
+		}
+		efistate.PK.Append(signature.CERT_X509_GUID, *guid, newkeys.PK.CertificateBytes())
+		return efistate.EnrollKey(hier.Efivar(), oldkeys)
 	case hierarchy.KEK:
-		sl, err = efi.GetKEK()
+		cert := oldkeys.KEK.CertificateBytes()
+		if err := efistate.KEK.Remove(signature.CERT_X509_GUID, *guid, cert); err != nil {
+			return fmt.Errorf("can't remove old key from KEK siglist: %v", err)
+		}
+		efistate.KEK.Append(signature.CERT_X509_GUID, *guid, newkeys.KEK.CertificateBytes())
+		return efistate.EnrollKey(hier.Efivar(), oldkeys)
 	case hierarchy.Db:
-		sl, err = efi.Getdb()
+		cert := oldkeys.Db.CertificateBytes()
+		if err := efistate.Db.Remove(signature.CERT_X509_GUID, *guid, cert); err != nil {
+			return fmt.Errorf("can't remove old key from Db siglist: %v", err)
+		}
+		efistate.Db.Append(signature.CERT_X509_GUID, *guid, newkeys.Db.CertificateBytes())
+		return efistate.EnrollKey(hier.Efivar(), oldkeys)
+	default:
+		return fmt.Errorf("unknown efivar hierarchy")
 	}
-
-	if err != nil {
-		return err
-	}
-
-	uuid, err := sbctl.GetGUID()
-	if err != nil {
-		return err
-	}
-
-	guid := util.StringToGUID(uuid.String())
-
-	cert, err := util.ReadCert(oldCert)
-	if err != nil {
-		return err
-	}
-
-	if err = sl.Remove(signature.CERT_X509_GUID, *guid, cert.Raw); err != nil {
-		return err
-	}
-
-	sl.Append(signature.CERT_X509_GUID, *guid, newCert)
-
-	return sbctl.Enroll(sl, keyCertPair.Key, keyCertPair.Cert, hiera.Efivar())
 }
 
 func RunRotateKeys(cmd *cobra.Command, args []string) error {
+	state := cmd.Context().Value(stateDataKey{}).(*config.State)
 	partial := rotateKeysCmdOptions.Partial.Value
 
 	// rotate all keys if no specific key should be replaced
 	if partial == "" {
-
-		if err := rotateAllKeys(rotateKeysCmdOptions.BackupDir, rotateKeysCmdOptions.NewKeysDir); err != nil {
+		if err := rotateAllKeys(state, rotateKeysCmdOptions.BackupDir, rotateKeysCmdOptions.NewKeysDir); err != nil {
 			return err
 		}
 
 		return nil
 	}
 
-	return rotateKey(partial, rotateKeysCmdOptions.KeyFile, rotateKeysCmdOptions.CertFile)
+	return rotateKey(state, partial, rotateKeysCmdOptions.KeyFile, rotateKeysCmdOptions.CertFile)
 }
 
-func rotateAllKeys(backupDir, newKeysDir string) error {
-	oldKeys, err := ReadKeysFromDir(sbctl.KeysPath)
+func rotateAllKeys(state *config.State, backupDir, newKeysDir string) error {
+	oldKeys, err := backend.GetKeyHierarchy(state.Config)
 	if err != nil {
 		return fmt.Errorf("can't read old keys from dir: %v", err)
+	}
+
+	efistate, err := sbctl.SystemEFIVariables(state.Efivarfs)
+	if err != nil {
+		return fmt.Errorf("can't read efivariables: %v", err)
 	}
 
 	if backupDir == "" {
 		backupDir = filepath.Join("/var/tmp", fmt.Sprintf("sbctl_backup_keys_%d", time.Now().Unix()))
 	}
 
-	if err := sbctl.CopyDirectory(sbctl.KeysPath, backupDir); err != nil {
+	if err := sbctl.CopyDirectory(state.Fs, state.Config.Keydir, backupDir); err != nil {
 		return err
 	}
 	logging.Print("Backed up keys to %s\n", backupDir)
 
-	if err := fs.Fs.RemoveAll(sbctl.KeysPath); err != nil {
+	if err := state.Fs.RemoveAll(state.Config.Keydir); err != nil {
 		return fmt.Errorf("failed removing old keys: %v", err)
 	}
 
-	var newKeys *Keys
+	var newKeyHierarchy *backend.KeyHierarchy
 
 	if newKeysDir == "" {
 		logging.Print("Creating secure boot keys...")
-		if err = sbctl.InitializeSecureBootKeys(sbctl.KeysPath); err != nil {
+		newKeyHierarchy, err = backend.CreateKeys(state.Config)
+		if err != nil {
+			logging.NotOk("")
+			return fmt.Errorf("couldn't initialize secure boot: %w", err)
+		}
+		err = newKeyHierarchy.SaveKeys(state.Fs, state.Config.Keydir)
+		if err != nil {
 			logging.NotOk("")
 			return fmt.Errorf("couldn't initialize secure boot: %w", err)
 		}
@@ -175,42 +127,43 @@ func rotateAllKeys(backupDir, newKeysDir string) error {
 
 	} else {
 		logging.Print("Importing new secure boot keys from %s...", newKeysDir)
-		if err := ImportKeysFromDirectory(newKeysDir); err != nil {
+		newKeyHierarchy, err = backend.ImportKeys(newKeysDir)
+		if err != nil {
 			logging.NotOk("")
-			return fmt.Errorf("couldn't import secure boot: %w", err)
+			return fmt.Errorf("couldn't import secure boot keys: %w", err)
+		}
+		err = newKeyHierarchy.SaveKeys(state.Fs, state.Config.Keydir)
+		if err != nil {
+			logging.NotOk("")
+			return fmt.Errorf("couldn't import secure boot keys: %w", err)
 		}
 		logging.Ok("")
 		logging.Println("Secure boot keys updated!")
 
 	}
 
-	newKeys, err = ReadKeysFromDir(sbctl.KeysPath)
-	if err != nil {
-		return fmt.Errorf("can't read new keys from dir: %v", err)
-	}
-
-	if err := rotateCerts(hierarchy.PK, oldKeys.PK.Cert, newKeys.PK.Cert, oldKeys.PK); err != nil {
+	if err := rotateCerts(state, hierarchy.PK, oldKeys, newKeyHierarchy, efistate); err != nil {
 		return fmt.Errorf("could not rotate PK: %v", err)
 	}
 
-	if err := rotateCerts(hierarchy.KEK, oldKeys.KEK.Cert, newKeys.KEK.Cert, newKeys.PK); err != nil {
+	if err := rotateCerts(state, hierarchy.KEK, oldKeys, newKeyHierarchy, efistate); err != nil {
 		return fmt.Errorf("could not rotate KEK: %v", err)
 	}
 
-	if err := rotateCerts(hierarchy.Db, oldKeys.Db.Cert, newKeys.Db.Cert, newKeys.KEK); err != nil {
-		return fmt.Errorf("could not rotate db: %v", err)
+	if err := rotateCerts(state, hierarchy.Db, oldKeys, newKeyHierarchy, efistate); err != nil {
+		return fmt.Errorf("could not rotate Db: %v", err)
 	}
 
 	logging.Ok("Enrolled new keys into UEFI!")
 
-	if err := SignAll(); err != nil {
+	if err := SignAll(state); err != nil {
 		return fmt.Errorf("failed resigning files: %v", err)
 	}
 
 	return nil
 }
 
-func rotateKey(hiera string, keyPath, certPath string) error {
+func rotateKey(state *config.State, hiera string, keyPath, certPath string) error {
 	if keyPath == "" {
 		return fmt.Errorf("a new key needs to be provided for a partial reset of %s", hiera)
 	}
@@ -219,55 +172,67 @@ func rotateKey(hiera string, keyPath, certPath string) error {
 		return fmt.Errorf("a new certificate needs to be provided for a partial reset of %s", hiera)
 	}
 
-	oldKeys, err := ReadKeysFromDir(sbctl.KeysPath)
+	oldKH, err := backend.GetKeyHierarchy(state.Config)
 	if err != nil {
 		return fmt.Errorf("can't read old keys from dir: %v", err)
 	}
 
-	newCert, err := fs.ReadFile(certPath)
+	newCert, err := fs.ReadFile(state.Fs, certPath)
 	if err != nil {
 		return fmt.Errorf("can't read new certificate from path %s: %v", certPath, err)
 	}
 
-	var (
-		importKeyDst  string
-		importCertDst string
-	)
+	newKey, err := fs.ReadFile(state.Fs, keyPath)
+	if err != nil {
+		return fmt.Errorf("can't read new certificate from path %s: %v", certPath, err)
+	}
+
+	// We will mutate this to the new state
+	newKH, err := backend.GetKeyHierarchy(state.Config)
+	if err != nil {
+		return fmt.Errorf("can't read old keys from dir: %v", err)
+	}
+
+	efistate, err := sbctl.SystemEFIVariables(state.Efivarfs)
+	if err != nil {
+		return fmt.Errorf("can't read efivariables: %v", err)
+	}
 
 	switch hiera {
 	case hierarchy.PK.String():
-		if err := rotateCerts(hierarchy.PK, oldKeys.PK.Cert, newCert, oldKeys.PK); err != nil {
+		bk, err := backend.InitBackendFromKeys(newKey, newCert, hierarchy.PK)
+		if err != nil {
 			return fmt.Errorf("could not rotate PK: %v", err)
 		}
-
-		importKeyDst = sbctl.PKKey
-		importCertDst = sbctl.PKCert
+		newKH.PK = bk
+		if err := rotateCerts(state, hierarchy.PK, oldKH, newKH, efistate); err != nil {
+			return fmt.Errorf("could not rotate PK: %v", err)
+		}
 	case hierarchy.KEK.String():
-		if err := rotateCerts(hierarchy.KEK, oldKeys.KEK.Cert, newCert, oldKeys.PK); err != nil {
+		bk, err := backend.InitBackendFromKeys(newKey, newCert, hierarchy.KEK)
+		if err != nil {
 			return fmt.Errorf("could not rotate KEK: %v", err)
 		}
-
-		importKeyDst = sbctl.KEKKey
-		importCertDst = sbctl.KEKCert
+		newKH.KEK = bk
+		if err := rotateCerts(state, hierarchy.KEK, oldKH, newKH, efistate); err != nil {
+			return fmt.Errorf("could not rotate KEK: %v", err)
+		}
 	case hierarchy.Db.String():
-		if err := rotateCerts(hierarchy.Db, oldKeys.Db.Cert, newCert, oldKeys.KEK); err != nil {
+		bk, err := backend.InitBackendFromKeys(newKey, newCert, hierarchy.Db)
+		if err != nil {
 			return fmt.Errorf("could not rotate db: %v", err)
 		}
+		newKH.Db = bk
+		if err := rotateCerts(state, hierarchy.Db, oldKH, newKH, efistate); err != nil {
+			return fmt.Errorf("could not rotate db: %v", err)
+		}
+	}
 
-		importKeyDst = sbctl.DBKey
-		importCertDst = sbctl.DBCert
+	if err := newKH.SaveKeys(state.Fs, state.Config.Keydir); err != nil {
+		return fmt.Errorf("can't save new key hierarchy: %v", err)
 	}
 
 	logging.Ok("Enrolled new key of hierarchy %s into UEFI!", hiera)
-
-	// import new key and certificate
-	if err = Import(keyPath, importKeyDst); err != nil {
-		return fmt.Errorf("could not replace key: %s", err)
-	}
-
-	if err = Import(certPath, importCertDst); err != nil {
-		return fmt.Errorf("could not replace certificate: %s", err)
-	}
 
 	return nil
 }

@@ -5,6 +5,9 @@ import (
 	"fmt"
 
 	"github.com/foxboron/sbctl"
+	"github.com/foxboron/sbctl/backend"
+	"github.com/foxboron/sbctl/config"
+	"github.com/foxboron/sbctl/hierarchy"
 	"github.com/foxboron/sbctl/logging"
 	"github.com/spf13/cobra"
 )
@@ -17,12 +20,14 @@ var generateBundlesCmd = &cobra.Command{
 	Use:   "generate-bundles",
 	Short: "Generate all EFI stub bundles",
 	RunE: func(cmd *cobra.Command, args []string) error {
+		state := cmd.Context().Value(stateDataKey{}).(*config.State)
+
 		logging.Println("Generating EFI bundles....")
 		out_create := true
 		out_sign := true
 		var out_err error
-		err := sbctl.BundleIter(func(bundle *sbctl.Bundle) error {
-			err := sbctl.CreateBundle(*bundle)
+		err := sbctl.BundleIter(state, func(bundle *sbctl.Bundle) error {
+			err := sbctl.CreateBundle(state, *bundle)
 			if err != nil {
 				out_create = false
 				out_err = fmt.Errorf("failed creating bundle %s: %w", bundle.Output, err)
@@ -31,7 +36,11 @@ var generateBundlesCmd = &cobra.Command{
 			logging.Print("Wrote EFI bundle %s\n", bundle.Output)
 			if sign {
 				file := bundle.Output
-				err = sbctl.SignFile(sbctl.DBKey, sbctl.DBCert, file, file, "")
+				kh, err := backend.GetKeyHierarchy(state.Config)
+				if err != nil {
+					return err
+				}
+				err = sbctl.SignFile(state, kh, hierarchy.Db, file, file)
 				if errors.Is(err, sbctl.ErrAlreadySigned) {
 					logging.Unknown("Bundle has already been signed")
 				} else if err != nil {

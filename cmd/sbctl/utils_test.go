@@ -2,14 +2,17 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"os"
 
 	"testing/fstest"
 
 	"github.com/foxboron/go-uefi/efi/efitest"
-	"github.com/foxboron/sbctl/fs"
+	efs "github.com/foxboron/go-uefi/efi/fs"
+	"github.com/foxboron/sbctl/config"
 	"github.com/foxboron/sbctl/logging"
+	"github.com/spf13/cobra"
 )
 
 func captureOutput(f func() error) ([]byte, error) {
@@ -29,10 +32,17 @@ func captureJsonOutput(out any, f func() error) error {
 	return json.Unmarshal(output, &out)
 }
 
-// Set filesystems for sbctl and go-uefi
-func SetFS(files ...fstest.MapFS) {
-	f := efitest.NewFS().
+func SetFS(files ...fstest.MapFS) *cobra.Command {
+	fs := efitest.NewFS().
 		With(files...).
-		SetFS()
-	fs.SetFS(f.ToAfero())
+		ToAfero()
+
+	// TODO: Remove and move to proper efifs implementation
+	efs.SetFS(fs)
+
+	state := &config.State{Fs: fs, Config: config.DefaultConfig()}
+	cmd := &cobra.Command{}
+	ctx := context.WithValue(context.Background(), stateDataKey{}, state)
+	cmd.SetContext(ctx)
+	return cmd
 }

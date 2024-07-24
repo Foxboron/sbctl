@@ -7,10 +7,11 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"runtime"
 
+	"github.com/foxboron/sbctl/config"
 	"github.com/foxboron/sbctl/fs"
+	"github.com/spf13/afero"
 )
 
 type Bundle struct {
@@ -28,10 +29,8 @@ type Bundle struct {
 
 type Bundles map[string]*Bundle
 
-var BundleDBPath = filepath.Join(DatabasePath, "bundles.db")
-
-func ReadBundleDatabase(dbpath string) (Bundles, error) {
-	f, err := ReadOrCreateFile(dbpath)
+func ReadBundleDatabase(vfs afero.Fs, dbpath string) (Bundles, error) {
+	f, err := ReadOrCreateFile(vfs, dbpath)
 	if err != nil {
 		return nil, err
 	}
@@ -45,20 +44,20 @@ func ReadBundleDatabase(dbpath string) (Bundles, error) {
 	return bundles, nil
 }
 
-func WriteBundleDatabase(dbpath string, bundles Bundles) error {
+func WriteBundleDatabase(vfs afero.Fs, dbpath string, bundles Bundles) error {
 	data, err := json.MarshalIndent(bundles, "", "    ")
 	if err != nil {
 		return err
 	}
-	err = fs.WriteFile(dbpath, data, 0644)
+	err = fs.WriteFile(vfs, dbpath, data, 0644)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func BundleIter(fn func(s *Bundle) error) error {
-	files, err := ReadBundleDatabase(BundleDBPath)
+func BundleIter(state *config.State, fn func(s *Bundle) error) error {
+	files, err := ReadBundleDatabase(state.Fs, state.Config.BundlesDb)
 	if err != nil {
 		return err
 	}
@@ -83,7 +82,7 @@ func efiStubArch() (string, error) {
 	return "", fmt.Errorf("unsupported architecture")
 }
 
-func GetEfistub() (string, error) {
+func GetEfistub(vfs afero.Fs) (string, error) {
 	candidatePaths := []string{
 		"/lib/systemd/boot/efi/",
 		"/lib/gummiboot/",
@@ -94,21 +93,21 @@ func GetEfistub() (string, error) {
 	}
 
 	for _, f := range candidatePaths {
-		if _, err := fs.Fs.Stat(f + stubName); err == nil {
+		if _, err := vfs.Stat(f + stubName); err == nil {
 			return f + stubName, nil
 		}
 	}
 	return "", nil
 }
 
-func NewBundle() (bundle *Bundle, err error) {
-	esp, err := GetESP()
+func NewBundle(vfs afero.Fs) (bundle *Bundle, err error) {
+	esp, err := GetESP(vfs)
 	if err != nil {
 		// This is not critical, just use an empty default.
 		esp = ""
 	}
 
-	stub, err := GetEfistub()
+	stub, err := GetEfistub(vfs)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get default EFI stub location: %v", err)
 	}
@@ -132,7 +131,7 @@ func NewBundle() (bundle *Bundle, err error) {
 // Reference ukify from systemd:
 // https://github.com/systemd/systemd/blob/d09df6b94e0c4924ea7064c79ab0441f5aff469b/src/ukify/ukify.py
 
-func GenerateBundle(bundle *Bundle) (bool, error) {
+func GenerateBundle(vfs afero.Fs, bundle *Bundle) (bool, error) {
 	type section struct {
 		section string
 		file    string
@@ -174,7 +173,7 @@ func GenerateBundle(bundle *Bundle) (bool, error) {
 				continue
 			}
 		}
-		fi, err := fs.Fs.Stat(s.file)
+		fi, err := vfs.Stat(s.file)
 		if err != nil || fi.IsDir() {
 			return false, err
 		}

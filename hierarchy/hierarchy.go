@@ -26,6 +26,21 @@ func (h Hierarchy) String() string {
 	}
 }
 
+func (h Hierarchy) Description() string {
+	switch h {
+	case PK:
+		return "Platform Key"
+	case KEK:
+		return "Key Exchange Key"
+	case Db:
+		return "Database Key"
+	case Dbx:
+		return "Forbidden Database"
+	default:
+		return "unknown"
+	}
+}
+
 func (h Hierarchy) Efivar() efivar.Efivar {
 	switch h {
 	case PK:

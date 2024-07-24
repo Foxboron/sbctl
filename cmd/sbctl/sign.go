@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 
 	"github.com/foxboron/sbctl"
+	"github.com/foxboron/sbctl/backend"
+	"github.com/foxboron/sbctl/config"
 	"github.com/foxboron/sbctl/logging"
 	"github.com/spf13/cobra"
 )
@@ -24,6 +26,8 @@ var signCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
+		state := cmd.Context().Value(stateDataKey{}).(*config.State)
+
 		// Ensure we have absolute paths
 		file, err := filepath.Abs(args[0])
 		if err != nil {
@@ -38,7 +42,12 @@ var signCmd = &cobra.Command{
 			}
 		}
 
-		err = sbctl.Sign(file, output, save)
+		kh, err := backend.GetKeyHierarchy(state.Config)
+		if err != nil {
+			return err
+		}
+
+		err = sbctl.Sign(state, kh, file, output, save)
 		if errors.Is(err, sbctl.ErrAlreadySigned) {
 			logging.Print("File has already been signed %s\n", output)
 		} else if err != nil {

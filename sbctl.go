@@ -9,8 +9,17 @@ import (
 	"os/exec"
 	"path/filepath"
 
-	"github.com/foxboron/sbctl/fs"
+	"github.com/foxboron/sbctl/backend"
+	"github.com/foxboron/sbctl/config"
+	"github.com/foxboron/sbctl/hierarchy"
 	"github.com/spf13/afero"
+)
+
+// TODO: Remove this at some point
+//       Only here for legacy reasons to denote the old path
+
+var (
+	DatabasePath = "/usr/share/secureboot/"
 )
 
 // Functions that doesn't fit anywhere else
@@ -34,7 +43,7 @@ var espLocations = []string{
 var ErrNoESP = errors.New("failed to find EFI system partition")
 
 // Slightly more advanced check
-func GetESP() (string, error) {
+func GetESP(vfs afero.Fs) (string, error) {
 
 	for _, env := range []string{"SYSTEMD_ESP_PATH", "ESP_PATH"} {
 		envEspPath, found := os.LookupEnv(env)
@@ -46,7 +55,7 @@ func GetESP() (string, error) {
 	for _, location := range espLocations {
 		// "Read" a file inside all candiadate locations to trigger an
 		// automount if there's an automount partition.
-		_, _ = fs.Fs.Stat(fmt.Sprintf("%s/does-not-exist", location))
+		_, _ = vfs.Stat(fmt.Sprintf("%s/does-not-exist", location))
 	}
 
 	out, err := exec.Command(
@@ -103,7 +112,7 @@ func GetESP() (string, error) {
 	return "", ErrNoESP
 }
 
-func Sign(file, output string, enroll bool) error {
+func Sign(state *config.State, keys *backend.KeyHierarchy, file, output string, enroll bool) error {
 	file, err := filepath.Abs(file)
 	if err != nil {
 		return err
@@ -118,27 +127,27 @@ func Sign(file, output string, enroll bool) error {
 		}
 	}
 
-	files, err := ReadFileDatabase(DBPath)
+	kh, err := backend.GetKeyHierarchy(state.Config)
 	if err != nil {
-		return fmt.Errorf("couldn't open database: %s", DBPath)
+		return err
+	}
+
+	files, err := ReadFileDatabase(state.Fs, state.Config.FilesDb)
+	if err != nil {
+		return fmt.Errorf("couldn't open database: %s", state.Config.FilesDb)
 	}
 	if entry, ok := files[file]; ok {
-		err = SignFile(DBKey, DBCert, entry.File, entry.OutputFile, entry.Checksum)
+		err = SignFile(state, kh, hierarchy.Db, entry.File, entry.OutputFile)
 		// return early if signing fails
 		if err != nil {
 			return err
 		}
-		checksum, err := ChecksumFile(file)
-		if err != nil {
-			return err
-		}
-		entry.Checksum = checksum
 		files[file] = entry
-		if err := WriteFileDatabase(DBPath, files); err != nil {
+		if err := WriteFileDatabase(state.Fs, state.Config.FilesDb, files); err != nil {
 			return err
 		}
 	} else {
-		err = SignFile(DBKey, DBCert, file, output, "")
+		err = SignFile(state, kh, hierarchy.Db, file, output)
 		// return early if signing fails
 		if err != nil {
 			return err
@@ -146,12 +155,8 @@ func Sign(file, output string, enroll bool) error {
 	}
 
 	if enroll {
-		checksum, err := ChecksumFile(file)
-		if err != nil {
-			return err
-		}
-		files[file] = &SigningEntry{File: file, OutputFile: output, Checksum: checksum}
-		if err := WriteFileDatabase(DBPath, files); err != nil {
+		files[file] = &SigningEntry{File: file, OutputFile: output}
+		if err := WriteFileDatabase(state.Fs, state.Config.FilesDb, files); err != nil {
 			return err
 		}
 	}
@@ -159,25 +164,25 @@ func Sign(file, output string, enroll bool) error {
 	return err
 }
 
-func CombineFiles(microcode, initramfs string) (afero.File, error) {
+func CombineFiles(vfs afero.Fs, microcode, initramfs string) (afero.File, error) {
 	for _, file := range []string{microcode, initramfs} {
-		if _, err := fs.Fs.Stat(file); err != nil {
+		if _, err := vfs.Stat(file); err != nil {
 			return nil, fmt.Errorf("%s: %w", file, errors.Unwrap(err))
 		}
 	}
 
-	tmpFile, err := afero.TempFile(fs.Fs, "/var/tmp", "initramfs-")
+	tmpFile, err := afero.TempFile(vfs, "/var/tmp", "initramfs-")
 	if err != nil {
 		return nil, err
 	}
 
-	one, err := fs.Fs.Open(microcode)
+	one, err := vfs.Open(microcode)
 	if err != nil {
 		return nil, err
 	}
 	defer one.Close()
 
-	two, err := fs.Fs.Open(initramfs)
+	two, err := vfs.Open(initramfs)
 	if err != nil {
 		return nil, err
 	}
@@ -195,7 +200,7 @@ func CombineFiles(microcode, initramfs string) (afero.File, error) {
 	return tmpFile, nil
 }
 
-func CreateBundle(bundle Bundle) error {
+func CreateBundle(state *config.State, bundle Bundle) error {
 	var microcode string
 	make_bundle := false
 
@@ -208,15 +213,15 @@ func CreateBundle(bundle Bundle) error {
 	}
 
 	if make_bundle {
-		tmpFile, err := CombineFiles(microcode, bundle.Initramfs)
+		tmpFile, err := CombineFiles(state.Fs, microcode, bundle.Initramfs)
 		if err != nil {
 			return err
 		}
-		defer fs.Fs.Remove(tmpFile.Name())
+		defer state.Fs.Remove(tmpFile.Name())
 		bundle.Initramfs = tmpFile.Name()
 	}
 
-	out, err := GenerateBundle(&bundle)
+	out, err := GenerateBundle(state.Fs, &bundle)
 	if err != nil {
 		return err
 	}
@@ -225,12 +230,4 @@ func CreateBundle(bundle Bundle) error {
 	}
 
 	return nil
-}
-
-// Checks if sbctl is setup on this computer
-func CheckSbctlInstallation(path string) bool {
-	if _, err := fs.Fs.Stat(path); errors.Is(err, os.ErrNotExist) {
-		return false
-	}
-	return true
 }

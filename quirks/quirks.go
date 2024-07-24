@@ -4,6 +4,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/foxboron/sbctl/config"
 	"github.com/foxboron/sbctl/dmi"
 )
 
@@ -65,8 +66,8 @@ func isAffectedDevice(list []affectedDevice) bool {
 	return false
 }
 
-func CheckFirmwareQuirks() []Quirk {
-	dmi.Table = dmi.ParseDMI()
+func CheckFirmwareQuirks(state *config.State) []Quirk {
+	dmi.Table = dmi.ParseDMI(state)
 	quirks := []Quirk{}
 
 	if HasFQ0001() {

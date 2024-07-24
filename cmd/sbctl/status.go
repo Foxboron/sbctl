@@ -8,7 +8,7 @@ import (
 	"github.com/foxboron/go-uefi/efi"
 	"github.com/foxboron/sbctl"
 	"github.com/foxboron/sbctl/certs"
-	"github.com/foxboron/sbctl/fs"
+	"github.com/foxboron/sbctl/config"
 	"github.com/foxboron/sbctl/logging"
 	"github.com/foxboron/sbctl/quirks"
 	"github.com/spf13/cobra"
@@ -81,15 +81,18 @@ func PrintStatus(s *Status) {
 }
 
 func RunStatus(cmd *cobra.Command, args []string) error {
+	state := cmd.Context().Value(stateDataKey{}).(*config.State)
+
 	stat := NewStatus()
-	if _, err := fs.Fs.Stat("/sys/firmware/efi/efivars"); os.IsNotExist(err) {
+	if _, err := state.Fs.Stat("/sys/firmware/efi/efivars"); os.IsNotExist(err) {
 		return fmt.Errorf("system is not booted with UEFI")
 	}
-	if sbctl.CheckSbctlInstallation(sbctl.DatabasePath) {
+
+	if state.IsInstalled() {
 		stat.Installed = true
-		u, err := sbctl.GetGUID()
+		u, err := state.Config.GetGUID(state.Fs)
 		if err == nil {
-			stat.GUID = u.String()
+			stat.GUID = u.Format()
 		}
 	}
 	if efi.GetSetupMode() {
@@ -104,7 +107,7 @@ func RunStatus(cmd *cobra.Command, args []string) error {
 	if keys, err := certs.BuiltinSignatureOwners(); err == nil {
 		stat.Vendors = append(stat.Vendors, keys...)
 	}
-	stat.FirmwareQuirks = quirks.CheckFirmwareQuirks()
+	stat.FirmwareQuirks = quirks.CheckFirmwareQuirks(state)
 	if cmdOptions.JsonOutput {
 		if err := JsonOut(stat); err != nil {
 			return err

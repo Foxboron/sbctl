@@ -9,8 +9,9 @@ import (
 
 	"github.com/foxboron/go-uefi/efi/util"
 	"github.com/foxboron/sbctl"
-	"github.com/foxboron/sbctl/fs"
+	"github.com/foxboron/sbctl/config"
 	"github.com/foxboron/sbctl/logging"
+	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 )
 
@@ -34,13 +35,13 @@ var (
 	}
 )
 
-func Import(src, dst string) error {
+func Import(vfs afero.Fs, src, dst string) error {
 	logging.Print("Importing %s...", src)
 	if err := os.MkdirAll(filepath.Dir(dst), 0777); err != nil {
 		logging.NotOk("")
 		return fmt.Errorf("could not create directory for %q: %w", dst, err)
 	}
-	if err := sbctl.CopyFile(src, dst); err != nil {
+	if err := sbctl.CopyFile(vfs, src, dst); err != nil {
 		logging.NotOk("")
 		return fmt.Errorf("could not move %s: %w", src, err)
 	}
@@ -48,7 +49,7 @@ func Import(src, dst string) error {
 	return nil
 }
 
-func ImportKeysFromDirectory(dir string) error {
+func ImportKeysFromDirectory(state *config.State, dir string) error {
 	keys := []string{
 		"PK/PK.key",
 		"PK/PK.pem",
@@ -63,15 +64,15 @@ func ImportKeysFromDirectory(dir string) error {
 	}
 	for _, f := range keys {
 		keyFile := path.Join(dir, f)
-		if _, err := fs.Fs.Stat(keyFile); errors.Is(err, os.ErrNotExist) {
+		if _, err := state.Fs.Stat(keyFile); errors.Is(err, os.ErrNotExist) {
 			return fmt.Errorf("file does not exist: %s", keyFile)
 		}
 	}
 
 	for _, f := range keys {
 		keyFile := path.Join(dir, f)
-		dstFile := path.Join(sbctl.KeysPath, f)
-		if err = Import(keyFile, dstFile); err != nil {
+		dstFile := path.Join(state.Config.Keydir, f)
+		if err = Import(state.Fs, keyFile, dstFile); err != nil {
 			return err
 		}
 	}
@@ -90,12 +91,14 @@ func RunImportKeys(cmd *cobra.Command, args []string) error {
 		{"PK", importKeysCmdOptions.PKKey, importKeysCmdOptions.PKCert},
 	}
 
+	state := cmd.Context().Value(stateDataKey{}).(*config.State)
+
 	if importKeysCmdOptions.Directory != "" {
-		_, err := fs.Fs.Stat(sbctl.KeysPath)
+		_, err := state.Fs.Stat(state.Config.Keydir)
 		if err == nil && !importKeysCmdOptions.Force {
 			return fmt.Errorf("key directory exists. Use --force to overwrite the current directory")
 		}
-		return ImportKeysFromDirectory(importKeysCmdOptions.Directory)
+		return ImportKeysFromDirectory(state, importKeysCmdOptions.Directory)
 	}
 	for _, key := range keypairs {
 		if key.Key == "" && key.Cert == "" {
@@ -103,7 +106,7 @@ func RunImportKeys(cmd *cobra.Command, args []string) error {
 		}
 
 		for _, s := range []string{key.Key, key.Cert} {
-			if _, err = fs.Fs.Stat(s); errors.Is(err, os.ErrNotExist) {
+			if _, err = state.Fs.Stat(s); errors.Is(err, os.ErrNotExist) {
 				return fmt.Errorf("keyfile %s does not exist", s)
 			}
 		}
@@ -118,14 +121,14 @@ func RunImportKeys(cmd *cobra.Command, args []string) error {
 		}
 
 		for src, dst := range map[string]string{
-			key.Cert: path.Join(sbctl.KeysPath, key.Type, key.Type+".pem"),
-			key.Key:  path.Join(sbctl.KeysPath, key.Type, key.Type+".key"),
+			key.Cert: path.Join(state.Config.Keydir, key.Type, key.Type+".pem"),
+			key.Key:  path.Join(state.Config.Keydir, key.Type, key.Type+".key"),
 		} {
 			srcFile, err := filepath.Abs(src)
 			if err != nil {
 				return err
 			}
-			if err = Import(srcFile, dst); err != nil {
+			if err = Import(state.Fs, srcFile, dst); err != nil {
 				return err
 			}
 		}

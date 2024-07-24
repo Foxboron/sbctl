@@ -4,6 +4,7 @@ import (
 	"os"
 
 	"github.com/foxboron/sbctl"
+	"github.com/foxboron/sbctl/config"
 	"github.com/foxboron/sbctl/logging"
 	"github.com/spf13/cobra"
 )
@@ -15,11 +16,13 @@ var removeBundleCmd = &cobra.Command{
 	},
 	Short: "Remove bundle from database",
 	RunE: func(cmd *cobra.Command, args []string) error {
+		state := cmd.Context().Value(stateDataKey{}).(*config.State)
+
 		if len(args) < 1 {
 			logging.Print("Need to specify file\n")
 			os.Exit(1)
 		}
-		bundles, err := sbctl.ReadBundleDatabase(sbctl.BundleDBPath)
+		bundles, err := sbctl.ReadBundleDatabase(state.Fs, state.Config.BundlesDb)
 		if err != nil {
 			return err
 		}
@@ -29,7 +32,7 @@ var removeBundleCmd = &cobra.Command{
 			os.Exit(1)
 		}
 		delete(bundles, args[0])
-		err = sbctl.WriteBundleDatabase(sbctl.BundleDBPath, bundles)
+		err = sbctl.WriteBundleDatabase(state.Fs, state.Config.BundlesDb, bundles)
 		if err != nil {
 			return err
 		}
