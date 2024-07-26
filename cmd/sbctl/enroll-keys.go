@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/foxboron/go-uefi/efi"
 	"github.com/foxboron/go-uefi/efi/signature"
 	"github.com/foxboron/go-uefi/efivar"
 	"github.com/foxboron/sbctl"
@@ -247,7 +246,11 @@ func RunEnrollKeys(cmd *cobra.Command, args []string) error {
 	state := cmd.Context().Value(stateDataKey{}).(*config.State)
 
 	// SetupMode is not necessarily required on a partial enrollment
-	if !efi.GetSetupMode() && enrollKeysCmdOptions.Partial.Value == "" && enrollKeysCmdOptions.Export.Value == "" {
+	ok, err := state.Efivarfs.GetSetupMode()
+	if err != nil {
+		return err
+	}
+	if !ok && enrollKeysCmdOptions.Partial.Value == "" && enrollKeysCmdOptions.Export.Value == "" {
 		return ErrSetupModeDisabled
 	}
 

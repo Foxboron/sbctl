@@ -10,6 +10,7 @@ import (
 
 	"github.com/foxboron/go-uefi/efi/efitest"
 	efs "github.com/foxboron/go-uefi/efi/fs"
+	"github.com/foxboron/go-uefi/efivarfs/testfs"
 	"github.com/foxboron/sbctl/config"
 	"github.com/foxboron/sbctl/logging"
 	"github.com/spf13/cobra"
@@ -40,7 +41,13 @@ func SetFS(files ...fstest.MapFS) *cobra.Command {
 	// TODO: Remove and move to proper efifs implementation
 	efs.SetFS(fs)
 
-	state := &config.State{Fs: fs, Config: config.DefaultConfig()}
+	state := &config.State{
+		Fs: fs,
+		Efivarfs: testfs.NewTestFS().
+			With(files...).
+			Open(),
+		Config: config.DefaultConfig(),
+	}
 	cmd := &cobra.Command{}
 	ctx := context.WithValue(context.Background(), stateDataKey{}, state)
 	cmd.SetContext(ctx)

@@ -5,7 +5,6 @@ import (
 	"os"
 	"strings"
 
-	"github.com/foxboron/go-uefi/efi"
 	"github.com/foxboron/sbctl"
 	"github.com/foxboron/sbctl/certs"
 	"github.com/foxboron/sbctl/config"
@@ -95,10 +94,10 @@ func RunStatus(cmd *cobra.Command, args []string) error {
 			stat.GUID = u.Format()
 		}
 	}
-	if efi.GetSetupMode() {
+	if ok, _ := state.Efivarfs.GetSetupMode(); ok {
 		stat.SetupMode = true
 	}
-	if efi.GetSecureBoot() {
+	if ok, _ := state.Efivarfs.GetSecureBoot(); ok {
 		stat.SecureBoot = true
 	}
 	if keys := sbctl.GetEnrolledVendorCerts(); len(keys) > 0 {
