@@ -85,7 +85,7 @@ func RunRotateKeys(cmd *cobra.Command, args []string) error {
 }
 
 func rotateAllKeys(state *config.State, backupDir, newKeysDir string) error {
-	oldKeys, err := backend.GetKeyHierarchy(state.Config)
+	oldKeys, err := backend.GetKeyHierarchy(state.Fs, state.Config)
 	if err != nil {
 		return fmt.Errorf("can't read old keys from dir: %v", err)
 	}
@@ -172,7 +172,7 @@ func rotateKey(state *config.State, hiera string, keyPath, certPath string) erro
 		return fmt.Errorf("a new certificate needs to be provided for a partial reset of %s", hiera)
 	}
 
-	oldKH, err := backend.GetKeyHierarchy(state.Config)
+	oldKH, err := backend.GetKeyHierarchy(state.Fs, state.Config)
 	if err != nil {
 		return fmt.Errorf("can't read old keys from dir: %v", err)
 	}
@@ -188,7 +188,7 @@ func rotateKey(state *config.State, hiera string, keyPath, certPath string) erro
 	}
 
 	// We will mutate this to the new state
-	newKH, err := backend.GetKeyHierarchy(state.Config)
+	newKH, err := backend.GetKeyHierarchy(state.Fs, state.Config)
 	if err != nil {
 		return fmt.Errorf("can't read old keys from dir: %v", err)
 	}

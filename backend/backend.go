@@ -202,36 +202,36 @@ func CreateKeys(c *config.Config) (*KeyHierarchy, error) {
 	return &hier, nil
 }
 
-func readKey(keydir string, kc *config.KeyConfig, hier hierarchy.Hierarchy) (KeyBackend, error) {
+func readKey(vfs afero.Fs, keydir string, kc *config.KeyConfig, hier hierarchy.Hierarchy) (KeyBackend, error) {
 	switch kc.Type {
 	case "file", "":
-		return ReadFileKey(keydir, hier)
+		return ReadFileKey(vfs, keydir, hier)
 	}
 	return nil, nil
 }
 
-func GetKeyBackend(c *config.Config, k hierarchy.Hierarchy) (KeyBackend, error) {
+func GetKeyBackend(vfs afero.Fs, c *config.Config, k hierarchy.Hierarchy) (KeyBackend, error) {
 	switch k {
 	case hierarchy.PK:
-		return readKey(c.Keydir, c.Keys.PK, k)
+		return readKey(vfs, c.Keydir, c.Keys.PK, k)
 	case hierarchy.KEK:
-		return readKey(c.Keydir, c.Keys.KEK, k)
+		return readKey(vfs, c.Keydir, c.Keys.KEK, k)
 	case hierarchy.Db:
-		return readKey(c.Keydir, c.Keys.Db, k)
+		return readKey(vfs, c.Keydir, c.Keys.Db, k)
 	}
 	return nil, nil
 }
 
-func GetKeyHierarchy(c *config.Config) (*KeyHierarchy, error) {
-	db, err := GetKeyBackend(c, hierarchy.Db)
+func GetKeyHierarchy(vfs afero.Fs, c *config.Config) (*KeyHierarchy, error) {
+	db, err := GetKeyBackend(vfs, c, hierarchy.Db)
 	if err != nil {
 		return nil, err
 	}
-	kek, err := GetKeyBackend(c, hierarchy.KEK)
+	kek, err := GetKeyBackend(vfs, c, hierarchy.KEK)
 	if err != nil {
 		return nil, err
 	}
-	pk, err := GetKeyBackend(c, hierarchy.PK)
+	pk, err := GetKeyBackend(vfs, c, hierarchy.PK)
 	if err != nil {
 		return nil, err
 	}

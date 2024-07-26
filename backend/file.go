@@ -10,11 +10,13 @@ import (
 	"encoding/pem"
 	"fmt"
 	"math/big"
-	"os"
 	"path/filepath"
 	"time"
 
+	"github.com/foxboron/sbctl/fs"
+
 	"github.com/foxboron/sbctl/hierarchy"
+	"github.com/spf13/afero"
 )
 
 var RSAKeySize = 4096
@@ -61,19 +63,19 @@ func NewFileKey(hier hierarchy.Hierarchy, desc string) (*FileKey, error) {
 	}, nil
 }
 
-func ReadFileKey(dir string, hier hierarchy.Hierarchy) (*FileKey, error) {
+func ReadFileKey(vfs afero.Fs, dir string, hier hierarchy.Hierarchy) (*FileKey, error) {
 	path := filepath.Join(dir, hier.String())
 	keyname := filepath.Join(path, fmt.Sprintf("%s.key", hier.String()))
 	certname := filepath.Join(path, fmt.Sprintf("%s.pem", hier.String()))
 
 	// Read privatekey
-	keyb, err := os.ReadFile(keyname)
+	keyb, err := fs.ReadFile(vfs, keyname)
 	if err != nil {
 		return nil, err
 	}
 
 	// Read certificate
-	pemb, err := os.ReadFile(certname)
+	pemb, err := fs.ReadFile(vfs, certname)
 	if err != nil {
 		return nil, err
 	}
