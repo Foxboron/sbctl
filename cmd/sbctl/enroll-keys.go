@@ -58,7 +58,10 @@ var (
 	enrollKeysCmd = &cobra.Command{
 		Use:   "enroll-keys",
 		Short: "Enroll the current keys to EFI",
-		RunE:  RunEnrollKeys,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			state := cmd.Context().Value(stateDataKey{}).(*config.State)
+			return RunEnrollKeys(state)
+		},
 	}
 	ErrSetupModeDisabled = errors.New("setup mode is disabled")
 )
@@ -242,9 +245,7 @@ func KeySync(state *config.State, oems []string) error {
 	return nil
 }
 
-func RunEnrollKeys(cmd *cobra.Command, args []string) error {
-	state := cmd.Context().Value(stateDataKey{}).(*config.State)
-
+func RunEnrollKeys(state *config.State) error {
 	// SetupMode is not necessarily required on a partial enrollment
 	ok, err := state.Efivarfs.GetSetupMode()
 	if err != nil {
