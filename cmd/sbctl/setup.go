@@ -17,6 +17,7 @@ type SetupCmdOptions struct {
 	PrintConfig bool
 	PrintState  bool
 	Migrate     bool
+	Setup       bool
 }
 
 var (
@@ -83,6 +84,46 @@ func PrintConfig(state *config.State) error {
 	return nil
 }
 
+func SetupInstallation(state *config.State) error {
+	if ok, _ := state.Efivarfs.GetSetupMode(); !ok {
+		return ErrSetupModeDisabled
+	}
+	if state.IsInstalled() {
+		return fmt.Errorf("sbctl is already installed")
+	}
+
+	if err := RunCreateKeys(state); err != nil {
+		return err
+	}
+
+	if err := RunEnrollKeys(state); err != nil {
+		return err
+	}
+
+	if len(state.Config.Files) == 0 {
+		return nil
+	}
+
+	files, err := sbctl.ReadFileDatabase(state.Fs, state.Config.FilesDb)
+	if err != nil {
+		return err
+	}
+
+	for _, f := range state.Config.Files {
+		files[f.Path] = &sbctl.SigningEntry{File: f.Path, OutputFile: f.Output}
+	}
+
+	if err := sbctl.WriteFileDatabase(state.Fs, state.Config.FilesDb, files); err != nil {
+		return err
+	}
+
+	if err := SignAll(state); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func MigrateSetup(state *config.State) error {
 	newConf := config.DefaultConfig()
 	p := path.Dir(newConf.Keydir)
@@ -122,6 +163,12 @@ func MigrateSetup(state *config.State) error {
 func RunSetup(cmd *cobra.Command, args []string) error {
 	state := cmd.Context().Value(stateDataKey{}).(*config.State)
 
+	if setupCmdOptions.Setup {
+		if err := SetupInstallation(state); err != nil {
+			return err
+		}
+	}
+
 	if setupCmdOptions.Migrate {
 		if err := MigrateSetup(state); err != nil {
 			return err
@@ -140,6 +187,7 @@ func setupCmdFlags(cmd *cobra.Command) {
 	f.BoolVarP(&setupCmdOptions.PrintConfig, "print-config", "", false, "print config file")
 	f.BoolVarP(&setupCmdOptions.PrintState, "print-state", "", false, "print the state of sbctl")
 	f.BoolVarP(&setupCmdOptions.Migrate, "migrate", "", false, "migrate the sbctl installation")
+	f.BoolVarP(&setupCmdOptions.Setup, "setup", "", false, "setup the sbctl installation")
 }
 
 func init() {
