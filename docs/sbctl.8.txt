@@ -207,9 +207,21 @@ EFI signing commands
                 Valid values: esl, auth.
 
 **setup**::
-        Print metadata about the current sbctl setup. This will list the current
-        configuraiton settings used by sbctl, and the installation state of
-        sbctl.
+        Setup an sbctl installation.
+
+        This commands enables declarative configuration of sbctl through the
+        configuration file. It can also print the current configuration and the
+        current state of the installation.
+
+        *--setup*;;
+                Setup an sbctl install based off on the provided configuration
+                file, or the default read configuration from
+                /etc/sbctl/sbctl.conf.
+                +
+                This will automatically do the create-keys and enroll-keys
+                commands and also setup the files database for signing.
+                +
+                See linkman:sbctl.conf[5] for details.
 
         *--migrate*;;
                 Migrate the configuration and setup of sbctl to a new iteration.
