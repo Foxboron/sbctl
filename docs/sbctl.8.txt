@@ -34,16 +34,16 @@ EFI signing commands
 
         *-e*, *--export*;;
                 The directory to persist the exported keys.
-
+                +
                 Default: "/usr/share/secureboot/keys/"
 
         *-d*, *--database-path*;;
                 Path to save the GUID file when generating keys.
-
+                +
                 Default: "/usr/share/secureboot/"
 
 **enroll-keys**::
-        Enrolls the created key into the EFI variables. 
+        Enrolls the created key into the EFI variables.
 
         Note that some devices have hardware firmware that is signed and
         validated when Secure Boot is enabled. Failing to validate this firmware
@@ -53,13 +53,15 @@ EFI signing commands
         *-m*, *--microsoft*;;
                 Enroll UEFI vendor certificates from Microsoft into the
                 signature database.
+                +
                 See **Option ROM***.
 
         *-t*, *--tpm-eventlog*;;
                 Enroll checksums from the TPM Eventlog into the signature
                 database.
+                +
                 See **Option ROM***.
-
+                +
                 This feature is experimental
 
         *-c*, *--custom*;;
@@ -71,16 +73,17 @@ EFI signing commands
                 Enroll signatures from dbDefault, KEKDefault or PKDefault. This
                 is usefull if sbctl does not vendor your OEM certificates, or
                 doesn't include all of them.
-
+                +
                 Valid values are "db", "KEK" or "PK" passed as a comma
                 delimitered string.
-
+                +
                 Default: "db,KEK"
 
 
         *--yes-this-might-brick-my-machine*, **--yolo**;;
                 Ignore the Option ROM error and continue enrolling keys into the
                 UEFI firmware.
+                +
                 See **Option ROM***.
 
         *-i*, *--ignore-immutable*;;
@@ -92,12 +95,12 @@ EFI signing commands
                 Export the keys we intend to enroll as EFI Signature Lists
                 (esl), or EFI Authenticated Variables (auth) into the current
                 working directory.
-
+                +
                 Valid values are: esl, auth.
 
         *-p*, *--partial*;;
                Enroll keys only for the hierarchy specified.
-               
+               + 
                Valid values are: db, KEK, PK.
 
         *--custom-bytes*;;
@@ -169,7 +172,7 @@ EFI signing commands
 
         *-p*, *--partial*;;
                Reset keys only for the hierarchy specified.
-               
+               + 
                Valid values are: db, KEK, PK.
 
 **rotate-keys**::
@@ -182,7 +185,7 @@ EFI signing commands
 
         *-p*, *--partial*;;
                Rotate keys only for the hierarchy specified.
-               
+               + 
                Valid values are: db, KEK, PK.
 
         *-k*, *--key-file*;;
@@ -199,14 +202,26 @@ EFI signing commands
 
         *--format* 'TYPE';;
                 Format of the exported keys.
-
+                +
                 Default: der
                 Valid values: esl, auth.
 
 **setup**::
-        Print metadata about the current sbctl setup. This will list the current
-        configuraiton settings used by sbctl, and the installation state of
-        sbctl.
+        Setup an sbctl installation.
+
+        This commands enables declarative configuration of sbctl through the
+        configuration file. It can also print the current configuration and the
+        current state of the installation.
+
+        *--setup*;;
+                Setup an sbctl install based off on the provided configuration
+                file, or the default read configuration from
+                /etc/sbctl/sbctl.conf.
+                +
+                This will automatically do the create-keys and enroll-keys
+                commands and also setup the files database for signing.
+                +
+                See linkman:sbctl.conf[5] for details.
 
         *--migrate*;;
                 Migrate the configuration and setup of sbctl to a new iteration.
@@ -294,6 +309,8 @@ Options
 **-c**, **--config**::
         An optionally provided path to the configuration file that should be
         used by sbctl.
+        +
+        Default: /etc/sbctl/sbctl.conf
 
 
 Bundles
@@ -444,32 +461,37 @@ Environment variables
 
 Files
 ----
-**/usr/share/secureboot**::
+
+**/etc/sbctl/sbctl.conf**:;
+        Defautl configuration file.
+        See linkman:sbctl.conf[5]
+
+**/var/lib/sbctl**::
         Default storage directory.
 
-**/usr/share/secureboot/GUID**::
+**/var/lib/sbctl/GUID**::
         Owner identification. This is a randomly generated UUID.
 
-**/usr/share/secureboot/files.db**::
+**/var/lib/sbctl/files.db**::
         Contains a list of EFI binaries to be signed by the generated key.
 
-**/usr/share/secureboot/bundles.db**::
+**/var/lib/sbctl/bundles.db**::
         Contains a list of EFI bundles to be generated.
 
-**/usr/share/secureboot/keys/db/db.{pem,key}**::
+**/var/lib/sbctl/keys/db/db.{pem,key}**::
         Contains the Signature Database key used for signing EFI binaries.
 
-**/usr/share/secureboot/keys/KEK/KEK.{pem,key}**::
+**/var/lib/sbctl/keys/KEK/KEK.{pem,key}**::
         Contains the Key Exchange Key.
 
-**/usr/share/secureboot/keys/PK/PK.{pem,key}**::
+**/var/lib/sbctl/keys/PK/PK.{pem,key}**::
         Contains the Platform Key.
 
-**/usr/share/secureboot/keys/custom/KEK/***::
+**/var/lib/sbctl/keys/custom/KEK/***::
         Contains custom certificates which will be added to the firmware as
         additional Key Exchange Keys.
 
-**/usr/share/secureboot/keys/custom/db/***::
+**/var/lib/sbctl/keys/custom/db/***::
         Contains custom certificates which will be added to the firmware
         Signature Database.
 

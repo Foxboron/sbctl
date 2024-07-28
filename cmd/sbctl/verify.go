@@ -41,7 +41,7 @@ func VerifyOneFile(state *config.State, f string) error {
 		return ErrInvalidHeader
 	}
 
-	kh, err := backend.GetKeyHierarchy(state.Config)
+	kh, err := backend.GetKeyHierarchy(state.Fs, state.Config)
 	if err != nil {
 		return err
 	}

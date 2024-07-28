@@ -36,7 +36,7 @@ var generateBundlesCmd = &cobra.Command{
 			logging.Print("Wrote EFI bundle %s\n", bundle.Output)
 			if sign {
 				file := bundle.Output
-				kh, err := backend.GetKeyHierarchy(state.Config)
+				kh, err := backend.GetKeyHierarchy(state.Fs, state.Config)
 				if err != nil {
 					return err
 				}

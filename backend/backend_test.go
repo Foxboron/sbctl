@@ -31,7 +31,7 @@ func TestCreateKeys(t *testing.T) {
 		t.Fatalf("%v", err)
 	}
 
-	key, err := GetKeyBackend(c, hierarchy.PK)
+	key, err := GetKeyBackend(afero.NewOsFs(), c, hierarchy.PK)
 	if err != nil {
 		log.Fatal(err)
 	}

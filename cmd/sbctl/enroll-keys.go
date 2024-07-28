@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/foxboron/go-uefi/efi"
 	"github.com/foxboron/go-uefi/efi/signature"
 	"github.com/foxboron/go-uefi/efivar"
 	"github.com/foxboron/sbctl"
@@ -59,7 +58,10 @@ var (
 	enrollKeysCmd = &cobra.Command{
 		Use:   "enroll-keys",
 		Short: "Enroll the current keys to EFI",
-		RunE:  RunEnrollKeys,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			state := cmd.Context().Value(stateDataKey{}).(*config.State)
+			return RunEnrollKeys(state)
+		},
 	}
 	ErrSetupModeDisabled = errors.New("setup mode is disabled")
 )
@@ -75,7 +77,7 @@ func SignSiglist(k *backend.KeyHierarchy, e efivar.Efivar, sigdb efivar.Marshall
 
 // Sync keys from a key directory into efivarfs
 func KeySync(state *config.State, oems []string) error {
-	kh, err := backend.GetKeyHierarchy(state.Config)
+	kh, err := backend.GetKeyHierarchy(state.Fs, state.Config)
 	if err != nil {
 		return err
 	}
@@ -243,11 +245,13 @@ func KeySync(state *config.State, oems []string) error {
 	return nil
 }
 
-func RunEnrollKeys(cmd *cobra.Command, args []string) error {
-	state := cmd.Context().Value(stateDataKey{}).(*config.State)
-
+func RunEnrollKeys(state *config.State) error {
 	// SetupMode is not necessarily required on a partial enrollment
-	if !efi.GetSetupMode() && enrollKeysCmdOptions.Partial.Value == "" && enrollKeysCmdOptions.Export.Value == "" {
+	ok, err := state.Efivarfs.GetSetupMode()
+	if err != nil {
+		return err
+	}
+	if !ok && enrollKeysCmdOptions.Partial.Value == "" && enrollKeysCmdOptions.Export.Value == "" {
 		return ErrSetupModeDisabled
 	}
 

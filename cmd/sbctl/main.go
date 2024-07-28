@@ -111,6 +111,8 @@ func main() {
 		Fs:     fs,
 		Config: conf,
 		Efivarfs: efivarfs.NewFS().
+			CheckImmutable().
+			UnsetImmutable().
 			Open(),
 	}
 	ctx := context.WithValue(context.Background(), stateDataKey{}, state)

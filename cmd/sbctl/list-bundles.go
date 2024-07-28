@@ -30,7 +30,7 @@ var listBundlesCmd = &cobra.Command{
 		var isSigned bool
 		err := sbctl.BundleIter(state,
 			func(s *sbctl.Bundle) error {
-				kh, err := backend.GetKeyHierarchy(state.Config)
+				kh, err := backend.GetKeyHierarchy(state.Fs, state.Config)
 				if err != nil {
 					return err
 				}

@@ -127,7 +127,7 @@ func Sign(state *config.State, keys *backend.KeyHierarchy, file, output string, 
 		}
 	}
 
-	kh, err := backend.GetKeyHierarchy(state.Config)
+	kh, err := backend.GetKeyHierarchy(state.Fs, state.Config)
 	if err != nil {
 		return err
 	}
