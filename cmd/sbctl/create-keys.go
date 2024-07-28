@@ -49,7 +49,6 @@ func RunCreateKeys(state *config.State) error {
 		return err
 	}
 	logging.Print("Created Owner UUID %s\n", uuid)
-	fmt.Println(state.Config.Keydir)
 	if !sbctl.CheckIfKeysInitialized(state.Fs, state.Config.Keydir) {
 		logging.Print("Creating secure boot keys...")
 
