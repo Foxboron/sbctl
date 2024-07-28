@@ -3,7 +3,7 @@
 KERNEL_FILE="$1"
 UKI_FILE="$3"
 
-if ! [ "$(sbctl setup --print-state --json | grep installed | awk '{print $2}')" = "true" ]; then
+if ! [ "$(sbctl setup --print-state --json | awk '/installed/ { gsub(/,$/,"",$2); print $2 }')" = "true" ]; then
     echo "Secureboot key directory doesn't exist, not signing!"
     exit 0
 fi
