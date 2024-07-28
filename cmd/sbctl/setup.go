@@ -110,6 +110,9 @@ func SetupInstallation(state *config.State) error {
 	}
 
 	for _, f := range state.Config.Files {
+		if f.Output == "" {
+			f.Output = f.Path
+		}
 		files[f.Path] = &sbctl.SigningEntry{File: f.Path, OutputFile: f.Output}
 	}
 

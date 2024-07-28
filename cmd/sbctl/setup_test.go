@@ -25,8 +25,9 @@ func mustBytes(f string) []byte {
 func TestSetup(t *testing.T) {
 	// Embed a TPM eventlog from out test suite for enroll-keys
 	mapfs := fstest.MapFS{
-		systemEventlog:   {Data: mustBytes("../../tests/tpm_eventlogs/t480s_eventlog")},
-		"/boot/test.efi": {Data: mustBytes("../../tests/binaries/test.pecoff")},
+		systemEventlog:        {Data: mustBytes("../../tests/tpm_eventlogs/t480s_eventlog")},
+		"/boot/test.efi":      {Data: mustBytes("../../tests/binaries/test.pecoff")},
+		"/boot/something.efi": {Data: mustBytes("../../tests/binaries/test.pecoff")},
 	}
 
 	conf := config.DefaultConfig()
@@ -34,6 +35,7 @@ func TestSetup(t *testing.T) {
 	// Include test file into our file config
 	conf.Files = []*config.FileConfig{
 		{"/boot/test.efi", "/boot/new.efi"},
+		{"/boot/something.efi", ""},
 	}
 
 	state := &config.State{

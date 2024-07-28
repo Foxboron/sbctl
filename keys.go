@@ -32,6 +32,12 @@ func VerifyFile(state *config.State, kh *backend.KeyHierarchy, ev hierarchy.Hier
 var ErrAlreadySigned = errors.New("already signed file")
 
 func SignFile(state *config.State, kh *backend.KeyHierarchy, ev hierarchy.Hierarchy, file, output string) error {
+
+	// Make sure that output is always populated by atleast the file path
+	if output == "" {
+		output = file
+	}
+
 	// Check file exists before we do anything
 	if _, err := state.Fs.Stat(file); errors.Is(err, os.ErrNotExist) {
 		return fmt.Errorf("%s does not exist", file)
