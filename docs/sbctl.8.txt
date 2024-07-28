@@ -461,32 +461,37 @@ Environment variables
 
 Files
 ----
-**/usr/share/secureboot**::
+
+**/etc/sbctl/sbctl.conf**:;
+        Defautl configuration file.
+        See linkman:sbctl.conf[5]
+
+**/var/lib/sbctl**::
         Default storage directory.
 
-**/usr/share/secureboot/GUID**::
+**/var/lib/sbctl/GUID**::
         Owner identification. This is a randomly generated UUID.
 
-**/usr/share/secureboot/files.db**::
+**/var/lib/sbctl/files.db**::
         Contains a list of EFI binaries to be signed by the generated key.
 
-**/usr/share/secureboot/bundles.db**::
+**/var/lib/sbctl/bundles.db**::
         Contains a list of EFI bundles to be generated.
 
-**/usr/share/secureboot/keys/db/db.{pem,key}**::
+**/var/lib/sbctl/keys/db/db.{pem,key}**::
         Contains the Signature Database key used for signing EFI binaries.
 
-**/usr/share/secureboot/keys/KEK/KEK.{pem,key}**::
+**/var/lib/sbctl/keys/KEK/KEK.{pem,key}**::
         Contains the Key Exchange Key.
 
-**/usr/share/secureboot/keys/PK/PK.{pem,key}**::
+**/var/lib/sbctl/keys/PK/PK.{pem,key}**::
         Contains the Platform Key.
 
-**/usr/share/secureboot/keys/custom/KEK/***::
+**/var/lib/sbctl/keys/custom/KEK/***::
         Contains custom certificates which will be added to the firmware as
         additional Key Exchange Keys.
 
-**/usr/share/secureboot/keys/custom/db/***::
+**/var/lib/sbctl/keys/custom/db/***::
         Contains custom certificates which will be added to the firmware
         Signature Database.
 
