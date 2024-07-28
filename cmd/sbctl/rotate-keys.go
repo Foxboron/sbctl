@@ -12,7 +12,9 @@ import (
 	"github.com/foxboron/sbctl/fs"
 	"github.com/foxboron/sbctl/hierarchy"
 	"github.com/foxboron/sbctl/logging"
+	"github.com/foxboron/sbctl/lsm"
 	"github.com/foxboron/sbctl/stringset"
+	"github.com/landlock-lsm/go-landlock/landlock"
 	"github.com/spf13/cobra"
 )
 
@@ -25,6 +27,7 @@ type RotateKeysCmdOptions struct {
 }
 
 var (
+	tmpPath              = "/var/tmp/sbctl/"
 	rotateKeysCmdOptions = RotateKeysCmdOptions{
 		Partial: stringset.StringSet{Allowed: []string{hierarchy.PK.String(), hierarchy.KEK.String(), hierarchy.Db.String()}},
 	}
@@ -70,6 +73,16 @@ func rotateCerts(state *config.State, hier hierarchy.Hierarchy, oldkeys *backend
 
 func RunRotateKeys(cmd *cobra.Command, args []string) error {
 	state := cmd.Context().Value(stateDataKey{}).(*config.State)
+
+	if state.Config.Landlock {
+		lsm.RestrictAdditionalPaths(
+			landlock.RWDirs(tmpPath),
+		)
+		if err := lsm.Restrict(); err != nil {
+			return err
+		}
+	}
+
 	partial := rotateKeysCmdOptions.Partial.Value
 
 	// rotate all keys if no specific key should be replaced
@@ -96,7 +109,7 @@ func rotateAllKeys(state *config.State, backupDir, newKeysDir string) error {
 	}
 
 	if backupDir == "" {
-		backupDir = filepath.Join("/var/tmp", fmt.Sprintf("sbctl_backup_keys_%d", time.Now().Unix()))
+		backupDir = filepath.Join(tmpPath, fmt.Sprintf("sbctl_backup_keys_%d", time.Now().Unix()))
 	}
 
 	if err := sbctl.CopyDirectory(state.Fs, state.Config.Keydir, backupDir); err != nil {

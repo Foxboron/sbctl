@@ -9,6 +9,9 @@ import (
 
 	"github.com/foxboron/go-uefi/efi"
 	"github.com/foxboron/go-uefi/efi/signature"
+	"github.com/foxboron/sbctl/config"
+	"github.com/foxboron/sbctl/lsm"
+	"github.com/landlock-lsm/go-landlock/landlock"
 	"github.com/spf13/cobra"
 )
 
@@ -20,9 +23,19 @@ var exportEnrolledKeysCmd = &cobra.Command{
 	Use:   "export-enrolled-keys",
 	Short: "Export already enrolled keys from the system",
 	RunE: func(cmd *cobra.Command, args []string) error {
+		state := cmd.Context().Value(stateDataKey{}).(*config.State)
+
 		if exportDir == "" {
 			fmt.Println("--dir should be set")
 			os.Exit(1)
+		}
+		if state.Config.Landlock {
+			lsm.RestrictAdditionalPaths(
+				landlock.RWFiles(exportDir),
+			)
+			if err := lsm.Restrict(); err != nil {
+				return err
+			}
 		}
 
 		var err error

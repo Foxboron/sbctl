@@ -12,6 +12,7 @@ require (
 	github.com/google/go-tpm v0.9.0
 	github.com/google/uuid v1.4.0
 	github.com/hugelgupf/vmtest v0.0.0-20240110072021-f6f07acb7aa1
+	github.com/landlock-lsm/go-landlock v0.0.0-20240715193425-db0c8d6f1dff
 	github.com/onsi/gomega v1.7.1
 	github.com/spf13/afero v1.11.0
 	github.com/spf13/cobra v1.8.1
@@ -54,5 +55,6 @@ require (
 	golang.org/x/tools v0.21.1-0.20240508182429-e35e4ccd0d2d // indirect
 	golang.org/x/xerrors v0.0.0-20231012003039-104605ab7028 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
+	kernel.org/pub/linux/libs/security/libcap/psx v1.2.70 // indirect
 	src.elv.sh v0.16.0-rc1.0.20220116211855-fda62502ad7f // indirect
 )

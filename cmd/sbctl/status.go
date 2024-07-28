@@ -9,6 +9,7 @@ import (
 	"github.com/foxboron/sbctl/certs"
 	"github.com/foxboron/sbctl/config"
 	"github.com/foxboron/sbctl/logging"
+	"github.com/foxboron/sbctl/lsm"
 	"github.com/foxboron/sbctl/quirks"
 	"github.com/spf13/cobra"
 )
@@ -81,6 +82,12 @@ func PrintStatus(s *Status) {
 
 func RunStatus(cmd *cobra.Command, args []string) error {
 	state := cmd.Context().Value(stateDataKey{}).(*config.State)
+
+	if state.Config.Landlock {
+		if err := lsm.Restrict(); err != nil {
+			return err
+		}
+	}
 
 	stat := NewStatus()
 	if _, err := state.Fs.Stat("/sys/firmware/efi/efivars"); os.IsNotExist(err) {

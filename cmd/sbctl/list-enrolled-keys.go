@@ -7,6 +7,8 @@ import (
 	"github.com/foxboron/go-uefi/efi"
 	"github.com/foxboron/go-uefi/efi/signature"
 	"github.com/foxboron/go-uefi/efi/util"
+	"github.com/foxboron/sbctl/config"
+	"github.com/foxboron/sbctl/lsm"
 	"github.com/spf13/cobra"
 )
 
@@ -17,6 +19,13 @@ var listKeysCmd = &cobra.Command{
 	},
 	Short: "List enrolled keys on the system",
 	RunE: func(cmd *cobra.Command, args []string) error {
+		state := cmd.Context().Value(stateDataKey{}).(*config.State)
+		if state.Config.Landlock {
+			if err := lsm.Restrict(); err != nil {
+				return err
+			}
+		}
+
 		var err error
 		certList := map[string]([]*x509.Certificate){}
 

@@ -8,7 +8,9 @@ import (
 	"github.com/foxboron/sbctl"
 	"github.com/foxboron/sbctl/config"
 	"github.com/foxboron/sbctl/logging"
+	"github.com/foxboron/sbctl/lsm"
 	"github.com/goccy/go-yaml"
+	"github.com/landlock-lsm/go-landlock/landlock"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 )
@@ -30,6 +32,14 @@ var (
 )
 
 func PrintConfig(state *config.State) error {
+	if state.Config.Landlock {
+		lsm.RestrictAdditionalPaths(
+			landlock.RWFiles(cmdOptions.Config),
+		)
+		if err := lsm.Restrict(); err != nil {
+			return err
+		}
+	}
 	var ser any
 	if cmdOptions.Config != "" {
 		b, err := os.ReadFile(cmdOptions.Config)
@@ -85,6 +95,15 @@ func PrintConfig(state *config.State) error {
 }
 
 func SetupInstallation(state *config.State) error {
+	if state.Config.Landlock {
+		if err := sbctl.LandlockFromFileDatabase(state); err != nil {
+			return err
+		}
+		if err := lsm.Restrict(); err != nil {
+			return err
+		}
+	}
+
 	if ok, _ := state.Efivarfs.GetSetupMode(); !ok {
 		return ErrSetupModeDisabled
 	}
@@ -128,6 +147,15 @@ func SetupInstallation(state *config.State) error {
 }
 
 func MigrateSetup(state *config.State) error {
+	if state.Config.Landlock {
+		lsm.RestrictAdditionalPaths(
+			landlock.RWDirs(sbctl.DatabasePath),
+		)
+		if err := lsm.Restrict(); err != nil {
+			return err
+		}
+	}
+
 	newConf := config.DefaultConfig()
 	p := path.Dir(newConf.Keydir)
 

@@ -9,6 +9,8 @@ import (
 	"github.com/foxboron/sbctl/backend"
 	"github.com/foxboron/sbctl/config"
 	"github.com/foxboron/sbctl/logging"
+	"github.com/foxboron/sbctl/lsm"
+	"github.com/landlock-lsm/go-landlock/landlock"
 	"github.com/spf13/cobra"
 )
 
@@ -21,12 +23,12 @@ var signCmd = &cobra.Command{
 	Use:   "sign",
 	Short: "Sign a file with secure boot keys",
 	RunE: func(cmd *cobra.Command, args []string) error {
+		state := cmd.Context().Value(stateDataKey{}).(*config.State)
+
 		if len(args) < 1 {
 			logging.Print("Requires a file to sign\n")
 			os.Exit(1)
 		}
-
-		state := cmd.Context().Value(stateDataKey{}).(*config.State)
 
 		// Ensure we have absolute paths
 		file, err := filepath.Abs(args[0])
@@ -38,6 +40,18 @@ var signCmd = &cobra.Command{
 		} else {
 			output, err = filepath.Abs(output)
 			if err != nil {
+				return err
+			}
+		}
+
+		if state.Config.Landlock {
+			lsm.RestrictAdditionalPaths(
+				// TODO: This doesn't work quite how I want it to
+				// setting RWFiles to the path gets EACCES
+				// but setting RWDirs on the dir is fine
+				landlock.RWDirs(filepath.Dir(output)),
+			)
+			if err := lsm.Restrict(); err != nil {
 				return err
 			}
 		}

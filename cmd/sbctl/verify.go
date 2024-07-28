@@ -10,6 +10,8 @@ import (
 	"github.com/foxboron/sbctl/config"
 	"github.com/foxboron/sbctl/hierarchy"
 	"github.com/foxboron/sbctl/logging"
+	"github.com/foxboron/sbctl/lsm"
+	"github.com/landlock-lsm/go-landlock/landlock"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 )
@@ -66,6 +68,19 @@ func RunVerify(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
+
+	if state.Config.Landlock {
+		lsm.RestrictAdditionalPaths(
+			landlock.RWDirs(espPath),
+		)
+		if err := sbctl.LandlockFromFileDatabase(state); err != nil {
+			return err
+		}
+		if err := lsm.Restrict(); err != nil {
+			return err
+		}
+	}
+
 	if len(args) > 0 {
 		for _, file := range args {
 			if err := VerifyOneFile(state, file); err != nil {

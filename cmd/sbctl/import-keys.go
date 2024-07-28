@@ -11,6 +11,8 @@ import (
 	"github.com/foxboron/sbctl"
 	"github.com/foxboron/sbctl/config"
 	"github.com/foxboron/sbctl/logging"
+	"github.com/foxboron/sbctl/lsm"
+	"github.com/landlock-lsm/go-landlock/landlock"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 )
@@ -92,6 +94,31 @@ func RunImportKeys(cmd *cobra.Command, args []string) error {
 	}
 
 	state := cmd.Context().Value(stateDataKey{}).(*config.State)
+
+	if state.Config.Landlock {
+		for _, key := range keypairs {
+			if key.Key != "" {
+				lsm.RestrictAdditionalPaths(
+					landlock.RWFiles(key.Key),
+				)
+			}
+			if key.Cert != "" {
+				lsm.RestrictAdditionalPaths(
+					landlock.RWFiles(key.Cert),
+				)
+			}
+		}
+
+		if importKeysCmdOptions.Directory != "" {
+			lsm.RestrictAdditionalPaths(
+				landlock.ROFiles(importKeysCmdOptions.Directory),
+			)
+		}
+
+		if err := lsm.Restrict(); err != nil {
+			return err
+		}
+	}
 
 	if importKeysCmdOptions.Directory != "" {
 		_, err := state.Fs.Stat(state.Config.Keydir)

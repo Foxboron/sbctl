@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/foxboron/sbctl/fs"
+	"github.com/landlock-lsm/go-landlock/landlock"
 
 	"github.com/foxboron/go-uefi/efi/util"
 	"github.com/foxboron/go-uefi/efivarfs"
@@ -49,6 +50,7 @@ func (k *Keys) GetKeysConfigs() []*KeyConfig {
 }
 
 type Config struct {
+	Landlock   bool          `json:"landlock"`
 	Keydir     string        `json:"keydir"`
 	GUID       string        `json:"guid"`
 	FilesDb    string        `json:"files_db"`
@@ -73,6 +75,7 @@ func (c *Config) GetGUID(vfs afero.Fs) (*util.EFIGUID, error) {
 
 func MkConfig(dir string) *Config {
 	conf := &Config{
+		Landlock:  true,
 		GUID:      path.Join(dir, "GUID"),
 		Keydir:    path.Join(dir, "keys"),
 		FilesDb:   path.Join(dir, "files.json"),
@@ -143,12 +146,24 @@ func (s *State) IsInstalled() bool {
 	return true
 }
 
+func (s *State) HasLandlock() bool {
+	if !s.Config.Landlock {
+		return false
+	}
+	// Minimal test to check if we have some form of landlock available
+	// TODO: This is probably not good check.
+	err := landlock.V1.Restrict(
+		landlock.RWDirs("/"),
+	)
+	return err == nil
+}
+
 func (s *State) MarshalJSON() ([]byte, error) {
 	return json.Marshal(
 		map[string]any{
 			"installed": s.IsInstalled(),
 			// We don't want the config embedded probably
-			// "landlock": s.HasLandlock(),
+			"landlock": s.HasLandlock(),
 			// "config":    s.Config,
 		},
 	)

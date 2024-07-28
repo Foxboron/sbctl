@@ -12,6 +12,7 @@ import (
 	"github.com/foxboron/sbctl/config"
 	"github.com/foxboron/sbctl/fs"
 	"github.com/foxboron/sbctl/logging"
+	"github.com/foxboron/sbctl/lsm"
 	"github.com/foxboron/sbctl/stringset"
 	"github.com/spf13/cobra"
 )
@@ -157,6 +158,11 @@ func resetDatabase(state *config.State, ev efivar.Efivar, certPaths ...string) e
 
 func RunReset(cmd *cobra.Command, args []string) error {
 	state := cmd.Context().Value(stateDataKey{}).(*config.State)
+	if state.Config.Landlock {
+		if err := lsm.Restrict(); err != nil {
+			return err
+		}
+	}
 	if err := resetKeys(state); err != nil {
 		return err
 	}

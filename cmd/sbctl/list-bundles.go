@@ -9,6 +9,7 @@ import (
 	"github.com/foxboron/sbctl/config"
 	"github.com/foxboron/sbctl/hierarchy"
 	"github.com/foxboron/sbctl/logging"
+	"github.com/foxboron/sbctl/lsm"
 	"github.com/spf13/cobra"
 )
 
@@ -25,6 +26,12 @@ var listBundlesCmd = &cobra.Command{
 	Short: "List stored bundles",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		state := cmd.Context().Value(stateDataKey{}).(*config.State)
+
+		if state.Config.Landlock {
+			if err := lsm.Restrict(); err != nil {
+				return err
+			}
+		}
 
 		bundles := []JsonBundle{}
 		var isSigned bool

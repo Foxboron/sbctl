@@ -3,9 +3,12 @@ package sbctl
 import (
 	"encoding/json"
 	"fmt"
+	"path/filepath"
 
 	"github.com/foxboron/sbctl/config"
 	"github.com/foxboron/sbctl/fs"
+	"github.com/foxboron/sbctl/lsm"
+	"github.com/landlock-lsm/go-landlock/landlock"
 	"github.com/spf13/afero"
 )
 
@@ -55,5 +58,28 @@ func SigningEntryIter(state *config.State, fn func(s *SigningEntry) error) error
 			return err
 		}
 	}
+	return nil
+}
+
+func LandlockFromFileDatabase(state *config.State) error {
+	var llrules []landlock.Rule
+	files, err := ReadFileDatabase(state.Fs, state.Config.FilesDb)
+	if err != nil {
+		return err
+	}
+	for _, entry := range files {
+		llrules = append(llrules, landlock.RWFiles(
+			entry.File,
+		))
+		if entry.File != entry.OutputFile {
+			// We do an RWDirs on the directory and a RWFiles on the file itself.  it
+			// should be noted that the output file might not exist at this time
+			llrules = append(llrules, landlock.RWDirs(
+				filepath.Dir(entry.File),
+			),
+				landlock.RWFiles(entry.File).IgnoreIfMissing())
+		}
+	}
+	lsm.RestrictAdditionalPaths(llrules...)
 	return nil
 }
