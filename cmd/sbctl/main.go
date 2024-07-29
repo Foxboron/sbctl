@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"log/slog"
 	"os"
 	"strings"
 
@@ -23,6 +24,7 @@ type CmdOptions struct {
 	QuietOutput     bool
 	Config          string
 	DisableLandlock bool
+	Debug           bool
 }
 
 type cliCommand struct {
@@ -59,6 +61,7 @@ func baseFlags(cmd *cobra.Command) {
 	flags.BoolVar(&cmdOptions.JsonOutput, "json", false, "Output as json")
 	flags.BoolVar(&cmdOptions.QuietOutput, "quiet", false, "Mute info from logging")
 	flags.BoolVar(&cmdOptions.DisableLandlock, "disable-landlock", false, "disable landlock")
+	flags.BoolVar(&cmdOptions.Debug, "debug", false, "debug logging")
 	flags.StringVarP(&cmdOptions.Config, "config", "", "", "Path to configuration file")
 
 	cmd.PersistentPreRun = func(cmd *cobra.Command, args []string) {
@@ -124,6 +127,16 @@ func main() {
 		if cmdOptions.DisableLandlock {
 			state.Config.Landlock = false
 		}
+
+		// Setup debug logging
+		opts := &slog.HandlerOptions{
+			Level: slog.LevelInfo,
+		}
+		if cmdOptions.Debug {
+			opts.Level = slog.LevelDebug
+		}
+		logger := slog.New(slog.NewTextHandler(os.Stdout, opts))
+		slog.SetDefault(logger)
 	}
 
 	ctx := context.WithValue(context.Background(), stateDataKey{}, state)

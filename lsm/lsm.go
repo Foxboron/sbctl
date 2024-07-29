@@ -1,6 +1,7 @@
 package lsm
 
 import (
+	"log/slog"
 	"path/filepath"
 
 	"github.com/foxboron/sbctl/config"
@@ -36,10 +37,9 @@ func RestrictAdditionalPaths(r ...landlock.Rule) {
 }
 
 func Restrict() error {
-	// TODO: For debug logging
-	// for _, r := range rules {
-	// 	fmt.Println(r)
-	// }
+	for _, r := range rules {
+		slog.Debug("landlock", slog.Any("rule", r))
+	}
 	landlock.V5.BestEffort().RestrictNet()
 	return landlock.V5.BestEffort().RestrictPaths(rules...)
 }

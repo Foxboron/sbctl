@@ -2,10 +2,13 @@ package main
 
 import (
 	"fmt"
+	"log/slog"
 	"os"
 	"strings"
 
+	"github.com/foxboron/go-uefi/efi/signature"
 	"github.com/foxboron/sbctl"
+	"github.com/foxboron/sbctl/backend"
 	"github.com/foxboron/sbctl/certs"
 	"github.com/foxboron/sbctl/config"
 	"github.com/foxboron/sbctl/logging"
@@ -80,6 +83,37 @@ func PrintStatus(s *Status) {
 	}
 }
 
+func RunDebug(state *config.State) error {
+	kh, err := backend.GetKeyHierarchy(state.Fs, state.Config)
+	if err != nil {
+		return err
+	}
+
+	efistate, err := sbctl.SystemEFIVariables(state.Efivarfs)
+	if err != nil {
+		return err
+	}
+
+	guid, err := state.Config.GetGUID(state.Fs)
+	if err != nil {
+		return err
+	}
+
+	if efistate.PK.SigDataExists(signature.CERT_X509_GUID, &signature.SignatureData{Owner: *guid, Data: kh.PK.Certificate().Raw}) {
+		slog.Debug("PK is fine")
+	}
+
+	if efistate.KEK.SigDataExists(signature.CERT_X509_GUID, &signature.SignatureData{Owner: *guid, Data: kh.KEK.Certificate().Raw}) {
+		slog.Debug("KEK is fine")
+	}
+
+	if efistate.Db.SigDataExists(signature.CERT_X509_GUID, &signature.SignatureData{Owner: *guid, Data: kh.Db.Certificate().Raw}) {
+		slog.Debug("db is fine")
+	}
+
+	return nil
+}
+
 func RunStatus(cmd *cobra.Command, args []string) error {
 	state := cmd.Context().Value(stateDataKey{}).(*config.State)
 
@@ -87,6 +121,10 @@ func RunStatus(cmd *cobra.Command, args []string) error {
 		if err := lsm.Restrict(); err != nil {
 			return err
 		}
+	}
+
+	if cmdOptions.Debug {
+		RunDebug(state)
 	}
 
 	stat := NewStatus()

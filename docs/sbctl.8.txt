@@ -317,6 +317,9 @@ Options
         +
         See linkman:landlock[7].
 
+**--debug**::
+        Enable verbose debug logging. This will break the pretty printed text.
+
 
 Bundles
 -------
