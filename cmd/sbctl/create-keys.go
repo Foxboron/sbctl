@@ -8,6 +8,7 @@ import (
 	"github.com/foxboron/sbctl/backend"
 	"github.com/foxboron/sbctl/config"
 	"github.com/foxboron/sbctl/logging"
+	"github.com/foxboron/sbctl/lsm"
 	"github.com/spf13/cobra"
 )
 
@@ -28,6 +29,11 @@ var createKeysCmd = &cobra.Command{
 }
 
 func RunCreateKeys(state *config.State) error {
+	if state.Config.Landlock {
+		if err := lsm.Restrict(); err != nil {
+			return err
+		}
+	}
 	// Overrides keydir or GUID location
 	if exportPath != "" {
 		state.Config.Keydir = exportPath

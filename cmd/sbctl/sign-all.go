@@ -9,6 +9,7 @@ import (
 	"github.com/foxboron/sbctl/config"
 	"github.com/foxboron/sbctl/hierarchy"
 	"github.com/foxboron/sbctl/logging"
+	"github.com/foxboron/sbctl/lsm"
 	"github.com/spf13/cobra"
 )
 
@@ -21,6 +22,15 @@ var signAllCmd = &cobra.Command{
 	Short: "Sign all enrolled files with secure boot keys",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		state := cmd.Context().Value(stateDataKey{}).(*config.State)
+		if state.Config.Landlock {
+			if err := sbctl.LandlockFromFileDatabase(state); err != nil {
+				return err
+			}
+			if err := lsm.Restrict(); err != nil {
+				return err
+			}
+		}
+
 		if generate {
 			sign = true
 			if err := generateBundlesCmd.RunE(cmd, args); err != nil {

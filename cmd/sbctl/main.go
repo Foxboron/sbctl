@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"log/slog"
 	"os"
 	"strings"
 
@@ -13,14 +14,17 @@ import (
 	"github.com/foxboron/sbctl"
 	"github.com/foxboron/sbctl/config"
 	"github.com/foxboron/sbctl/logging"
+	"github.com/foxboron/sbctl/lsm"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 )
 
 type CmdOptions struct {
-	JsonOutput  bool
-	QuietOutput bool
-	Config      string
+	JsonOutput      bool
+	QuietOutput     bool
+	Config          string
+	DisableLandlock bool
+	Debug           bool
 }
 
 type cliCommand struct {
@@ -56,6 +60,8 @@ func baseFlags(cmd *cobra.Command) {
 	flags := cmd.PersistentFlags()
 	flags.BoolVar(&cmdOptions.JsonOutput, "json", false, "Output as json")
 	flags.BoolVar(&cmdOptions.QuietOutput, "quiet", false, "Mute info from logging")
+	flags.BoolVar(&cmdOptions.DisableLandlock, "disable-landlock", false, "Disable landlock sandboxing")
+	flags.BoolVar(&cmdOptions.Debug, "debug", false, "Enable verbose debug logging")
 	flags.StringVarP(&cmdOptions.Config, "config", "", "", "Path to configuration file")
 
 	cmd.PersistentPreRun = func(cmd *cobra.Command, args []string) {
@@ -115,7 +121,29 @@ func main() {
 			UnsetImmutable().
 			Open(),
 	}
+
+	// We need to set this after we have parsed stuff
+	rootCmd.PersistentPreRun = func(_ *cobra.Command, _ []string) {
+		if cmdOptions.DisableLandlock {
+			state.Config.Landlock = false
+		}
+
+		// Setup debug logging
+		opts := &slog.HandlerOptions{
+			Level: slog.LevelInfo,
+		}
+		if cmdOptions.Debug {
+			opts.Level = slog.LevelDebug
+		}
+		logger := slog.New(slog.NewTextHandler(os.Stdout, opts))
+		slog.SetDefault(logger)
+	}
+
 	ctx := context.WithValue(context.Background(), stateDataKey{}, state)
+
+	if state.Config.Landlock {
+		lsm.LandlockRulesFromConfig(state.Config)
+	}
 
 	// This returns i the flag is not found with a specific error
 	rootCmd.SetFlagErrorFunc(func(cmd *cobra.Command, err error) error {

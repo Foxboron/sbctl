@@ -8,6 +8,7 @@ import (
 	"github.com/foxboron/sbctl/config"
 	"github.com/foxboron/sbctl/hierarchy"
 	"github.com/foxboron/sbctl/logging"
+	"github.com/foxboron/sbctl/lsm"
 	"github.com/spf13/cobra"
 )
 
@@ -28,6 +29,15 @@ type JsonFile struct {
 
 func RunList(cmd *cobra.Command, args []string) error {
 	state := cmd.Context().Value(stateDataKey{}).(*config.State)
+
+	if state.Config.Landlock {
+		if err := sbctl.LandlockFromFileDatabase(state); err != nil {
+			return err
+		}
+		if err := lsm.Restrict(); err != nil {
+			return err
+		}
+	}
 
 	files := []JsonFile{}
 	var isSigned bool

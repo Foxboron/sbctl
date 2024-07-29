@@ -6,6 +6,7 @@ import (
 	"github.com/foxboron/sbctl"
 	"github.com/foxboron/sbctl/config"
 	"github.com/foxboron/sbctl/logging"
+	"github.com/foxboron/sbctl/lsm"
 	"github.com/spf13/cobra"
 )
 
@@ -18,6 +19,12 @@ var removeFileCmd = &cobra.Command{
 	Short: "Remove file from database",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		state := cmd.Context().Value(stateDataKey{}).(*config.State)
+
+		if state.Config.Landlock {
+			if err := lsm.Restrict(); err != nil {
+				return err
+			}
+		}
 
 		if len(args) < 1 {
 			logging.Println("Need to specify file")

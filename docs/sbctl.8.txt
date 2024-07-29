@@ -312,6 +312,14 @@ Options
         +
         Default: /etc/sbctl/sbctl.conf
 
+**--disable-landlock**::
+        Disables landlock sandboxing in sbctl.
+        +
+        See linkman:landlock[7].
+
+**--debug**::
+        Enable verbose debug logging. This will break the pretty printed text.
+
 
 Bundles
 -------
@@ -330,6 +338,16 @@ after each system update.
 
 Tip: systemd-boot will automatically show entries for any bundles found in
 *esp/EFI/Linux/+++*+++.efi*.
+
+
+Landlock
+--------
+sbctl supports landlock and will attempt to restrict access to filepaths to
+where it's needed during execution. Any attempts at establishing network access
+is also restricted.
+
+This feature can be disabled by setting **landlock: false** in the configuration
+file, or by passing **--disable-landlock** to sbctl.
 
 
 Option ROM
@@ -501,6 +519,7 @@ See Also
 linkman:bootctl[1]
 linkman:jq[1]
 linkman:sbctl.conf[5]
+linkman:landlock[7]
 
 Authors
 -------

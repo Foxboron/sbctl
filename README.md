@@ -103,23 +103,33 @@ Usage:
   sbctl [command]
 
 Available Commands:
-  bundle           Bundle the needed files for an EFI stub image
-  create-keys      Create a set of secure boot signing keys
-  enroll-keys      Enroll the current keys to EFI
-  generate-bundles Generate all EFI stub bundles
-  help             Help about any command
-  list-bundles     List stored bundles
-  list-files       List enrolled files
-  remove-bundle    Remove bundle from database
-  remove-file      Remove file from database
-  sign             Sign a file with secure boot keys
-  sign-all         Sign all enrolled files with secure boot keys
-  status           Show current boot status
-  verify           Find and check if files in the ESP are signed or not
+  bundle               Bundle the needed files for an EFI stub image
+  create-keys          Create a set of secure boot signing keys
+  enroll-keys          Enroll the current keys to EFI
+  export-enrolled-keys Export already enrolled keys from the system
+  generate-bundles     Generate all EFI stub bundles
+  help                 Help about any command
+  import-keys          Import keys into sbctl
+  list-bundles         List stored bundles
+  list-enrolled-keys   List enrolled keys on the system
+  list-files           List enrolled files
+  remove-bundle        Remove bundle from database
+  remove-file          Remove file from database
+  reset                Reset Secure Boot Keys
+  rotate-keys          Rotate secure boot keys with new keys.
+  setup                Setup sbctl
+  sign                 Sign a file with secure boot keys
+  sign-all             Sign all enrolled files with secure boot keys
+  status               Show current boot status
+  verify               Find and check if files in the ESP are signed or not
 
 Flags:
-  -h, --help   help for sbctl
-      --json   Output as json
+      --config string      Path to configuration file
+      --debug              debug logging
+      --disable-landlock   disable landlock
+  -h, --help               help for sbctl
+      --json               Output as json
+      --quiet              Mute info from logging
 
 Use "sbctl [command] --help" for more information about a command.
 ```

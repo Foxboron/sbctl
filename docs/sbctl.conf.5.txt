@@ -51,6 +51,11 @@ Options
     +
     Default: /var/lib/sbctl/bundles.json
 
+*landlock:* bool ::
+    Enable or disable the landlock sandboxing of sbctl.
+    +
+    Default: true
+
 *files:* [ [*path:* /path/to/file *output:* /path/to/output ], ... ]::
     A list of files sbctl will sign upon setup. It will be used to seed the
     files_db during initial setup.
@@ -111,6 +116,7 @@ An example of a /etc/sbctl/sbctl.conf file with the default values.
     guid: /var/lib/sbctl/GUID
     files_db: /var/lib/sbctl/files.json
     bundles_db: /var/lib/sbctl/bundles.json
+    landlock: true
     files:
     - path: /boot/vmlinuz-linux
       output: /boot/vmlinuz-linux
