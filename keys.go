@@ -63,7 +63,7 @@ func SignFile(state *config.State, kh *backend.KeyHierarchy, ev hierarchy.Hierar
 	// We want to write the file back with correct permissions
 	si, err := state.Fs.Stat(file)
 	if err != nil {
-		return fmt.Errorf("failed signing file: %w", err)
+		return fmt.Errorf("failed stat of file: %w", err)
 	}
 
 	peFile, err := state.Fs.Open(file)
