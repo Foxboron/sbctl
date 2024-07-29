@@ -44,28 +44,45 @@ func rotateCerts(state *config.State, hier hierarchy.Hierarchy, oldkeys *backend
 		return err
 	}
 
+	// Note:
+	// PK needs to be signed by the old key hierarchy, as old PK signs new PK
+	// However db and KEK needs to be signed by new key hierarchy, as new PK -> new KEK,
+	// and new KEK -> new Db
+
 	switch hier {
 	case hierarchy.PK:
-		cert := oldkeys.PK.CertificateBytes()
-		if err := efistate.PK.Remove(signature.CERT_X509_GUID, *guid, cert); err != nil {
-			return fmt.Errorf("can't remove old key from PK siglist: %v", err)
+		// fmt.Printf("Old PK: %s\n", oldkeys.PK.Certificate().SerialNumber.String())
+		// fmt.Printf("New PK: %s\n", newkeys.PK.Certificate().SerialNumber.String())
+		cert := oldkeys.PK.Certificate().Raw
+		if efistate.PK.SigDataExists(signature.CERT_X509_GUID, &signature.SignatureData{Owner: *guid, Data: cert}) {
+			if err := efistate.PK.Remove(signature.CERT_X509_GUID, *guid, cert); err != nil {
+				return fmt.Errorf("can't remove old key from PK siglist: %v", err)
+			}
 		}
 		efistate.PK.Append(signature.CERT_X509_GUID, *guid, newkeys.PK.CertificateBytes())
 		return efistate.EnrollKey(hier.Efivar(), oldkeys)
 	case hierarchy.KEK:
-		cert := oldkeys.KEK.CertificateBytes()
-		if err := efistate.KEK.Remove(signature.CERT_X509_GUID, *guid, cert); err != nil {
-			return fmt.Errorf("can't remove old key from KEK siglist: %v", err)
+		// fmt.Printf("Old KEK: %s\n", oldkeys.KEK.Certificate().SerialNumber.String())
+		// fmt.Printf("New KEK: %s\n", newkeys.KEK.Certificate().SerialNumber.String())
+		cert := oldkeys.KEK.Certificate().Raw
+		if efistate.KEK.SigDataExists(signature.CERT_X509_GUID, &signature.SignatureData{Owner: *guid, Data: cert}) {
+			if err := efistate.KEK.Remove(signature.CERT_X509_GUID, *guid, cert); err != nil {
+				return fmt.Errorf("can't remove old key from KEK siglist: %v", err)
+			}
 		}
 		efistate.KEK.Append(signature.CERT_X509_GUID, *guid, newkeys.KEK.CertificateBytes())
-		return efistate.EnrollKey(hier.Efivar(), oldkeys)
+		return efistate.EnrollKey(hier.Efivar(), newkeys)
 	case hierarchy.Db:
-		cert := oldkeys.Db.CertificateBytes()
-		if err := efistate.Db.Remove(signature.CERT_X509_GUID, *guid, cert); err != nil {
-			return fmt.Errorf("can't remove old key from Db siglist: %v", err)
+		// fmt.Printf("Old Db: %s\n", oldkeys.Db.Certificate().SerialNumber.String())
+		// fmt.Printf("New Db: %s\n", newkeys.Db.Certificate().SerialNumber.String())
+		cert := oldkeys.Db.Certificate().Raw
+		if efistate.Db.SigDataExists(signature.CERT_X509_GUID, &signature.SignatureData{Owner: *guid, Data: cert}) {
+			if err := efistate.Db.Remove(signature.CERT_X509_GUID, *guid, cert); err != nil {
+				return fmt.Errorf("can't remove old key from Db siglist: %v", err)
+			}
 		}
 		efistate.Db.Append(signature.CERT_X509_GUID, *guid, newkeys.Db.CertificateBytes())
-		return efistate.EnrollKey(hier.Efivar(), oldkeys)
+		return efistate.EnrollKey(hier.Efivar(), newkeys)
 	default:
 		return fmt.Errorf("unknown efivar hierarchy")
 	}
