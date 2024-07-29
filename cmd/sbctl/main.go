@@ -60,8 +60,8 @@ func baseFlags(cmd *cobra.Command) {
 	flags := cmd.PersistentFlags()
 	flags.BoolVar(&cmdOptions.JsonOutput, "json", false, "Output as json")
 	flags.BoolVar(&cmdOptions.QuietOutput, "quiet", false, "Mute info from logging")
-	flags.BoolVar(&cmdOptions.DisableLandlock, "disable-landlock", false, "disable landlock")
-	flags.BoolVar(&cmdOptions.Debug, "debug", false, "debug logging")
+	flags.BoolVar(&cmdOptions.DisableLandlock, "disable-landlock", false, "Disable landlock sandboxing")
+	flags.BoolVar(&cmdOptions.Debug, "debug", false, "Enable verbose debug logging")
 	flags.StringVarP(&cmdOptions.Config, "config", "", "", "Path to configuration file")
 
 	cmd.PersistentPreRun = func(cmd *cobra.Command, args []string) {
