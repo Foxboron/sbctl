@@ -43,6 +43,26 @@ type KeyHierarchy struct {
 	state *config.State
 }
 
+func (k *KeyHierarchy) GetConfig(keydir string) *config.Keys {
+	return &config.Keys{
+		PK: &config.KeyConfig{
+			Privkey: filepath.Join(keydir, "PK/PK.key"),
+			Pubkey:  filepath.Join(keydir, "PK/PK.pem"),
+			Type:    string(k.PK.Type()),
+		},
+		KEK: &config.KeyConfig{
+			Privkey: filepath.Join(keydir, "KEK/KEK.key"),
+			Pubkey:  filepath.Join(keydir, "KEK/KEK.pem"),
+			Type:    string(k.KEK.Type()),
+		},
+		Db: &config.KeyConfig{
+			Privkey: filepath.Join(keydir, "db/db.key"),
+			Pubkey:  filepath.Join(keydir, "db/db.pem"),
+			Type:    string(k.Db.Type()),
+		},
+	}
+}
+
 func NewKeyHierarchy(state *config.State) *KeyHierarchy {
 	return &KeyHierarchy{
 		state: state,
@@ -183,6 +203,8 @@ func createKey(state *config.State, backend string, hier hierarchy.Hierarchy, de
 	switch backend {
 	case "file", "":
 		return NewFileKey(hier, desc)
+	case "tpm":
+		return NewTPMKey(state.TPM, desc)
 	default:
 		return NewFileKey(hier, desc)
 	}
@@ -236,6 +258,8 @@ func readKey(state *config.State, keydir string, kc *config.KeyConfig, hier hier
 	switch t {
 	case FileBackend:
 		return FileKeyFromBytes(keyb, pemb)
+	case TPMBackend:
+		return TPMKeyFromBytes(state.TPM, keyb, pemb)
 	default:
 		return nil, fmt.Errorf("unknown key")
 	}
@@ -281,6 +305,8 @@ func GetBackendType(b []byte) (BackendType, error) {
 	switch block.Type {
 	case "PRIVATE KEY":
 		return FileBackend, nil
+	case "TSS2 PRIVATE KEY":
+		return TPMBackend, nil
 	default:
 		return "", fmt.Errorf("unknown file type: %s", block.Type)
 	}
@@ -299,6 +325,8 @@ func InitBackendFromKeys(state *config.State, priv, pem []byte, hier hierarchy.H
 	switch t {
 	case "file":
 		return FileKeyFromBytes(priv, pem)
+	case "tpm":
+		return TPMKeyFromBytes(state.TPM, priv, pem)
 	default:
 		return nil, fmt.Errorf("unknown key backend: %s", t)
 	}

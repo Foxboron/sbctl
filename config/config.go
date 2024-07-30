@@ -148,6 +148,10 @@ func (s *State) IsInstalled() bool {
 	return true
 }
 
+func (s *State) HasTPM() bool {
+	return s.TPM != nil
+}
+
 func (s *State) HasLandlock() bool {
 	if !s.Config.Landlock {
 		return false

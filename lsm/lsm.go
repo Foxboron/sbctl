@@ -28,6 +28,8 @@ func LandlockRulesFromConfig(conf *config.Config) {
 			conf.GUID,
 			conf.FilesDb,
 			conf.BundlesDb,
+			// Enable the TPM devices by default if they exist
+			"/dev/tpm0", "/dev/tpmrm0",
 		).IgnoreIfMissing(),
 	)
 }

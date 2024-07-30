@@ -1,15 +1,15 @@
 module github.com/foxboron/sbctl
 
-go 1.21
+go 1.22.0
 
-toolchain go1.22.3
+toolchain go1.22.5
 
 require (
 	github.com/fatih/color v1.17.0
 	github.com/foxboron/go-uefi v0.0.0-20240516213015-35289af04a75
 	github.com/goccy/go-yaml v1.11.3
 	github.com/google/go-attestation v0.5.1
-	github.com/google/go-tpm v0.9.0
+	github.com/google/go-tpm v0.9.1
 	github.com/google/uuid v1.4.0
 	github.com/hugelgupf/vmtest v0.0.0-20240110072021-f6f07acb7aa1
 	github.com/landlock-lsm/go-landlock v0.0.0-20240715193425-db0c8d6f1dff
@@ -24,7 +24,9 @@ require (
 	github.com/Netflix/go-expect v0.0.0-20220104043353-73e0943537d2 // indirect
 	github.com/creack/pty v1.1.21 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
+	github.com/foxboron/go-tpm-keyfiles v0.0.0-20240725205618-b7c5a84edf9d // indirect
 	github.com/google/certificate-transparency-go v1.1.2 // indirect
+	github.com/google/go-tpm-tools v0.4.4 // indirect
 	github.com/google/go-tspi v0.3.0 // indirect
 	github.com/google/goterm v0.0.0-20200907032337-555d40f16ae2 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
@@ -47,7 +49,7 @@ require (
 	github.com/ulikunitz/xz v0.5.11 // indirect
 	github.com/vishvananda/netlink v1.2.1-beta.2 // indirect
 	github.com/vishvananda/netns v0.0.4 // indirect
-	golang.org/x/crypto v0.23.0 // indirect
+	golang.org/x/crypto v0.25.0 // indirect
 	golang.org/x/mod v0.17.0 // indirect
 	golang.org/x/net v0.25.0 // indirect
 	golang.org/x/sync v0.7.0 // indirect

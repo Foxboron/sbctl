@@ -15,6 +15,7 @@ import (
 	"github.com/foxboron/sbctl/config"
 	"github.com/foxboron/sbctl/logging"
 	"github.com/foxboron/sbctl/lsm"
+	"github.com/google/go-tpm/tpm2/transport"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 )
@@ -113,8 +114,17 @@ func main() {
 
 	baseFlags(rootCmd)
 
+	// We save tpmerr and print it when we can print debug messages
+	rwc, tpmerr := transport.OpenTPM()
+	if tpmerr == nil {
+		defer rwc.Close()
+	}
+
 	state := &config.State{
-		Fs:     fs,
+		Fs: fs,
+		TPM: func() transport.TPMCloser {
+			return rwc
+		},
 		Config: conf,
 		Efivarfs: efivarfs.NewFS().
 			CheckImmutable().
@@ -137,6 +147,10 @@ func main() {
 		}
 		logger := slog.New(slog.NewTextHandler(os.Stdout, opts))
 		slog.SetDefault(logger)
+
+		if !state.HasTPM() {
+			slog.Debug("can't open tpm", slog.Any("err", tpmerr))
+		}
 	}
 
 	ctx := context.WithValue(context.Background(), stateDataKey{}, state)
