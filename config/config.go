@@ -49,6 +49,8 @@ func (k *Keys) GetKeysConfigs() []*KeyConfig {
 	}
 }
 
+// Note: Anything serialized as part of this struct will end up in a public
+// debug dump at some point, probably.
 type Config struct {
 	Landlock   bool          `json:"landlock"`
 	Keydir     string        `json:"keydir"`
