@@ -33,9 +33,6 @@ var (
 
 func PrintConfig(state *config.State) error {
 	if state.Config.Landlock {
-		lsm.RestrictAdditionalPaths(
-			landlock.RWFiles(cmdOptions.Config),
-		)
 		if err := lsm.Restrict(); err != nil {
 			return err
 		}
