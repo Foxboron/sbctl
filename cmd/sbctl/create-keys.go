@@ -58,7 +58,7 @@ func RunCreateKeys(state *config.State) error {
 	if !sbctl.CheckIfKeysInitialized(state.Fs, state.Config.Keydir) {
 		logging.Print("Creating secure boot keys...")
 
-		hier, err := backend.CreateKeys(state.Config)
+		hier, err := backend.CreateKeys(state)
 		if err != nil {
 			logging.NotOk("")
 			return fmt.Errorf("couldn't initialize secure boot: %w", err)

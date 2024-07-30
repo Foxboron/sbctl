@@ -23,12 +23,11 @@ var RSAKeySize = 4096
 
 type FileKey struct {
 	keytype BackendType
-	hier    hierarchy.Hierarchy
 	cert    *x509.Certificate
 	privkey *rsa.PrivateKey
 }
 
-func NewFileKey(hier hierarchy.Hierarchy, desc string) (*FileKey, error) {
+func NewFileKey(_ hierarchy.Hierarchy, desc string) (*FileKey, error) {
 	serialNumberLimit := new(big.Int).Lsh(big.NewInt(1), 128)
 	serialNumber, _ := rand.Int(rand.Reader, serialNumberLimit)
 	c := x509.Certificate{
@@ -59,7 +58,6 @@ func NewFileKey(hier hierarchy.Hierarchy, desc string) (*FileKey, error) {
 		keytype: FileBackend,
 		cert:    cert,
 		privkey: priv,
-		hier:    hier,
 	}, nil
 }
 
@@ -79,10 +77,10 @@ func ReadFileKey(vfs afero.Fs, dir string, hier hierarchy.Hierarchy) (*FileKey, 
 	if err != nil {
 		return nil, err
 	}
-	return FileKeyFromBytes(keyb, pemb, hier)
+	return FileKeyFromBytes(keyb, pemb)
 }
 
-func FileKeyFromBytes(keyb, pemb []byte, hier hierarchy.Hierarchy) (*FileKey, error) {
+func FileKeyFromBytes(keyb, pemb []byte) (*FileKey, error) {
 	block, _ := pem.Decode(keyb)
 	if block == nil {
 		return nil, fmt.Errorf("failed to parse pem block")
@@ -113,19 +111,13 @@ func FileKeyFromBytes(keyb, pemb []byte, hier hierarchy.Hierarchy) (*FileKey, er
 		keytype: FileBackend,
 		cert:    cert,
 		privkey: key,
-		hier:    hier,
 	}, nil
 }
 
-func (f *FileKey) Hierarchy() hierarchy.Hierarchy { return f.hier }
 func (f *FileKey) Type() BackendType              { return f.keytype }
-
 func (f *FileKey) Certificate() *x509.Certificate { return f.cert }
-func (f *FileKey) PrivateKey() any                { return f.privkey }
-
-func (f *FileKey) Signer() crypto.Signer { return f.privkey }
-
-func (f *FileKey) Description() string { return f.Certificate().Subject.SerialNumber }
+func (f *FileKey) Signer() crypto.Signer          { return f.privkey }
+func (f *FileKey) Description() string            { return f.Certificate().Subject.SerialNumber }
 
 func (f *FileKey) PrivateKeyBytes() []byte {
 	privateKeyBytes, err := x509.MarshalPKCS8PrivateKey(f.privkey)

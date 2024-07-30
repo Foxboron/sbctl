@@ -39,6 +39,14 @@ type KeyHierarchy struct {
 	PK  KeyBackend
 	KEK KeyBackend
 	Db  KeyBackend
+	// We need the callbacks
+	state *config.State
+}
+
+func NewKeyHierarchy(state *config.State) *KeyHierarchy {
+	return &KeyHierarchy{
+		state: state,
+	}
 }
 
 var (
@@ -100,11 +108,11 @@ func (k *KeyHierarchy) RotateKeyWithBackend(hier hierarchy.Hierarchy, backend Ba
 	var err error
 	switch hier {
 	case hierarchy.PK:
-		k.PK, err = createKey(string(backend), hier, k.PK.Description())
+		k.PK, err = createKey(k.state, string(backend), hier, k.PK.Description())
 	case hierarchy.KEK:
-		k.KEK, err = createKey(string(backend), hier, k.KEK.Description())
+		k.KEK, err = createKey(k.state, string(backend), hier, k.KEK.Description())
 	case hierarchy.Db:
-		k.Db, err = createKey(string(backend), hier, k.Db.Description())
+		k.Db, err = createKey(k.state, string(backend), hier, k.Db.Description())
 	}
 	return err
 }
@@ -168,7 +176,7 @@ func (k *KeyHierarchy) SignFile(hier hierarchy.Hierarchy, r io.ReaderAt) ([]byte
 	return peBinary.Bytes(), nil
 }
 
-func createKey(backend string, hier hierarchy.Hierarchy, desc string) (KeyBackend, error) {
+func createKey(state *config.State, backend string, hier hierarchy.Hierarchy, desc string) (KeyBackend, error) {
 	if desc == "" {
 		desc = hier.Description()
 	}
@@ -180,21 +188,22 @@ func createKey(backend string, hier hierarchy.Hierarchy, desc string) (KeyBacken
 	}
 }
 
-func CreateKeys(c *config.Config) (*KeyHierarchy, error) {
+func CreateKeys(state *config.State) (*KeyHierarchy, error) {
 	var hier KeyHierarchy
 	var err error
 
-	hier.PK, err = createKey(c.Keys.PK.Type, hierarchy.PK, c.Keys.PK.Description)
+	c := state.Config
+	hier.PK, err = createKey(state, c.Keys.PK.Type, hierarchy.PK, c.Keys.PK.Description)
 	if err != nil {
 		return nil, err
 	}
 
-	hier.KEK, err = createKey(c.Keys.KEK.Type, hierarchy.KEK, c.Keys.KEK.Description)
+	hier.KEK, err = createKey(state, c.Keys.KEK.Type, hierarchy.KEK, c.Keys.KEK.Description)
 	if err != nil {
 		return nil, err
 	}
 
-	hier.Db, err = createKey(c.Keys.Db.Type, hierarchy.Db, c.Keys.Db.Description)
+	hier.Db, err = createKey(state, c.Keys.Db.Type, hierarchy.Db, c.Keys.Db.Description)
 	if err != nil {
 		return nil, err
 	}
@@ -202,43 +211,67 @@ func CreateKeys(c *config.Config) (*KeyHierarchy, error) {
 	return &hier, nil
 }
 
-func readKey(vfs afero.Fs, keydir string, kc *config.KeyConfig, hier hierarchy.Hierarchy) (KeyBackend, error) {
-	switch kc.Type {
-	case "file", "":
-		return ReadFileKey(vfs, keydir, hier)
+func readKey(state *config.State, keydir string, kc *config.KeyConfig, hier hierarchy.Hierarchy) (KeyBackend, error) {
+	path := filepath.Join(keydir, hier.String())
+	keyname := filepath.Join(path, fmt.Sprintf("%s.key", hier.String()))
+	certname := filepath.Join(path, fmt.Sprintf("%s.pem", hier.String()))
+
+	// Read privatekey
+	keyb, err := fs.ReadFile(state.Fs, keyname)
+	if err != nil {
+		return nil, err
 	}
-	return nil, nil
+
+	// Read certificate
+	pemb, err := fs.ReadFile(state.Fs, certname)
+	if err != nil {
+		return nil, err
+	}
+
+	t, err := GetBackendType(keyb)
+	if err != nil {
+		return nil, err
+	}
+
+	switch t {
+	case FileBackend:
+		return FileKeyFromBytes(keyb, pemb)
+	default:
+		return nil, fmt.Errorf("unknown key")
+	}
 }
 
-func GetKeyBackend(vfs afero.Fs, c *config.Config, k hierarchy.Hierarchy) (KeyBackend, error) {
+func GetKeyBackend(state *config.State, k hierarchy.Hierarchy) (KeyBackend, error) {
+	c := state.Config
 	switch k {
 	case hierarchy.PK:
-		return readKey(vfs, c.Keydir, c.Keys.PK, k)
+		return readKey(state, c.Keydir, c.Keys.PK, k)
 	case hierarchy.KEK:
-		return readKey(vfs, c.Keydir, c.Keys.KEK, k)
+		return readKey(state, c.Keydir, c.Keys.KEK, k)
 	case hierarchy.Db:
-		return readKey(vfs, c.Keydir, c.Keys.Db, k)
+		return readKey(state, c.Keydir, c.Keys.Db, k)
 	}
 	return nil, nil
 }
 
-func GetKeyHierarchy(vfs afero.Fs, c *config.Config) (*KeyHierarchy, error) {
-	db, err := GetKeyBackend(vfs, c, hierarchy.Db)
+func GetKeyHierarchy(vfs afero.Fs, state *config.State) (*KeyHierarchy, error) {
+	db, err := GetKeyBackend(state, hierarchy.Db)
 	if err != nil {
 		return nil, err
 	}
-	kek, err := GetKeyBackend(vfs, c, hierarchy.KEK)
+	kek, err := GetKeyBackend(state, hierarchy.KEK)
 	if err != nil {
 		return nil, err
 	}
-	pk, err := GetKeyBackend(vfs, c, hierarchy.PK)
+	pk, err := GetKeyBackend(state, hierarchy.PK)
 	if err != nil {
 		return nil, err
 	}
 	return &KeyHierarchy{
-		PK:  pk,
-		KEK: kek,
-		Db:  db,
+		PK:    pk,
+		KEK:   kek,
+		Db:    db,
+		state: state,
 	}, nil
 }
 
@@ -258,14 +291,14 @@ func ImportKeys(keydir string) (*KeyHierarchy, error) {
 	return nil, nil
 }
 
-func InitBackendFromKeys(priv, pem []byte, hier hierarchy.Hierarchy) (KeyBackend, error) {
+func InitBackendFromKeys(state *config.State, priv, pem []byte, hier hierarchy.Hierarchy) (KeyBackend, error) {
 	t, err := GetBackendType(priv)
 	if err != nil {
 		return nil, err
 	}
 	switch t {
 	case "file":
-		return FileKeyFromBytes(priv, pem, hier)
+		return FileKeyFromBytes(priv, pem)
 	default:
 		return nil, fmt.Errorf("unknown key backend: %s", t)
 	}

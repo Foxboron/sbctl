@@ -56,7 +56,7 @@ var signCmd = &cobra.Command{
 			}
 		}
 
-		kh, err := backend.GetKeyHierarchy(state.Fs, state.Config)
+		kh, err := backend.GetKeyHierarchy(state.Fs, state)
 		if err != nil {
 			return err
 		}

@@ -21,7 +21,11 @@ func TestCreateKeys(t *testing.T) {
 			Db:  &config.KeyConfig{},
 		},
 	}
-	hier, err := CreateKeys(c)
+	state := &config.State{
+		Fs:     afero.NewOsFs(),
+		Config: c,
+	}
+	hier, err := CreateKeys(state)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
@@ -31,7 +35,7 @@ func TestCreateKeys(t *testing.T) {
 		t.Fatalf("%v", err)
 	}
 
-	key, err := GetKeyBackend(afero.NewOsFs(), c, hierarchy.PK)
+	key, err := GetKeyBackend(state, hierarchy.PK)
 	if err != nil {
 		log.Fatal(err)
 	}

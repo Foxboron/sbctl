@@ -48,7 +48,7 @@ func SignAll(state *config.State) error {
 	}
 	for _, entry := range files {
 
-		kh, err := backend.GetKeyHierarchy(state.Fs, state.Config)
+		kh, err := backend.GetKeyHierarchy(state.Fs, state)
 		if err != nil {
 			return err
 		}

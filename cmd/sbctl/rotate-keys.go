@@ -115,7 +115,7 @@ func RunRotateKeys(cmd *cobra.Command, args []string) error {
 }
 
 func rotateAllKeys(state *config.State, backupDir, newKeysDir string) error {
-	oldKeys, err := backend.GetKeyHierarchy(state.Fs, state.Config)
+	oldKeys, err := backend.GetKeyHierarchy(state.Fs, state)
 	if err != nil {
 		return fmt.Errorf("can't read old keys from dir: %v", err)
 	}
@@ -142,7 +142,7 @@ func rotateAllKeys(state *config.State, backupDir, newKeysDir string) error {
 
 	if newKeysDir == "" {
 		logging.Print("Creating secure boot keys...")
-		newKeyHierarchy, err = backend.CreateKeys(state.Config)
+		newKeyHierarchy, err = backend.CreateKeys(state)
 		if err != nil {
 			logging.NotOk("")
 			return fmt.Errorf("couldn't initialize secure boot: %w", err)
@@ -202,7 +202,7 @@ func rotateKey(state *config.State, hiera string, keyPath, certPath string) erro
 		return fmt.Errorf("a new certificate needs to be provided for a partial reset of %s", hiera)
 	}
 
-	oldKH, err := backend.GetKeyHierarchy(state.Fs, state.Config)
+	oldKH, err := backend.GetKeyHierarchy(state.Fs, state)
 	if err != nil {
 		return fmt.Errorf("can't read old keys from dir: %v", err)
 	}
@@ -218,7 +218,7 @@ func rotateKey(state *config.State, hiera string, keyPath, certPath string) erro
 	}
 
 	// We will mutate this to the new state
-	newKH, err := backend.GetKeyHierarchy(state.Fs, state.Config)
+	newKH, err := backend.GetKeyHierarchy(state.Fs, state)
 	if err != nil {
 		return fmt.Errorf("can't read old keys from dir: %v", err)
 	}
@@ -230,7 +230,7 @@ func rotateKey(state *config.State, hiera string, keyPath, certPath string) erro
 
 	switch hiera {
 	case hierarchy.PK.String():
-		bk, err := backend.InitBackendFromKeys(newKey, newCert, hierarchy.PK)
+		bk, err := backend.InitBackendFromKeys(state, newKey, newCert, hierarchy.PK)
 		if err != nil {
 			return fmt.Errorf("could not rotate PK: %v", err)
 		}
@@ -239,7 +239,7 @@ func rotateKey(state *config.State, hiera string, keyPath, certPath string) erro
 			return fmt.Errorf("could not rotate PK: %v", err)
 		}
 	case hierarchy.KEK.String():
-		bk, err := backend.InitBackendFromKeys(newKey, newCert, hierarchy.KEK)
+		bk, err := backend.InitBackendFromKeys(state, newKey, newCert, hierarchy.KEK)
 		if err != nil {
 			return fmt.Errorf("could not rotate KEK: %v", err)
 		}
@@ -248,7 +248,7 @@ func rotateKey(state *config.State, hiera string, keyPath, certPath string) erro
 			return fmt.Errorf("could not rotate KEK: %v", err)
 		}
 	case hierarchy.Db.String():
-		bk, err := backend.InitBackendFromKeys(newKey, newCert, hierarchy.Db)
+		bk, err := backend.InitBackendFromKeys(state, newKey, newCert, hierarchy.Db)
 		if err != nil {
 			return fmt.Errorf("could not rotate db: %v", err)
 		}

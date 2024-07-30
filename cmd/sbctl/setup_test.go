@@ -60,7 +60,7 @@ func TestSetup(t *testing.T) {
 	}
 
 	// Check that we can sign and verify a file
-	kh, err := backend.GetKeyHierarchy(state.Fs, state.Config)
+	kh, err := backend.GetKeyHierarchy(state.Fs, state)
 	if err != nil {
 		t.Fatalf("can't get key hierarchy: %v", err)
 	}
