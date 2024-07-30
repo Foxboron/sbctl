@@ -32,6 +32,9 @@ func TestSetup(t *testing.T) {
 
 	conf := config.DefaultConfig()
 
+	// Disable landlock in tests
+	conf.Landlock = false
+
 	// Include test file into our file config
 	conf.Files = []*config.FileConfig{
 		{"/boot/test.efi", "/boot/new.efi"},
