@@ -152,13 +152,16 @@ func SetupInstallation(state *config.State) error {
 }
 
 func MigrateSetup(state *config.State) error {
+	if !state.IsInstalled() {
+		return fmt.Errorf("sbctl is not installd")
+	}
 
 	newConf := config.DefaultConfig()
 	p := path.Dir(newConf.Keydir)
 
 	// abort early if it exists
-	if ok, _ := afero.DirExists(state.Fs, p); ok {
-		logging.Print("%s already exists!\n", p)
+	if ok, _ := afero.DirExists(state.Fs, newConf.Keydir); ok {
+		logging.Println("sbctl has already been migrated!")
 		return nil
 	}
 
