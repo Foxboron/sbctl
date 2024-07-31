@@ -13,13 +13,16 @@ var (
 )
 
 func LandlockRulesFromConfig(conf *config.Config) {
-	rules = append(rules, landlock.RWDirs(
-		filepath.Dir(conf.Keydir),
-		// It seems to me that RWFiles should work on efivars, but it doesn't.
-		// TODO: Lock this down to induvidual files?
-		"/sys/firmware/efi/efivars/",
-		"/sys/devices/virtual/dmi/id/",
-	).IgnoreIfMissing(),
+	rules = append(rules,
+		landlock.RODirs(
+			"/sys/devices/virtual/dmi/id/",
+		).IgnoreIfMissing(),
+		landlock.RWDirs(
+			filepath.Dir(conf.Keydir),
+			// It seems to me that RWFiles should work on efivars, but it doesn't.
+			// TODO: Lock this down to induvidual files?
+			"/sys/firmware/efi/efivars/",
+		).IgnoreIfMissing(),
 		landlock.ROFiles(
 			"/sys/kernel/security/tpm0/binary_bios_measurements",
 			// Go timezone reads /etc/localtime
