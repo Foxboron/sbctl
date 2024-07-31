@@ -155,6 +155,12 @@ func MigrateSetup(state *config.State) error {
 	newConf := config.DefaultConfig()
 	p := path.Dir(newConf.Keydir)
 
+	// abort early if it exists
+	if ok, _ := afero.DirExists(state.Fs, p); ok {
+		logging.Print("%s already exists!\n", p)
+		return nil
+	}
+
 	if err := state.Fs.MkdirAll(p, os.ModePerm); err != nil {
 		return err
 	}
@@ -173,11 +179,6 @@ func MigrateSetup(state *config.State) error {
 	// we dont need to do anything
 	if sbctl.DatabasePath == p {
 		logging.Println("Nothing to be done!")
-		return nil
-	}
-
-	if ok, _ := afero.DirExists(state.Fs, p); ok {
-		logging.Print("%s already exists!\n", p)
 		return nil
 	}
 
