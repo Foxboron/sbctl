@@ -20,6 +20,7 @@ import (
 
 var (
 	DatabasePath = "/usr/share/secureboot/"
+	Version      = "unknown"
 )
 
 // Functions that doesn't fit anywhere else

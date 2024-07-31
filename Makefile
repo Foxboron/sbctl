@@ -11,6 +11,10 @@ GOFLAGS ?= -buildmode=pie -trimpath
 
 TAG = $(shell git describe --abbrev=0 --tags)
 
+GIT_DESCRIBE = $(shell git describe | sed 's/-/./g;s/^v//;')
+
+VERSION = $(shell if test -f VERSION; then cat VERSION; else echo -n $(GIT_DESCRIBE) ; fi)
+
 all: man build
 build: sbctl
 man: $(MANS)
@@ -21,7 +25,7 @@ docs/sbctl.%: docs/sbctl.%.txt docs/asciidoc.conf
 
 .PHONY: sbctl
 sbctl:
-	go build -o $@ ./cmd/$@
+	go build -ldflags="-X github.com/foxboron/sbctl.Version=$(VERSION)" -o $@ ./cmd/$@
 
 .PHONY: completions
 completions: sbctl
@@ -42,8 +46,9 @@ install: sbctl completions man
 
 .PHONY: release
 release:
+	echo -n "$(GIT_DESCRIBE)" > VERSION
 	mkdir -p releases
-	git archive --prefix=${PROGNM}-${TAG}/ -o releases/${PROGNM}-${TAG}.tar.gz ${TAG};
+	git archive --prefix=${PROGNM}-${TAG}/ --add-file=VERSION -o releases/${PROGNM}-${TAG}.tar.gz ${TAG};
 	gpg --detach-sign -o releases/${PROGNM}-${TAG}.tar.gz.sig releases/${PROGNM}-${TAG}.tar.gz
 	gh release upload ${TAG} releases/${PROGNM}-${TAG}.tar.gz.sig releases/${PROGNM}-${TAG}.tar.gz ${TAG}
 

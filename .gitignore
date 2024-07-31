@@ -3,3 +3,4 @@ releases/*
 /sbctl
 docs/*.8
 rootfs*
+VERSION
