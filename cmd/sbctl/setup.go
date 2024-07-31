@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"path/filepath"
 
 	"github.com/foxboron/sbctl"
 	"github.com/foxboron/sbctl/backend"
@@ -167,7 +168,7 @@ func MigrateSetup(state *config.State) error {
 
 	if state.Config.Landlock {
 		lsm.RestrictAdditionalPaths(
-			landlock.RWDirs(sbctl.DatabasePath),
+			landlock.RWDirs(filepath.Dir(filepath.Clean(sbctl.DatabasePath))),
 			landlock.RWDirs(p),
 		)
 		if err := lsm.Restrict(); err != nil {
