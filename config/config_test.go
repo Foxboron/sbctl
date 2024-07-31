@@ -11,7 +11,7 @@ keydir: /etc/sbctl/keys
 guid: /var/lib/sbctl/GUID
 files_db: /var/lib/sbctl/files.db
 bundles_db: /var/lib/sbctl/bundles.db
-vendor_keys:
+db_additions:
   - microsoft
 files:
   - path: /boot/vmlinuz-linux-lts

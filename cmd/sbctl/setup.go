@@ -55,6 +55,7 @@ func PrintConfig(state *config.State) error {
 			return err
 		}
 		state.Config.Keys = kh.GetConfig(state.Config.Keydir)
+		state.Config.DbAdditions = sbctl.GetEnrolledVendorCerts()
 	}
 
 	// Setup the files

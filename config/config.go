@@ -52,14 +52,14 @@ func (k *Keys) GetKeysConfigs() []*KeyConfig {
 // Note: Anything serialized as part of this struct will end up in a public
 // debug dump at some point, probably.
 type Config struct {
-	Landlock   bool          `json:"landlock"`
-	Keydir     string        `json:"keydir"`
-	GUID       string        `json:"guid"`
-	FilesDb    string        `json:"files_db"`
-	BundlesDb  string        `json:"bundles_db"`
-	VendorKeys []string      `json:"vendor_keys,omitempty"`
-	Files      []*FileConfig `json:"files,omitempty"`
-	Keys       *Keys         `json:"keys"`
+	Landlock    bool          `json:"landlock"`
+	Keydir      string        `json:"keydir"`
+	GUID        string        `json:"guid"`
+	FilesDb     string        `json:"files_db"`
+	BundlesDb   string        `json:"bundles_db"`
+	DbAdditions []string      `json:"db_additions,omitempty"`
+	Files       []*FileConfig `json:"files,omitempty"`
+	Keys        *Keys         `json:"keys"`
 }
 
 func (c *Config) GetGUID(vfs afero.Fs) (*util.EFIGUID, error) {

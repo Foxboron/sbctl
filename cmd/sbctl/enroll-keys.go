@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/foxboron/go-uefi/efi/signature"
@@ -294,6 +295,15 @@ func RunEnrollKeys(state *config.State) error {
 	if len(enrollKeysCmdOptions.BuiltinFirmwareCerts) >= 1 {
 		oems = append(oems, "firmware-builtin")
 	}
+
+	if len(state.Config.DbAdditions) != 0 {
+		for _, k := range state.Config.DbAdditions {
+			if !slices.Contains(oems, k) {
+				oems = append(oems, k)
+			}
+		}
+	}
+
 	if !enrollKeysCmdOptions.IgnoreImmutable && enrollKeysCmdOptions.Export.Value == "" {
 		if err := sbctl.CheckImmutable(state.Fs); err != nil {
 			return err

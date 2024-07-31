@@ -56,6 +56,12 @@ Options
     +
     Default: true
 
+*db_additions:* [ options... ]
+    Include additional keys or checksums into the authorization database for
+    Secure Boot. These values are synonymous with the flags passed to *sbctl enroll-keys*.
+    +
+    Valid values: microsoft, tpm-eventlog, firmware-builtin, custom
+
 *files:* [ [*path:* /path/to/file *output:* /path/to/output ], ... ]::
     A list of files sbctl will sign upon setup. It will be used to seed the
     files_db during initial setup.
@@ -117,6 +123,8 @@ An example of a /etc/sbctl/sbctl.conf file with the default values.
     files_db: /var/lib/sbctl/files.json
     bundles_db: /var/lib/sbctl/bundles.json
     landlock: true
+    db_additions:
+    - microsoft
     files:
     - path: /boot/vmlinuz-linux
       output: /boot/vmlinuz-linux
