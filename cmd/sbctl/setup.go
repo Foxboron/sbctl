@@ -151,8 +151,13 @@ func SetupInstallation(state *config.State) error {
 }
 
 func MigrateSetup(state *config.State) error {
+
 	newConf := config.DefaultConfig()
 	p := path.Dir(newConf.Keydir)
+
+	if err := state.Fs.MkdirAll(p, os.ModePerm); err != nil {
+		return err
+	}
 
 	if state.Config.Landlock {
 		lsm.RestrictAdditionalPaths(
