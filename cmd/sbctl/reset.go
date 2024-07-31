@@ -135,7 +135,7 @@ func resetDatabase(state *config.State, ev efivar.Efivar, certPaths ...string) e
 		}
 	}
 
-	kh, err := backend.GetKeyHierarchy(state.Fs, state.Config)
+	kh, err := backend.GetKeyHierarchy(state.Fs, state)
 	if err != nil {
 		return err
 	}

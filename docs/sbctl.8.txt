@@ -79,7 +79,6 @@ EFI signing commands
                 +
                 Default: "db,KEK"
 
-
         *--yes-this-might-brick-my-machine*, **--yolo**;;
                 Ignore the Option ROM error and continue enrolling keys into the
                 UEFI firmware.
@@ -99,15 +98,45 @@ EFI signing commands
                 Valid values are: esl, auth.
 
         *-p*, *--partial*;;
-               Enroll keys only for the hierarchy specified.
-               + 
-               Valid values are: db, KEK, PK.
+                Enroll keys only for the hierarchy specified.
+                + 
+                Valid values are: db, KEK, PK.
 
         *--custom-bytes*;;
-               Enroll a custom bytefile provided by its path to the efivar specified by partial. 
+                Enroll a custom bytefile provided by its path to the efivar specified by partial. 
 
         *-a*, *--append*;;
-               Instead of replacing the currently enrolled keys, append the provided one.
+                Instead of replacing the currently enrolled keys, append the provided one.
+
+        *--keytype*;;
+                Set the keytype for all signing keys used by sbctl. This
+                includes PK, KEK and db keys.
+                +
+                Default: file 
+                +
+                Valid values are: file, tpm
+                
+        *--pk-keytype*;;
+                Set the PK key type.
+                +
+                Default: file 
+                +
+                Valid values are: file, tpm
+
+        *--kek-keytype*;;
+                Set the KEK key type.
+                +
+                Default: file 
+                +
+                Valid values are: file, tpm
+
+        *--db-keytype*;;
+                Set the db key type.
+                +
+                Default: file 
+                +
+                Valid values are: file, tpm
+
 
 **sign** <FILE>...::
         Signs an EFI binary with the created key. The file will be checked for
@@ -193,6 +222,35 @@ EFI signing commands
 
         *-c*, *--cert-file*;;
                Certificate file to be appended for the specified hierarchy.
+
+        *--keytype*;;
+                Set the keytype for all signing keys used by sbctl. This
+                includes PK, KEK and db keys.
+                +
+                Default: file 
+                +
+                Valid values are: file, tpm
+                
+        *--pk-keytype*;;
+                Set the PK key type.
+                +
+                Default: file 
+                +
+                Valid values are: file, tpm
+
+        *--kek-keytype*;;
+                Set the KEK key type.
+                +
+                Default: file 
+                +
+                Valid values are: file, tpm
+
+        *--db-keytype*;;
+                Set the db key type.
+                +
+                Default: file 
+                +
+                Valid values are: file, tpm
 
 **export-enrolled-keys**::
         Export already enrolled keys from the system.
@@ -338,6 +396,28 @@ after each system update.
 
 Tip: systemd-boot will automatically show entries for any bundles found in
 *esp/EFI/Linux/+++*+++.efi*.
+
+Supported key types
+-------------------
+
+sbctl currently supports storing keys as plain unencrypted files, or as TPM
+shielded keys.
+
+Plain unencrypted files (*file*) should only be used when the root partition is
+encrypted. This is the default key type for historic reasons. File keys are
+hardcoded to RSA 4098.
+
+TPM shielded keys (*tpm*) are shielded inside the TPM and available if there is
+an accessible TPM on the system. TPM policies are not supported which means we
+can't seal keys towards the system state. Note that TPM keys are hardcoded to
+RSA 2048, which is usually the highest bit strength supported by TPMs.
+
+When creating a key hierarchy for Secure Boot, the user can decide which key
+type each of the keys in the hierarchy gets. Because TPMs can be slow to sign,
+it's generally adviced to keep PK and KEK in the TPM, while the db key can be a
+standard *file* key.
+
+Note that password protection is currently not supported.
 
 
 Landlock

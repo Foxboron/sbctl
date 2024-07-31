@@ -16,7 +16,7 @@ var (
 	exportPath                       string
 	databasePath                     string
 	Keytype                          string
-	PKKeyType, KEKKeyType, DbKeyType string
+	PKKeytype, KEKKeytype, DbKeytype string
 )
 
 var createKeysCmd = &cobra.Command{
@@ -50,6 +50,23 @@ func RunCreateKeys(state *config.State) error {
 		return err
 	}
 
+	// Should be own flag type
+	if Keytype != "" && (Keytype == "file" || Keytype == "tpm") {
+		state.Config.Keys.PK.Type = Keytype
+		state.Config.Keys.KEK.Type = Keytype
+		state.Config.Keys.Db.Type = Keytype
+	} else {
+		if PKKeytype != "" && (PKKeytype == "file" || PKKeytype == "tpm") {
+			state.Config.Keys.PK.Type = PKKeytype
+		}
+		if KEKKeytype != "" && (KEKKeytype == "file" || KEKKeytype == "tpm") {
+			state.Config.Keys.KEK.Type = KEKKeytype
+		}
+		if DbKeytype != "" && (DbKeytype == "file" || DbKeytype == "tpm") {
+			state.Config.Keys.Db.Type = DbKeytype
+		}
+	}
+
 	uuid, err := sbctl.CreateGUID(state.Fs, state.Config.GUID)
 	if err != nil {
 		return err
@@ -58,7 +75,7 @@ func RunCreateKeys(state *config.State) error {
 	if !sbctl.CheckIfKeysInitialized(state.Fs, state.Config.Keydir) {
 		logging.Print("Creating secure boot keys...")
 
-		hier, err := backend.CreateKeys(state.Config)
+		hier, err := backend.CreateKeys(state)
 		if err != nil {
 			logging.NotOk("")
 			return fmt.Errorf("couldn't initialize secure boot: %w", err)
@@ -80,10 +97,10 @@ func createKeysCmdFlags(cmd *cobra.Command) {
 	f := cmd.Flags()
 	f.StringVarP(&exportPath, "export", "e", "", "export file path")
 	f.StringVarP(&databasePath, "database-path", "d", "", "location to create GUID file")
-	f.StringVarP(&Keytype, "keytype", "", "file", "key type for all keys")
-	f.StringVarP(&PKKeyType, "pk-type", "", "file", "PK key type (file | tpm)")
-	f.StringVarP(&KEKKeyType, "kek-type", "", "file", "PK key type (file | tpm)")
-	f.StringVarP(&DbKeyType, "db-type", "", "file", "PK key type (file | tpm)")
+	f.StringVarP(&Keytype, "keytype", "", "", "key type for all keys")
+	f.StringVarP(&PKKeytype, "pk-keytype", "", "", "PK key type (default: file)")
+	f.StringVarP(&KEKKeytype, "kek-keytype", "", "", "KEK key type (default: file)")
+	f.StringVarP(&DbKeytype, "db-keytype", "", "", "db key type (defualt: file)")
 }
 
 func init() {

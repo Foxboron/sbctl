@@ -6,6 +6,7 @@ import (
 	"path"
 
 	"github.com/foxboron/sbctl"
+	"github.com/foxboron/sbctl/backend"
 	"github.com/foxboron/sbctl/config"
 	"github.com/foxboron/sbctl/logging"
 	"github.com/foxboron/sbctl/lsm"
@@ -47,6 +48,12 @@ func PrintConfig(state *config.State) error {
 		if err != nil {
 			return err
 		}
+	} else {
+		kh, err := backend.GetKeyHierarchy(state.Fs, state)
+		if err != nil {
+			return err
+		}
+		state.Config.Keys = kh.GetConfig(state.Config.Keydir)
 	}
 
 	// Setup the files
