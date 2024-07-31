@@ -151,17 +151,18 @@ func SetupInstallation(state *config.State) error {
 }
 
 func MigrateSetup(state *config.State) error {
+	newConf := config.DefaultConfig()
+	p := path.Dir(newConf.Keydir)
+
 	if state.Config.Landlock {
 		lsm.RestrictAdditionalPaths(
 			landlock.RWDirs(sbctl.DatabasePath),
+			landlock.RWDirs(p),
 		)
 		if err := lsm.Restrict(); err != nil {
 			return err
 		}
 	}
-
-	newConf := config.DefaultConfig()
-	p := path.Dir(newConf.Keydir)
 
 	// If state.Config.Keydir is the same as sbctl.DatabasePath
 	// we dont need to do anything
