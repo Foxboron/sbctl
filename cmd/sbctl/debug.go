@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/foxboron/sbctl"
 	"github.com/foxboron/sbctl/config"
 	"github.com/foxboron/sbctl/logging"
 	"github.com/goccy/go-yaml"
@@ -107,6 +108,10 @@ func ProduceDebugInformation(state *config.State) error {
 		return err
 	}
 	if err := writeTw("config.json", configbj); err != nil {
+		return err
+	}
+
+	if err := writeTw("VERSION", []byte(sbctl.Version)); err != nil {
 		return err
 	}
 	return nil
