@@ -18,6 +18,7 @@ func LandlockRulesFromConfig(conf *config.Config) {
 		// It seems to me that RWFiles should work on efivars, but it doesn't.
 		// TODO: Lock this down to induvidual files?
 		"/sys/firmware/efi/efivars/",
+		"/sys/devices/virtual/dmi/id/",
 	).IgnoreIfMissing(),
 		landlock.ROFiles(
 			"/sys/kernel/security/tpm0/binary_bios_measurements",
