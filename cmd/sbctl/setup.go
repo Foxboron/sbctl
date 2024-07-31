@@ -190,8 +190,10 @@ func MigrateSetup(state *config.State) error {
 	if err := state.Fs.Rename(path.Join(p, "files.db"), newConf.FilesDb); err != nil {
 		return err
 	}
-	if err := state.Fs.Rename(path.Join(p, "bundles.db"), newConf.FilesDb); err != nil {
-		return err
+	if ok, _ := afero.Exists(state.Fs, path.Join(p, "bundles.db")); ok {
+		if err := state.Fs.Rename(path.Join(p, "bundles.db"), newConf.BundlesDb); err != nil {
+			return err
+		}
 	}
 	logging.Ok("")
 
