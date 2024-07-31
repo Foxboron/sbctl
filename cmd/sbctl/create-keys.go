@@ -3,12 +3,14 @@ package main
 import (
 	"fmt"
 	"path"
+	"path/filepath"
 
 	"github.com/foxboron/sbctl"
 	"github.com/foxboron/sbctl/backend"
 	"github.com/foxboron/sbctl/config"
 	"github.com/foxboron/sbctl/logging"
 	"github.com/foxboron/sbctl/lsm"
+	"github.com/landlock-lsm/go-landlock/landlock"
 	"github.com/spf13/cobra"
 )
 
@@ -30,6 +32,9 @@ var createKeysCmd = &cobra.Command{
 
 func RunCreateKeys(state *config.State) error {
 	if state.Config.Landlock {
+		lsm.RestrictAdditionalPaths(
+			landlock.RWDirs(filepath.Dir(filepath.Dir(filepath.Clean(state.Config.Keydir)))),
+		)
 		if err := lsm.Restrict(); err != nil {
 			return err
 		}
