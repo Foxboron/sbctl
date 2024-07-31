@@ -22,6 +22,8 @@ var generateBundlesCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		state := cmd.Context().Value(stateDataKey{}).(*config.State)
 
+		logging.Errorf("The bundle/uki support in sbctl is deprecated. Please move to dracut/mkinitcpio/ukify.")
+
 		logging.Println("Generating EFI bundles....")
 		out_create := true
 		out_sign := true

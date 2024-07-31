@@ -382,6 +382,8 @@ Options
 Bundles
 -------
 
+Note: This is being deprecated. Please move to dracut/mkinitcpio/ukify.
+
 Normally, only the kernel is signed with your secure boot keys. This means the
 kernel command line and initramfs can be changed without possibility of verification.
 

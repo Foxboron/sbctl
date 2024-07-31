@@ -30,6 +30,8 @@ var bundleCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		state := cmd.Context().Value(stateDataKey{}).(*config.State)
 
+		logging.Errorf("The bundle/uki support in sbctl is deprecated. Please move to dracut/mkinitcpio/ukify.")
+
 		if len(args) < 1 {
 			logging.Print("Requires a file to sign...\n")
 			os.Exit(1)
