@@ -10,7 +10,6 @@ import (
 	"github.com/foxboron/sbctl/lsm"
 	"github.com/landlock-lsm/go-landlock/landlock"
 
-	ll "github.com/landlock-lsm/go-landlock/landlock/syscall"
 	"github.com/spf13/afero"
 )
 
@@ -62,11 +61,6 @@ func SigningEntryIter(state *config.State, fn func(s *SigningEntry) error) error
 	}
 	return nil
 }
-
-const (
-	// We open the file with O_TRUNC
-	accessFile landlock.AccessFSSet = ll.AccessFSExecute | ll.AccessFSWriteFile | ll.AccessFSReadFile | ll.AccessFSTruncate
-)
 
 func LandlockFromFileDatabase(state *config.State) error {
 	var llrules []landlock.Rule
