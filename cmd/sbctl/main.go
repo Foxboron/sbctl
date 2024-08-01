@@ -64,15 +64,6 @@ func baseFlags(cmd *cobra.Command) {
 	flags.BoolVar(&cmdOptions.DisableLandlock, "disable-landlock", false, "Disable landlock sandboxing")
 	flags.BoolVar(&cmdOptions.Debug, "debug", false, "Enable verbose debug logging")
 	flags.StringVarP(&cmdOptions.Config, "config", "", "", "Path to configuration file")
-
-	cmd.PersistentPreRun = func(cmd *cobra.Command, args []string) {
-		if cmdOptions.JsonOutput {
-			logging.PrintOff()
-		}
-		if cmdOptions.QuietOutput {
-			logging.DisableInfo = true
-		}
-	}
 }
 
 func JsonOut(v interface{}) error {
@@ -134,6 +125,12 @@ func main() {
 
 	// We need to set this after we have parsed stuff
 	rootCmd.PersistentPreRun = func(_ *cobra.Command, _ []string) {
+		if cmdOptions.JsonOutput {
+			logging.PrintOff()
+		}
+		if cmdOptions.QuietOutput {
+			logging.DisableInfo = true
+		}
 		if cmdOptions.DisableLandlock {
 			state.Config.Landlock = false
 		}
