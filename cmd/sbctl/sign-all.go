@@ -22,7 +22,8 @@ var signAllCmd = &cobra.Command{
 	Short: "Sign all enrolled files with secure boot keys",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		state := cmd.Context().Value(stateDataKey{}).(*config.State)
-		if state.Config.Landlock {
+		// Don't run landlock if we are making UKIs
+		if state.Config.Landlock && !generate {
 			if err := sbctl.LandlockFromFileDatabase(state); err != nil {
 				return err
 			}
