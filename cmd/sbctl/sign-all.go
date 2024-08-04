@@ -21,6 +21,7 @@ var signAllCmd = &cobra.Command{
 	Use:   "sign-all",
 	Short: "Sign all enrolled files with secure boot keys",
 	RunE: func(cmd *cobra.Command, args []string) error {
+		var gerr error
 		state := cmd.Context().Value(stateDataKey{}).(*config.State)
 		if state.Config.Landlock {
 			if err := sbctl.LandlockFromFileDatabase(state); err != nil {
@@ -34,14 +35,20 @@ var signAllCmd = &cobra.Command{
 		if generate {
 			sign = true
 			if err := generateBundlesCmd.RunE(cmd, args); err != nil {
+				gerr = ErrSilent
 				logging.Error(err)
 			}
 		}
-		return SignAll(state)
+		serr := SignAll(state)
+		if serr != nil || gerr != nil {
+			return ErrSilent
+		}
+		return nil
 	},
 }
 
 func SignAll(state *config.State) error {
+	var signerr error
 	files, err := sbctl.ReadFileDatabase(state.Fs, state.Config.FilesDb)
 	if err != nil {
 		return err
@@ -58,6 +65,8 @@ func SignAll(state *config.State) error {
 			logging.Print("File has already been signed %s\n", entry.OutputFile)
 		} else if err != nil {
 			logging.Error(fmt.Errorf("failed signing %s: %w", entry.File, err))
+			// Ensure we are getting os.Exit(1)
+			signerr = ErrSilent
 			continue
 		} else {
 			logging.Ok("Signed %s", entry.OutputFile)
@@ -68,9 +77,8 @@ func SignAll(state *config.State) error {
 		if err := sbctl.WriteFileDatabase(state.Fs, state.Config.FilesDb, files); err != nil {
 			return err
 		}
-
 	}
-	return nil
+	return signerr
 }
 
 func signAllCmdFlags(cmd *cobra.Command) {
