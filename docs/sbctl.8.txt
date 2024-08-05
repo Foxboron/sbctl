@@ -403,7 +403,7 @@ shielded keys.
 
 Plain unencrypted files (*file*) should only be used when the root partition is
 encrypted. This is the default key type for historic reasons. File keys are
-hardcoded to RSA 4098.
+hardcoded to RSA 4096.
 
 TPM shielded keys (*tpm*) are shielded inside the TPM and available if there is
 an accessible TPM on the system. TPM policies are not supported which means we
