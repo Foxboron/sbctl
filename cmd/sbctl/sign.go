@@ -11,6 +11,7 @@ import (
 	"github.com/foxboron/sbctl/logging"
 	"github.com/foxboron/sbctl/lsm"
 	"github.com/landlock-lsm/go-landlock/landlock"
+	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 )
 
@@ -30,6 +31,8 @@ var signCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
+		var rules []landlock.Rule
+
 		// Ensure we have absolute paths
 		file, err := filepath.Abs(args[0])
 		if err != nil {
@@ -37,20 +40,23 @@ var signCmd = &cobra.Command{
 		}
 		if output == "" {
 			output = file
+			rules = append(rules, lsm.TruncFile(file).IgnoreIfMissing())
 		} else {
 			output, err = filepath.Abs(output)
 			if err != nil {
 				return err
 			}
+			// Set input file to RO and output dir/file to RW
+			rules = append(rules, landlock.ROFiles(file).IgnoreIfMissing())
+			if ok, _ := afero.Exists(state.Fs, output); ok {
+				rules = append(rules, lsm.TruncFile(output))
+			} else {
+				rules = append(rules, landlock.RWDirs(filepath.Dir(output)))
+			}
 		}
 
 		if state.Config.Landlock {
-			lsm.RestrictAdditionalPaths(
-				// TODO: This doesn't work quite how I want it to
-				// setting RWFiles to the path gets EACCES
-				// but setting RWDirs on the dir is fine
-				landlock.RWDirs(filepath.Dir(output)),
-			)
+			lsm.RestrictAdditionalPaths(rules...)
 			if err := lsm.Restrict(); err != nil {
 				return err
 			}

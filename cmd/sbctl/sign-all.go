@@ -23,7 +23,8 @@ var signAllCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		var gerr error
 		state := cmd.Context().Value(stateDataKey{}).(*config.State)
-		if state.Config.Landlock {
+		// Don't run landlock if we are making UKIs
+		if state.Config.Landlock && !generate {
 			if err := sbctl.LandlockFromFileDatabase(state); err != nil {
 				return err
 			}

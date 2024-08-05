@@ -10,7 +10,6 @@ import (
 	"github.com/foxboron/sbctl/lsm"
 	"github.com/landlock-lsm/go-landlock/landlock"
 
-	ll "github.com/landlock-lsm/go-landlock/landlock/syscall"
 	"github.com/spf13/afero"
 )
 
@@ -63,11 +62,6 @@ func SigningEntryIter(state *config.State, fn func(s *SigningEntry) error) error
 	return nil
 }
 
-const (
-	// We open the file with O_TRUNC
-	accessFile landlock.AccessFSSet = ll.AccessFSExecute | ll.AccessFSWriteFile | ll.AccessFSReadFile | ll.AccessFSTruncate
-)
-
 func LandlockFromFileDatabase(state *config.State) error {
 	var llrules []landlock.Rule
 	files, err := ReadFileDatabase(state.Fs, state.Config.FilesDb)
@@ -75,16 +69,25 @@ func LandlockFromFileDatabase(state *config.State) error {
 		return err
 	}
 	for _, entry := range files {
-		llrules = append(llrules,
-			landlock.PathAccess(accessFile, entry.File),
-		)
+		if entry.File == entry.OutputFile {
+			// If file is the same as output, set RW+Trunc on file
+			llrules = append(llrules,
+				lsm.TruncFile(entry.File).IgnoreIfMissing(),
+			)
+		}
 		if entry.File != entry.OutputFile {
-			// We do an RWDirs on the directory and a RWFiles on the file itself.  it
-			// should be noted that the output file might not exist at this time
-			llrules = append(llrules, landlock.RWDirs(
-				filepath.Dir(entry.File),
-			),
-				landlock.RWFiles(entry.File).IgnoreIfMissing())
+			// Set input file to RO, ignore if missing so we can bubble a useable
+			// error to the user
+			llrules = append(llrules, landlock.ROFiles(entry.File).IgnoreIfMissing())
+
+			// Check if output file exists
+			// if it does we set RW on the file directly
+			// if it doesnt, we set RW on the directory
+			if ok, _ := afero.Exists(state.Fs, entry.OutputFile); ok {
+				llrules = append(llrules, lsm.TruncFile(entry.OutputFile))
+			} else {
+				llrules = append(llrules, landlock.RWDirs(filepath.Dir(entry.OutputFile)))
+			}
 		}
 	}
 	lsm.RestrictAdditionalPaths(llrules...)

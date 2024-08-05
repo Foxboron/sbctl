@@ -6,11 +6,20 @@ import (
 
 	"github.com/foxboron/sbctl/config"
 	"github.com/landlock-lsm/go-landlock/landlock"
+
+	ll "github.com/landlock-lsm/go-landlock/landlock/syscall"
 )
 
 var (
 	rules []landlock.Rule
+
+	// Include file truncation
+	truncFile landlock.AccessFSSet = ll.AccessFSExecute | ll.AccessFSWriteFile | ll.AccessFSReadFile | ll.AccessFSTruncate
 )
+
+func TruncFile(p string) landlock.FSRule {
+	return landlock.PathAccess(truncFile, p)
+}
 
 func LandlockRulesFromConfig(conf *config.Config) {
 	rules = append(rules,

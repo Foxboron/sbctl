@@ -9,7 +9,6 @@ import (
 	"github.com/foxboron/sbctl/config"
 	"github.com/foxboron/sbctl/hierarchy"
 	"github.com/foxboron/sbctl/logging"
-	"github.com/foxboron/sbctl/lsm"
 	"github.com/spf13/cobra"
 )
 
@@ -29,11 +28,11 @@ var listBundlesCmd = &cobra.Command{
 
 		logging.Errorf("The bundle/uki support in sbctl is deprecated. Please move to dracut/mkinitcpio/ukify.")
 
-		if state.Config.Landlock {
-			if err := lsm.Restrict(); err != nil {
-				return err
-			}
-		}
+		// if state.Config.Landlock {
+		// 	if err := lsm.Restrict(); err != nil {
+		// 		return err
+		// 	}
+		// }
 
 		bundles := []JsonBundle{}
 		var isSigned bool
