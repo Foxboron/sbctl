@@ -34,13 +34,9 @@ EFI signing commands
 
         *-e*, *--export*;;
                 The directory to persist the exported keys.
-                +
-                Default: "/usr/share/secureboot/keys/"
 
         *-d*, *--database-path*;;
                 Path to save the GUID file when generating keys.
-                +
-                Default: "/usr/share/secureboot/"
 
 **enroll-keys**::
         Enrolls the created key into the EFI variables.
@@ -65,8 +61,8 @@ EFI signing commands
                 This feature is experimental
 
         *-c*, *--custom*;;
-                Enroll custom KEK and db certificates from "/usr/share/secureboot/keys/custom/KEK/",
-                "/usr/share/secureboot/keys/custom/db/",
+                Enroll custom KEK and db certificates from "/var/lib/sbctl/keys/custom/KEK/",
+                "/var/lib/sbctl/keys/custom/db/",
                 respectively.
 
         *-f*, *--firmware-builtin*;;
@@ -449,7 +445,7 @@ not be enabled unless no other way to enter key management is provided.
 If this step is not completed, enrolling custom keys will be rejected by the firmware.
 
 Next is creating the keys for secure boot. 'create-keys' creates the key
-hierarchy needed for secure boot into "/usr/share/secureboot".
+hierarchy needed for secure boot into "/var/lib/sbctl/keys".
 
         # sbctl create-keys
         Created Owner UUID a9fbbdb7-a05f-48d5-b63a-08c5df45ee70

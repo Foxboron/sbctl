@@ -15,10 +15,9 @@ import (
 	"github.com/spf13/afero"
 )
 
-// TODO: Remove this at some point
-//       Only here for legacy reasons to denote the old path
-
 var (
+	// TODO: Remove this at some point
+	//       Only here for legacy reasons to denote the old path
 	DatabasePath = "/usr/share/secureboot/"
 	Version      = "unknown"
 )
