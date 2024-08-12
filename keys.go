@@ -1,6 +1,8 @@
 package sbctl
 
 import (
+	"bytes"
+	"crypto"
 	"errors"
 	"fmt"
 	"os"
@@ -32,6 +34,8 @@ func VerifyFile(state *config.State, kh *backend.KeyHierarchy, ev hierarchy.Hier
 var ErrAlreadySigned = errors.New("already signed file")
 
 func SignFile(state *config.State, kh *backend.KeyHierarchy, ev hierarchy.Hierarchy, file, output string) error {
+	// Check to see if input and output binary is the same
+	var same bool
 
 	// Make sure that output is always populated by atleast the file path
 	if output == "" {
@@ -41,23 +45,6 @@ func SignFile(state *config.State, kh *backend.KeyHierarchy, ev hierarchy.Hierar
 	// Check file exists before we do anything
 	if _, err := state.Fs.Stat(file); errors.Is(err, os.ErrNotExist) {
 		return fmt.Errorf("%s does not exist", file)
-	}
-
-	// Let's check if we have signed it already AND the original file hasn't changed
-	ok, err := VerifyFile(state, kh, ev, output)
-	if errors.Is(err, os.ErrNotExist) && (file != output) {
-		// if the file does not exist and file is not the same as output
-		// then we just catch the error and continue. This is expected
-		// behaviour
-	} else if errors.Is(err, authenticode.ErrNoValidSignatures) {
-		// If we tried to verify the file, but it has signatures but nothing signed
-		// by our key, we catch the error and continue.
-	} else if err != nil {
-		return err
-	}
-
-	if ok {
-		return ErrAlreadySigned
 	}
 
 	// We want to write the file back with correct permissions
@@ -72,7 +59,53 @@ func SignFile(state *config.State, kh *backend.KeyHierarchy, ev hierarchy.Hierar
 	}
 	defer peFile.Close()
 
-	b, err := kh.SignFile(ev, peFile)
+	inputBinary, err := authenticode.Parse(peFile)
+	if err != nil {
+		return err
+	}
+
+	// Check if the files are identical
+	if file != output {
+		if _, err := state.Fs.Stat(output); errors.Is(err, os.ErrExist) {
+			outputFile, err := state.Fs.Open(output)
+			if err != nil {
+				return err
+			}
+			defer outputFile.Close()
+			outputBinary, err := authenticode.Parse(outputFile)
+			if err != nil {
+				return err
+			}
+			b := outputBinary.Hash(crypto.SHA256)
+			bb := inputBinary.Hash(crypto.SHA256)
+			if bytes.Equal(b, bb) {
+				same = true
+			}
+		}
+	}
+
+	if file == output {
+		same = true
+	}
+
+	// Let's check if we have signed it already AND the original file hasn't changed
+	// TODO: This will run authenticode.Parse again, *and* open the file
+	// this should be refactored to be nicer
+	ok, err := VerifyFile(state, kh, ev, output)
+	if errors.Is(err, authenticode.ErrNoValidSignatures) {
+		// If we tried to verify the file, but it has signatures but nothing signed
+		// by our key, we catch the error and continue.
+	} else if errors.Is(err, os.ErrNotExist) {
+		// Ignore the error if the file doesn't exist
+	} else if ok && same {
+		// If already signed, and the input/output binaries are identical,
+		// we can just assume everything is fine.
+		return ErrAlreadySigned
+	} else if err != nil {
+		return err
+	}
+
+	b, err := kh.SignFile(ev, inputBinary)
 	if err != nil {
 		return err
 	}
