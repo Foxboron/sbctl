@@ -136,6 +136,14 @@ func Sign(state *config.State, keys *backend.KeyHierarchy, file, output string, 
 	if err != nil {
 		return fmt.Errorf("couldn't open database: %s", state.Config.FilesDb)
 	}
+
+	if enroll {
+		files[file] = &SigningEntry{File: file, OutputFile: output}
+		if err := WriteFileDatabase(state.Fs, state.Config.FilesDb, files); err != nil {
+			return err
+		}
+	}
+
 	if entry, ok := files[file]; ok {
 		err = SignFile(state, kh, hierarchy.Db, entry.File, entry.OutputFile)
 		// return early if signing fails
@@ -150,13 +158,6 @@ func Sign(state *config.State, keys *backend.KeyHierarchy, file, output string, 
 		err = SignFile(state, kh, hierarchy.Db, file, output)
 		// return early if signing fails
 		if err != nil {
-			return err
-		}
-	}
-
-	if enroll {
-		files[file] = &SigningEntry{File: file, OutputFile: output}
-		if err := WriteFileDatabase(state.Fs, state.Config.FilesDb, files); err != nil {
 			return err
 		}
 	}
