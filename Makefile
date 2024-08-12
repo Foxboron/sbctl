@@ -50,7 +50,7 @@ release:
 	mkdir -p releases
 	git archive --prefix=${PROGNM}-${TAG}/ --add-file=VERSION -o releases/${PROGNM}-${TAG}.tar.gz ${TAG};
 	gpg --detach-sign -o releases/${PROGNM}-${TAG}.tar.gz.sig releases/${PROGNM}-${TAG}.tar.gz
-	gh release upload ${TAG} releases/${PROGNM}-${TAG}.tar.gz.sig releases/${PROGNM}-${TAG}.tar.gz ${TAG}
+	gh release upload ${TAG} releases/${PROGNM}-${TAG}.tar.gz.sig releases/${PROGNM}-${TAG}.tar.gz
 
 .PHONY: push-aur
 push-aur:
@@ -63,7 +63,7 @@ clean:
 .PHONY: lint
 lint:
 	go vet ./...
-	go run honnef.co/go/tools/cmd/staticcheck@v0.4.0 ./...
+	go run honnef.co/go/tools/cmd/staticcheck@v0.4.7 ./...
 
 .PHONY: test
 test:
