@@ -144,7 +144,7 @@ func Sign(state *config.State, keys *backend.KeyHierarchy, file, output string, 
 		}
 	}
 
-	if entry, ok := files[file]; ok {
+	if entry, ok := files[file]; ok && output == entry.OutputFile {
 		err = SignFile(state, kh, hierarchy.Db, entry.File, entry.OutputFile)
 		// return early if signing fails
 		if err != nil {
