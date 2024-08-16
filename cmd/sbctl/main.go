@@ -171,11 +171,11 @@ func main() {
 		} else if errors.Is(err, sbctl.ErrImmutable) {
 			logging.Println("You need to chattr -i files in efivarfs")
 		} else if errors.Is(err, sbctl.ErrOprom) {
-			logging.Error(fmt.Errorf(opromErrorMsg))
+			logging.Error(errors.New(opromErrorMsg))
 		} else if errors.Is(err, sbctl.ErrNoEventlog) {
-			logging.Error(fmt.Errorf(noEventlogErrorMsg))
+			logging.Error(errors.New(noEventlogErrorMsg))
 		} else if errors.Is(err, ErrSetupModeDisabled) {
-			logging.Error(fmt.Errorf(setupModeDisabled))
+			logging.Error(errors.New(setupModeDisabled))
 		} else if !errors.Is(err, ErrSilent) {
 			logging.Error(err)
 		}
