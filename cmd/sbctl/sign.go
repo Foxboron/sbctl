@@ -38,6 +38,21 @@ var signCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
+		// Get output path from database for file if output not specified
+		if output == "" {
+			files, err := sbctl.ReadFileDatabase(state.Fs, state.Config.FilesDb)
+			if err != nil {
+				return err
+			}
+			for _, entry := range files {
+				if entry.File == file {
+					logging.Print("Using output file from database\n")
+					output = entry.OutputFile
+					break
+				}
+			}
+		}
+
 		if output == "" {
 			output = file
 			rules = append(rules, lsm.TruncFile(file).IgnoreIfMissing())
