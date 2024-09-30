@@ -310,7 +310,7 @@ func RunEnrollKeys(state *config.State) error {
 			return err
 		}
 	}
-	if !enrollKeysCmdOptions.Force && !enrollKeysCmdOptions.TPMEventlogChecksums && !enrollKeysCmdOptions.MicrosoftKeys {
+	if !enrollKeysCmdOptions.Force && !enrollKeysCmdOptions.TPMEventlogChecksums && !enrollKeysCmdOptions.MicrosoftKeys && !enrollKeysCmdOptions.Append {
 		if err := sbctl.CheckEventlogOprom(state.Fs, systemEventlog); err != nil {
 			return err
 		}
