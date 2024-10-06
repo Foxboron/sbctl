@@ -18,6 +18,8 @@ func HasFQ0001() bool {
 		{Name: "MS-7C80", NameSrc: &dmi.Table.ProductName, NameStrict: true, Version: "1.B0", VersionSrc: &dmi.Table.FirmwareVersion},
 		// MSI H310M PRO-C
 		{Name: "MS-7D02", NameSrc: &dmi.Table.ProductName, NameStrict: true, Version: "1.20", VersionSrc: &dmi.Table.FirmwareVersion},
+		// MSI MPG X670E CARBON WIFI
+		{Name: "MS-7D70", NameSrc: &dmi.Table.ProductName, NameStrict: true, Version: "1.K0", VersionSrc: &dmi.Table.FirmwareVersion},
 	}
 
 	affectedDateRanges := []affectedDateRange{
