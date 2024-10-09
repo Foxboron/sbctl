@@ -8,6 +8,7 @@ Target = efi/*
 Target = usr/lib/modules/*/vmlinuz
 Target = usr/lib/modules/*/extramodules/*
 Target = usr/lib/**/efi/*.efi*
+Target = usr/share/**/*.efi*
 
 [Action]
 Description = Signing EFI binaries...
