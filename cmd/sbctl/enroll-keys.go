@@ -253,11 +253,12 @@ func KeySync(state *config.State, oems []string) error {
 }
 
 func RunEnrollKeys(state *config.State) error {
-	// SetupMode is not necessarily required on a partial enrollment
 	ok, err := state.Efivarfs.GetSetupMode()
-	if err != nil {
+	// EFI variables are missing in some CI / build environments and setup mode is not needed for exporting keys
+	if err != nil && enrollKeysCmdOptions.Export.Value == "" {
 		return err
 	}
+	// SetupMode is not necessarily required for a partial enrollment and not needed for exporting keys
 	if !ok && enrollKeysCmdOptions.Partial.Value == "" && enrollKeysCmdOptions.Export.Value == "" {
 		return ErrSetupModeDisabled
 	}

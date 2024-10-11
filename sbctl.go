@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"slices"
 
 	"github.com/foxboron/sbctl/backend"
 	"github.com/foxboron/sbctl/config"
@@ -25,26 +26,82 @@ var (
 // Functions that doesn't fit anywhere else
 
 type LsblkEntry struct {
-	Parttype   string `json:"parttype"`
-	Mountpoint string `json:"mountpoint"`
-	Pttype     string `json:"pttype"`
-	Fstype     string `json:"fstype"`
+	Parttype    string        `json:"parttype"`
+	Mountpoint  string        `json:"mountpoint"`
+	Mountpoints []string      `json:"mountpoints"`
+	Pttype      string        `json:"pttype"`
+	Fstype      string        `json:"fstype"`
+	Children    []*LsblkEntry `json:"children"`
 }
 
 type LsblkRoot struct {
-	Blockdevices []LsblkEntry `json:"blockdevices"`
+	Blockdevices []*LsblkEntry `json:"blockdevices"`
 }
 
 var espLocations = []string{
+	"/efi",
 	"/boot",
 	"/boot/efi",
-	"/efi",
 }
 var ErrNoESP = errors.New("failed to find EFI system partition")
 
+func findESP(b []byte) (string, error) {
+	var lsblkRoot LsblkRoot
+
+	if err := json.Unmarshal(b, &lsblkRoot); err != nil {
+		return "", fmt.Errorf("failed to parse json: %v", err)
+	}
+
+	for _, lsblkEntry := range lsblkRoot.Blockdevices {
+		// This is our check function, that also checks mountpoints
+		checkDev := func(e *LsblkEntry, pttype string) *LsblkEntry {
+			if e.Pttype != "gpt" && (e.Pttype != "" && pttype != "gpt") {
+				return nil
+			}
+
+			if e.Fstype != "vfat" {
+				return nil
+			}
+
+			if e.Parttype != "c12a7328-f81f-11d2-ba4b-00a0c93ec93b" {
+				return nil
+			}
+
+			if slices.Contains(espLocations, e.Mountpoint) {
+				return e
+			}
+
+			for _, esp := range espLocations {
+				n := slices.Index(e.Mountpoints, esp)
+				if n == -1 {
+					continue
+				}
+				// Replace the top-level Mountpoint with a valid one from mountpoints
+				e.Mountpoint = e.Mountpoints[n]
+				return e
+			}
+			return nil
+		}
+
+		// First check top-level devices
+		p := checkDev(lsblkEntry, "")
+		if p != nil {
+			return p.Mountpoint, nil
+		}
+
+		// Check children, this is not recursive.
+		for _, ce := range lsblkEntry.Children {
+			p := checkDev(ce, lsblkEntry.Pttype)
+			if p != nil {
+				return p.Mountpoint, nil
+			}
+		}
+	}
+	return "", ErrNoESP
+}
+
 // Slightly more advanced check
 func GetESP(vfs afero.Fs) (string, error) {
-
 	for _, env := range []string{"SYSTEMD_ESP_PATH", "ESP_PATH"} {
 		envEspPath, found := os.LookupEnv(env)
 		if found {
@@ -61,55 +118,12 @@ func GetESP(vfs afero.Fs) (string, error) {
 	out, err := exec.Command(
 		"lsblk",
 		"--json",
+		"--tree",
 		"--output", "PARTTYPE,MOUNTPOINT,PTTYPE,FSTYPE").Output()
 	if err != nil {
 		return "", err
 	}
-
-	var lsblkRoot LsblkRoot
-	if err = json.Unmarshal(out, &lsblkRoot); err != nil {
-		return "", fmt.Errorf("failed to parse json: %v", err)
-	}
-
-	var pathBootEntry *LsblkEntry
-	var pathBootEfiEntry *LsblkEntry
-	var pathEfiEntry *LsblkEntry
-
-	for _, lsblkEntry := range lsblkRoot.Blockdevices {
-		switch lsblkEntry.Mountpoint {
-		case "/boot":
-			pathBootEntry = new(LsblkEntry)
-			*pathBootEntry = lsblkEntry
-		case "/boot/efi":
-			pathBootEfiEntry = new(LsblkEntry)
-			*pathBootEfiEntry = lsblkEntry
-		case "/efi":
-			pathEfiEntry = new(LsblkEntry)
-			*pathEfiEntry = lsblkEntry
-		}
-	}
-
-	for _, entryToCheck := range []*LsblkEntry{pathEfiEntry, pathBootEntry, pathBootEfiEntry} {
-		if entryToCheck == nil {
-			continue
-		}
-
-		if entryToCheck.Pttype != "gpt" {
-			continue
-		}
-
-		if entryToCheck.Fstype != "vfat" {
-			continue
-		}
-
-		if entryToCheck.Parttype != "c12a7328-f81f-11d2-ba4b-00a0c93ec93b" {
-			continue
-		}
-
-		return entryToCheck.Mountpoint, nil
-	}
-
-	return "", ErrNoESP
+	return findESP(out)
 }
 
 func Sign(state *config.State, keys *backend.KeyHierarchy, file, output string, enroll bool) error {
@@ -136,7 +150,15 @@ func Sign(state *config.State, keys *backend.KeyHierarchy, file, output string, 
 	if err != nil {
 		return fmt.Errorf("couldn't open database: %s", state.Config.FilesDb)
 	}
-	if entry, ok := files[file]; ok {
+
+	if enroll {
+		files[file] = &SigningEntry{File: file, OutputFile: output}
+		if err := WriteFileDatabase(state.Fs, state.Config.FilesDb, files); err != nil {
+			return err
+		}
+	}
+
+	if entry, ok := files[file]; ok && output == entry.OutputFile {
 		err = SignFile(state, kh, hierarchy.Db, entry.File, entry.OutputFile)
 		// return early if signing fails
 		if err != nil {
@@ -150,13 +172,6 @@ func Sign(state *config.State, keys *backend.KeyHierarchy, file, output string, 
 		err = SignFile(state, kh, hierarchy.Db, file, output)
 		// return early if signing fails
 		if err != nil {
-			return err
-		}
-	}
-
-	if enroll {
-		files[file] = &SigningEntry{File: file, OutputFile: output}
-		if err := WriteFileDatabase(state.Fs, state.Config.FilesDb, files); err != nil {
 			return err
 		}
 	}

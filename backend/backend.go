@@ -181,16 +181,11 @@ func (k *KeyHierarchy) VerifyFile(hier hierarchy.Hierarchy, r io.ReaderAt) (bool
 	return ok, nil
 }
 
-func (k *KeyHierarchy) SignFile(hier hierarchy.Hierarchy, r io.ReaderAt) ([]byte, error) {
+func (k *KeyHierarchy) SignFile(hier hierarchy.Hierarchy, peBinary *authenticode.PECOFFBinary) ([]byte, error) {
 	kk := k.GetKeyBackend(hier.Efivar())
 	signer := kk.Signer()
 
-	peBinary, err := authenticode.Parse(r)
-	if err != nil {
-		return nil, err
-	}
-
-	_, err = peBinary.Sign(signer, kk.Certificate())
+	_, err := peBinary.Sign(signer, kk.Certificate())
 	if err != nil {
 		return nil, err
 	}
