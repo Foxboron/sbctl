@@ -46,7 +46,6 @@ var signCmd = &cobra.Command{
 			}
 			for _, entry := range files {
 				if entry.File == file {
-					logging.Print("Using output file from database\n")
 					output = entry.OutputFile
 					break
 				}
