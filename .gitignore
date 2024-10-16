@@ -1,6 +1,7 @@
 tags
 releases/*
 /sbctl
+docs/*.5
 docs/*.8
 rootfs*
 VERSION
