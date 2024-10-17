@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"os"
 	"slices"
 	"strings"
 
@@ -16,6 +17,7 @@ import (
 	"github.com/foxboron/sbctl/logging"
 	"github.com/foxboron/sbctl/lsm"
 	"github.com/foxboron/sbctl/stringset"
+	"github.com/landlock-lsm/go-landlock/landlock"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 )
@@ -63,6 +65,15 @@ var (
 		RunE: func(cmd *cobra.Command, args []string) error {
 			state := cmd.Context().Value(stateDataKey{}).(*config.State)
 			if state.Config.Landlock {
+				if enrollKeysCmdOptions.Export.Value != "" {
+					wd, err := os.Getwd()
+					if err != nil {
+						return err
+					}
+					lsm.RestrictAdditionalPaths(
+						landlock.RWDirs(wd),
+					)
+				}
 				if err := lsm.Restrict(); err != nil {
 					return err
 				}
