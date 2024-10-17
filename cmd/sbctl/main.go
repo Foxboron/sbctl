@@ -83,25 +83,7 @@ func main() {
 		rootCmd.AddCommand(cmd.Cmd)
 	}
 
-	var conf *config.Config
-
 	fs := afero.NewOsFs()
-
-	if config.HasOldConfig(fs, sbctl.DatabasePath) && !config.HasConfigurationFile(fs, "/etc/sbctl/sbctl.conf") {
-		logging.Error(fmt.Errorf("old configuration detected. Please use `sbctl setup --migrate`"))
-		conf = config.OldConfig(sbctl.DatabasePath)
-	} else if ok, _ := afero.Exists(fs, "/etc/sbctl/sbctl.conf"); ok {
-		b, err := os.ReadFile("/etc/sbctl/sbctl.conf")
-		if err != nil {
-			log.Fatal(err)
-		}
-		conf, err = config.NewConfig(b)
-		if err != nil {
-			log.Fatal(err)
-		}
-	} else {
-		conf = config.DefaultConfig()
-	}
 
 	baseFlags(rootCmd)
 
@@ -111,20 +93,62 @@ func main() {
 		defer rwc.Close()
 	}
 
-	state := &config.State{
-		Fs: fs,
-		TPM: func() transport.TPMCloser {
-			return rwc
-		},
-		Config: conf,
-		Efivarfs: efivarfs.NewFS().
-			CheckImmutable().
-			UnsetImmutable().
-			Open(),
-	}
-
 	// We need to set this after we have parsed stuff
-	rootCmd.PersistentPreRun = func(_ *cobra.Command, _ []string) {
+	rootCmd.PersistentPreRunE = func(cmd *cobra.Command, _ []string) error {
+		state := &config.State{
+			Fs: fs,
+			TPM: func() transport.TPMCloser {
+				return rwc
+			},
+			Efivarfs: efivarfs.NewFS().
+				CheckImmutable().
+				UnsetImmutable().
+				Open(),
+		}
+
+		var conf *config.Config
+
+		if cmdOptions.Config != "" {
+			b, err := os.ReadFile(cmdOptions.Config)
+			if err != nil {
+				return err
+			}
+			conf, err = config.NewConfig(b)
+			if err != nil {
+				return err
+			}
+
+			state.Config = conf
+
+			// TODO: Do we want to overwrite the provided configuration with out existing keys?
+			// something to figure out
+			// kh, err := backend.GetKeyHierarchy(fs, state)
+			// if err != nil {
+			// 	return err
+			// }
+			// state.Config.Keys = kh.GetConfig(state.Config.Keydir)
+			// state.Config.DbAdditions = sbctl.GetEnrolledVendorCerts()
+		} else {
+			if config.HasOldConfig(fs, sbctl.DatabasePath) && !config.HasConfigurationFile(fs, "/etc/sbctl/sbctl.conf") {
+				logging.Error(fmt.Errorf("old configuration detected. Please use `sbctl setup --migrate`"))
+				conf = config.OldConfig(sbctl.DatabasePath)
+				state.Config = conf
+			} else if ok, _ := afero.Exists(fs, "/etc/sbctl/sbctl.conf"); ok {
+				b, err := os.ReadFile("/etc/sbctl/sbctl.conf")
+				if err != nil {
+					log.Fatal(err)
+				}
+				conf, err = config.NewConfig(b)
+				if err != nil {
+					log.Fatal(err)
+				}
+				state.Config = conf
+			} else {
+				conf = config.DefaultConfig()
+				state.Config = conf
+			}
+		}
+
 		if cmdOptions.JsonOutput {
 			logging.PrintOff()
 		}
@@ -148,12 +172,13 @@ func main() {
 		if !state.HasTPM() {
 			slog.Debug("can't open tpm", slog.Any("err", tpmerr))
 		}
-	}
 
-	ctx := context.WithValue(context.Background(), stateDataKey{}, state)
-
-	if state.Config.Landlock {
-		lsm.LandlockRulesFromConfig(state.Config)
+		if state.Config.Landlock {
+			lsm.LandlockRulesFromConfig(state.Config)
+		}
+		ctx := context.WithValue(cmd.Context(), stateDataKey{}, state)
+		cmd.SetContext(ctx)
+		return nil
 	}
 
 	// This returns i the flag is not found with a specific error
@@ -163,7 +188,7 @@ func main() {
 		return ErrSilent
 	})
 
-	if err := rootCmd.ExecuteContext(ctx); err != nil {
+	if err := rootCmd.Execute(); err != nil {
 		if strings.HasPrefix(err.Error(), "unknown command") {
 			logging.Println(err.Error())
 		} else if errors.Is(err, os.ErrPermission) {
