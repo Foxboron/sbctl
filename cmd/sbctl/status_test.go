@@ -14,7 +14,10 @@ var (
 )
 
 func TestStatusOff(t *testing.T) {
-	cmd := SetFS(efitest.SecureBootOff())
+	cmd := SetFS(
+		efitest.SecureBootOff(),
+		efitest.SetUpModeOn(),
+	)
 
 	if err := captureJsonOutput(&out, func() error {
 		return RunStatus(cmd, []string{})
@@ -28,7 +31,8 @@ func TestStatusOff(t *testing.T) {
 }
 
 func TestStatusOn(t *testing.T) {
-	cmd := SetFS(efitest.SecureBootOn())
+	cmd := SetFS(efitest.SecureBootOn(),
+		efitest.SetUpModeOff())
 
 	if err := captureJsonOutput(&out, func() error {
 		return RunStatus(cmd, []string{})
@@ -50,6 +54,7 @@ func TestFQ0001DateMethod(t *testing.T) {
 		fstest.MapFS{"/sys/devices/virtual/dmi/id/chassis_type": {Data: []byte("3\n")}},
 		fstest.MapFS{"/sys/devices/virtual/dmi/id/product_name": {Data: []byte("MS-7E07\n")}},
 		efitest.SecureBootOn(),
+		efitest.SetUpModeOff(),
 	)
 
 	if err := captureJsonOutput(&out, func() error {
@@ -81,6 +86,7 @@ func TestFQ0001DeviceMethod(t *testing.T) {
 		fstest.MapFS{"/sys/devices/virtual/dmi/id/chassis_type": {Data: []byte("3\n")}},
 		fstest.MapFS{"/sys/devices/virtual/dmi/id/product_name": {Data: []byte("MS-7C84\n")}},
 		efitest.SecureBootOn(),
+		efitest.SetUpModeOff(),
 	)
 
 	if err := captureJsonOutput(&out, func() error {
@@ -112,6 +118,7 @@ func TestFQ0001ExplicitlyUnaffected(t *testing.T) {
 		fstest.MapFS{"/sys/devices/virtual/dmi/id/chassis_type": {Data: []byte("3\n")}},
 		fstest.MapFS{"/sys/devices/virtual/dmi/id/product_name": {Data: []byte("MS-7C80\n")}},
 		efitest.SecureBootOn(),
+		efitest.SetUpModeOff(),
 	)
 
 	if err := captureJsonOutput(&out, func() error {
@@ -141,6 +148,7 @@ func TestFQ0001WrongChassis(t *testing.T) {
 		fstest.MapFS{"/sys/devices/virtual/dmi/id/chassis_type": {Data: []byte("5\n")}},
 		fstest.MapFS{"/sys/devices/virtual/dmi/id/product_name": {Data: []byte("MS-7E07\n")}},
 		efitest.SecureBootOn(),
+		efitest.SetUpModeOff(),
 	)
 
 	if err := captureJsonOutput(&out, func() error {
@@ -170,6 +178,7 @@ func TestFQ0001WrongVendor(t *testing.T) {
 		fstest.MapFS{"/sys/devices/virtual/dmi/id/chassis_type": {Data: []byte("3\n")}},
 		fstest.MapFS{"/sys/devices/virtual/dmi/id/product_name": {Data: []byte("MS-7E07\n")}},
 		efitest.SecureBootOn(),
+		efitest.SetUpModeOff(),
 	)
 
 	if err := captureJsonOutput(&out, func() error {
