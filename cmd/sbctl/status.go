@@ -128,7 +128,7 @@ func RunStatus(cmd *cobra.Command, args []string) error {
 	}
 
 	stat := NewStatus()
-	if _, err := state.Fs.Stat("/sys/firmware/efi/efivars"); os.IsNotExist(err) {
+	if _, err := state.Fs.Stat("/sys/firmware/efi/efivars/SetupMode-8be4df61-93ca-11d2-aa0d-00e098032b8c"); os.IsNotExist(err) {
 		return fmt.Errorf("system is not booted with UEFI")
 	}
 
