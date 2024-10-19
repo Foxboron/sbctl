@@ -55,6 +55,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Download workflow artifacts
+        env:
+          GOOS: ${{ matrix.GOOS }}
+          GOARCH: ${{ matrix.GOARCH }}
         uses: actions/download-artifact@v4
         with:
           name: sbctl-binaries-${{ matrix.GOOS }}-${{ matrix.GOARCH }}
