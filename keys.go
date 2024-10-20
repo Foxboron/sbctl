@@ -66,11 +66,7 @@ func SignFile(state *config.State, kh *backend.KeyHierarchy, ev hierarchy.Hierar
 
 	// Check if the files are identical
 	if file != output {
-		if _, err := state.Fs.Stat(output); errors.Is(err, os.ErrExist) {
-			outputFile, err := state.Fs.Open(output)
-			if err != nil {
-				return err
-			}
+		if outputFile, err := state.Fs.Open(output); err == nil {
 			defer outputFile.Close()
 			outputBinary, err := authenticode.Parse(outputFile)
 			if err != nil {
