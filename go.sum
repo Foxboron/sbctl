@@ -268,8 +268,8 @@ github.com/fortytw2/leaktest v1.2.0/go.mod h1:jDsjWgpAGjm2CA7WthBh/CdZYEPF31XHqu
 github.com/fortytw2/leaktest v1.3.0/go.mod h1:jDsjWgpAGjm2CA7WthBh/CdZYEPF31XHquHwclZch5g=
 github.com/foxboron/go-tpm-keyfiles v0.0.0-20240725205618-b7c5a84edf9d h1:odwhCo3olsbN0fkXxCSH3aYz2OhrkcH93oU2QKEcI9s=
 github.com/foxboron/go-tpm-keyfiles v0.0.0-20240725205618-b7c5a84edf9d/go.mod h1:uAyTlAUxchYuiFjTHmuIEJ4nGSm7iOPaGcAyA81fJ80=
-github.com/foxboron/go-uefi v0.0.0-20240722190620-5d4f760099bd h1:as2HfgSh+rJJgM9yCSAv+VpJt11hMPpYh6Jo9l45Ceo=
-github.com/foxboron/go-uefi v0.0.0-20240722190620-5d4f760099bd/go.mod h1:ffg/fkDeOYicEQLoO2yFFGt00KUTYVXI+rfnc8il6vQ=
+github.com/foxboron/go-uefi v0.0.0-20241017190036-fab4fdf2f2f3 h1:K8ADp66ulnZ0NhjzwVwE4E3g6Id5KMWu86l0vURusA8=
+github.com/foxboron/go-uefi v0.0.0-20241017190036-fab4fdf2f2f3/go.mod h1:ffg/fkDeOYicEQLoO2yFFGt00KUTYVXI+rfnc8il6vQ=
 github.com/foxboron/swtpm_test v0.0.0-20230726224112-46aaafdf7006 h1:50sW4r0PcvlpG4PV8tYh2RVCapszJgaOLRCS2subvV4=
 github.com/foxboron/swtpm_test v0.0.0-20230726224112-46aaafdf7006/go.mod h1:eIXCMsMYCaqq9m1KSSxXwQG11krpuNPGP3k0uaWrbas=
 github.com/franela/goblin v0.0.0-20200105215937-c9ffbefa60db/go.mod h1:7dvUGVsVBjqR7JHJk0brhHOZYGmfBYOrK0ZhYMEtBr4=

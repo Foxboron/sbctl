@@ -7,7 +7,7 @@ toolchain go1.22.5
 require (
 	github.com/fatih/color v1.17.0
 	github.com/foxboron/go-tpm-keyfiles v0.0.0-20240725205618-b7c5a84edf9d
-	github.com/foxboron/go-uefi v0.0.0-20240722190620-5d4f760099bd
+	github.com/foxboron/go-uefi v0.0.0-20241017190036-fab4fdf2f2f3
 	github.com/goccy/go-yaml v1.11.3
 	github.com/google/go-attestation v0.5.1
 	github.com/google/go-tpm v0.9.1

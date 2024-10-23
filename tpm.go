@@ -62,6 +62,9 @@ func GetEventlogChecksums(vfs afero.Fs, eventlog string) (*signature.SignatureDa
 	for _, event := range events {
 		switch event.Type.String() {
 		case "EV_EFI_BOOT_SERVICES_DRIVER":
+			if sigdb.BytesExists(signature.CERT_SHA256_GUID, eventlogGUID, event.Digest) {
+				continue
+			}
 			if err = sigdb.Append(signature.CERT_SHA256_GUID, eventlogGUID, event.Digest); err != nil {
 				return nil, err
 			}
