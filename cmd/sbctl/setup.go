@@ -154,7 +154,7 @@ func SetupInstallation(state *config.State) error {
 
 func MigrateSetup(state *config.State) error {
 	if !state.IsInstalled() {
-		return fmt.Errorf("sbctl is not installd")
+		return fmt.Errorf("sbctl is not installed")
 	}
 
 	newConf := config.DefaultConfig()
