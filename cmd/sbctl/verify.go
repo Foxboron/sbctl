@@ -17,8 +17,12 @@ import (
 )
 
 type VerifiedFile struct {
-	FileName           string         `json:"file_name"`
-	FileIsSigned       bool           `json:"is_signed"`
+	FileName       string         `json:"file_name"`
+	// IsSigned should be set to one of these values:
+	//   -  0: "unsigned"
+	//   -  1: "signed"
+	//   - -1: "file does not exist"
+	IsSigned       int8           `json:"is_signed"`
 }
 
 var (
@@ -28,13 +32,16 @@ var (
 		Short: "Find and check if files in the ESP are signed or not",
 		RunE:  RunVerify,
 	}
-	verifiedFiles    = make([]VerifiedFile, 0)
+	verifiedFiles      []VerifiedFile
 )
 
 func VerifyOneFile(state *config.State, f string) error {
 	o, err := state.Fs.Open(f)
+	fileentry := VerifiedFile{FileName: f, IsSigned: 0}
 	if errors.Is(err, os.ErrNotExist) {
 		logging.Warn("%s does not exist", f)
+		fileentry.IsSigned = -1
+		verifiedFiles = append(verifiedFiles, fileentry)
 		return nil
 	} else if errors.Is(err, os.ErrPermission) {
 		logging.Warn("%s permission denied. Can't read file\n", f)
@@ -59,14 +66,13 @@ func VerifyOneFile(state *config.State, f string) error {
 		return err
 	}
 
-	file_entry := &VerifiedFile{FileName: f, FileIsSigned: false}
 	if ok {
 		logging.Ok("%s is signed", f)
-		file_entry.FileIsSigned = true
+		fileentry.IsSigned = 1
 	} else {
 		logging.NotOk("%s is not signed", f)
 	}
-	verifiedFiles = append(verifiedFiles, *file_entry)
+	verifiedFiles = append(verifiedFiles, fileentry)
 
 	return nil
 }
@@ -103,9 +109,7 @@ func RunVerify(cmd *cobra.Command, args []string) error {
 			}
 		}
 		if cmdOptions.JsonOutput {
-			if err := JsonOut(verifiedFiles); err != nil {
-				return err
-			}
+			return JsonOut(verifiedFiles)
 		}
 		return nil
 	}
@@ -142,9 +146,7 @@ func RunVerify(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	if cmdOptions.JsonOutput {
-		if err := JsonOut(verifiedFiles); err != nil {
-			return err
-		}
+		return JsonOut(verifiedFiles)
 	}
 	return nil
 }
