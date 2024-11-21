@@ -16,6 +16,11 @@ import (
 	"github.com/spf13/cobra"
 )
 
+type VerifiedFile struct {
+	FileName           string         `json:"file_name"`
+	FileIsSigned       bool           `json:"is_signed"`
+}
+
 var (
 	ErrInvalidHeader = errors.New("invalid pe header")
 	verifyCmd        = &cobra.Command{
@@ -23,6 +28,7 @@ var (
 		Short: "Find and check if files in the ESP are signed or not",
 		RunE:  RunVerify,
 	}
+	verifiedFiles    = make([]VerifiedFile, 0)
 )
 
 func VerifyOneFile(state *config.State, f string) error {
@@ -52,11 +58,16 @@ func VerifyOneFile(state *config.State, f string) error {
 	if err != nil {
 		return err
 	}
+
+	file_entry := &VerifiedFile{FileName: f, FileIsSigned: false}
 	if ok {
 		logging.Ok("%s is signed", f)
+		file_entry.FileIsSigned = true
 	} else {
 		logging.NotOk("%s is not signed", f)
 	}
+	verifiedFiles = append(verifiedFiles, *file_entry)
+
 	return nil
 }
 
@@ -88,6 +99,11 @@ func RunVerify(cmd *cobra.Command, args []string) error {
 					logging.Error(fmt.Errorf("%s is not a valid EFI binary", file))
 					return nil
 				}
+				return err
+			}
+		}
+		if cmdOptions.JsonOutput {
+			if err := JsonOut(verifiedFiles); err != nil {
 				return err
 			}
 		}
@@ -124,6 +140,11 @@ func RunVerify(cmd *cobra.Command, args []string) error {
 		return nil
 	}); err != nil {
 		return err
+	}
+	if cmdOptions.JsonOutput {
+		if err := JsonOut(verifiedFiles); err != nil {
+			return err
+		}
 	}
 	return nil
 }
