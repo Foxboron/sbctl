@@ -105,7 +105,7 @@ func createKeysCmdFlags(cmd *cobra.Command) {
 	f.StringVarP(&Keytype, "keytype", "", "", "key type for all keys")
 	f.StringVarP(&PKKeytype, "pk-keytype", "", "", "PK key type (default: file)")
 	f.StringVarP(&KEKKeytype, "kek-keytype", "", "", "KEK key type (default: file)")
-	f.StringVarP(&DbKeytype, "db-keytype", "", "", "db key type (defualt: file)")
+	f.StringVarP(&DbKeytype, "db-keytype", "", "", "db key type (default: file)")
 }
 
 func init() {
