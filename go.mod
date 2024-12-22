@@ -17,6 +17,7 @@ require (
 	github.com/onsi/gomega v1.7.1
 	github.com/spf13/afero v1.11.0
 	github.com/spf13/cobra v1.8.1
+	github.com/tomis007/piv-go/v2 v2.0.0-20241222201455-731899948d7d
 	golang.org/x/exp v0.0.0-20231219180239-dc181d75b848
 	golang.org/x/sys v0.22.0
 )
