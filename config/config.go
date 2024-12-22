@@ -1,8 +1,10 @@
 package config
 
 import (
+	"crypto"
 	"encoding/json"
 	"errors"
+	"github.com/tomis007/piv-go/v2/piv"
 	"os"
 	"path"
 	"strings"
@@ -104,7 +106,7 @@ func MkConfig(dir string) *Config {
 }
 
 func DefaultConfig() *Config {
-	return MkConfig("/var/lib/sbctl")
+	return MkConfig("/var/lib/sbctl/yubitest2")
 }
 
 func OldConfig(dir string) *Config {
@@ -133,12 +135,19 @@ func NewConfig(b []byte) (*Config, error) {
 	return conf, nil
 }
 
+type YubiConfig struct {
+	Pub  crypto.PublicKey
+	Priv crypto.PrivateKey
+	YK   *piv.YubiKey
+}
+
 // Key creation is going to require differen callbacks to we abstract them away
 type State struct {
-	Fs       afero.Fs
-	TPM      func() transport.TPMCloser
-	Config   *Config
-	Efivarfs *efivarfs.Efivarfs
+	Fs             afero.Fs
+	TPM            func() transport.TPMCloser
+	Config         *Config
+	YubikeySigKeys *YubiConfig
+	Efivarfs       *efivarfs.Efivarfs
 }
 
 func (s *State) IsInstalled() bool {

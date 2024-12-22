@@ -15,10 +15,12 @@ import (
 )
 
 var (
-	exportPath                       string
-	databasePath                     string
-	Keytype                          string
-	PKKeytype, KEKKeytype, DbKeytype string
+	exportPath   string
+	databasePath string
+	Keytype      string
+	KEKKeytype   string
+	DbKeytype    string
+	PKKeytype    string
 )
 
 var createKeysCmd = &cobra.Command{
@@ -56,7 +58,7 @@ func RunCreateKeys(state *config.State) error {
 	}
 
 	// Should be own flag type
-	if Keytype != "" && (Keytype == "file" || Keytype == "tpm") {
+	if Keytype != "" && (Keytype == "file" || Keytype == "tpm" || Keytype == "yubikey") {
 		state.Config.Keys.PK.Type = Keytype
 		state.Config.Keys.KEK.Type = Keytype
 		state.Config.Keys.Db.Type = Keytype
@@ -105,7 +107,7 @@ func createKeysCmdFlags(cmd *cobra.Command) {
 	f.StringVarP(&Keytype, "keytype", "", "", "key type for all keys")
 	f.StringVarP(&PKKeytype, "pk-keytype", "", "", "PK key type (default: file)")
 	f.StringVarP(&KEKKeytype, "kek-keytype", "", "", "KEK key type (default: file)")
-	f.StringVarP(&DbKeytype, "db-keytype", "", "", "db key type (defualt: file)")
+	f.StringVarP(&DbKeytype, "db-keytype", "", "", "db key type (default: file)")
 }
 
 func init() {
