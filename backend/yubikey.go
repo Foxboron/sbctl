@@ -15,13 +15,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/tomis007/piv-go/v2/piv"
+	"github.com/go-piv/piv-go/v2/piv"
 )
 
 type Yubikey struct {
 	keytype BackendType
 	cert    *x509.Certificate
-	privkey *piv.KeyRSA
+	privkey crypto.Signer
 }
 
 func NewYubikeyKey(conf *config.YubiConfig, desc string) (*Yubikey, error) {
@@ -117,7 +117,7 @@ func NewYubikeyKey(conf *config.YubiConfig, desc string) (*Yubikey, error) {
 	return &Yubikey{
 		keytype: YubikeyBackend,
 		cert:    cert,
-		privkey: priv.(*piv.KeyRSA),
+		privkey: priv.(crypto.Signer),
 	}, nil
 }
 
@@ -171,7 +171,7 @@ func YubikeyFromBytes(conf *config.YubiConfig, keyb, pemb []byte) (*Yubikey, err
 	return &Yubikey{
 		keytype: YubikeyBackend,
 		cert:    cert,
-		privkey: priv.(*piv.KeyRSA),
+		privkey: priv.(crypto.Signer),
 	}, nil
 }
 
