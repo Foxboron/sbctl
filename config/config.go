@@ -4,7 +4,6 @@ import (
 	"crypto"
 	"encoding/json"
 	"errors"
-	"github.com/tomis007/piv-go/v2/piv"
 	"os"
 	"path"
 	"strings"
@@ -14,6 +13,7 @@ import (
 
 	"github.com/foxboron/go-uefi/efi/util"
 	"github.com/foxboron/go-uefi/efivarfs"
+	"github.com/go-piv/piv-go/v2/piv"
 	"github.com/google/go-tpm/tpm2/transport"
 	"github.com/google/uuid"
 	"github.com/spf13/afero"
