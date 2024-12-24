@@ -3,9 +3,11 @@ package backend
 import (
 	"crypto"
 	"crypto/x509"
+	"encoding/json"
 	"encoding/pem"
 	"errors"
 	"fmt"
+	"github.com/foxboron/sbctl/logging"
 	"io"
 	"os"
 	"path/filepath"
@@ -298,16 +300,26 @@ func GetKeyHierarchy(vfs afero.Fs, state *config.State) (*KeyHierarchy, error) {
 
 func GetBackendType(b []byte) (BackendType, error) {
 	block, _ := pem.Decode(b)
-	// TODO: Add TSS2 keys
-	switch block.Type {
-	case "PRIVATE KEY":
-		return FileBackend, nil
-	case "TSS2 PRIVATE KEY":
-		return TPMBackend, nil
-	case "PUBLIC KEY":
+	if block == nil {
+		//the yubikey data is json
+		var yubiData YubikeyData
+		err := json.Unmarshal(b, &yubiData)
+		if err != nil {
+			logging.Errorf("Error unmarshalling Yubikey: %v\n", err)
+			return "", err
+		}
+		fmt.Printf("unmarshalled!: %s\n", b)
 		return YubikeyBackend, nil
-	default:
-		return "", fmt.Errorf("unknown file type: %s", block.Type)
+	} else {
+		// TODO: Add TSS2 keys
+		switch block.Type {
+		case "PRIVATE KEY":
+			return FileBackend, nil
+		case "TSS2 PRIVATE KEY":
+			return TPMBackend, nil
+		default:
+			return "", fmt.Errorf("unknown file type: %s", block.Type)
+		}
 	}
 }
 
