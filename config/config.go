@@ -1,7 +1,6 @@
 package config
 
 import (
-	"crypto"
 	"encoding/json"
 	"errors"
 	"os"
@@ -55,6 +54,7 @@ func (k *Keys) GetKeysConfigs() []*KeyConfig {
 // debug dump at some point, probably.
 type Config struct {
 	Landlock    bool          `json:"landlock"`
+	Datadir     string        `json:"datadir"`
 	Keydir      string        `json:"keydir"`
 	GUID        string        `json:"guid"`
 	FilesDb     string        `json:"files_db"`
@@ -106,7 +106,7 @@ func MkConfig(dir string) *Config {
 }
 
 func DefaultConfig() *Config {
-	return MkConfig("/var/lib/sbctl/yubitest2")
+	return MkConfig("/var/lib/sbctl")
 }
 
 func OldConfig(dir string) *Config {
@@ -128,17 +128,27 @@ func HasConfigurationFile(fs afero.Fs, file string) bool {
 }
 
 func NewConfig(b []byte) (*Config, error) {
-	conf := DefaultConfig()
+	conf := &Config{}
 	if err := yaml.Unmarshal(b, conf); err != nil {
 		return nil, err
 	}
-	return conf, nil
+	var newConf = new(Config)
+	if conf.Datadir != "" {
+		newConf = MkConfig(conf.Datadir)
+	} else {
+		newConf = DefaultConfig()
+	}
+
+	if err := yaml.Unmarshal(b, newConf); err != nil {
+		return nil, err
+	}
+
+	return newConf, nil
 }
 
 type YubiConfig struct {
-	Pub  crypto.PublicKey
-	Priv crypto.PrivateKey
-	YK   *piv.YubiKey
+	PubKeyInfo *piv.KeyInfo
+	YK         *piv.YubiKey
 }
 
 // Key creation is going to require differen callbacks to we abstract them away

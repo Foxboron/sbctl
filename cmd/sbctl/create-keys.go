@@ -35,7 +35,7 @@ var createKeysCmd = &cobra.Command{
 func RunCreateKeys(state *config.State) error {
 	if state.Config.Landlock {
 		lsm.RestrictAdditionalPaths(
-			landlock.RWDirs(filepath.Dir(filepath.Dir(filepath.Clean(state.Config.Keydir)))),
+			landlock.RWDirs(filepath.Dir(filepath.Clean(state.Config.Keydir))),
 		)
 		if err := lsm.Restrict(); err != nil {
 			return err
@@ -74,13 +74,15 @@ func RunCreateKeys(state *config.State) error {
 		}
 	}
 
+	logging.Println("trying to create GUID:\n")
+	logging.Println(state.Config.GUID)
 	uuid, err := sbctl.CreateGUID(state.Fs, state.Config.GUID)
 	if err != nil {
 		return err
 	}
 	logging.Print("Created Owner UUID %s\n", uuid)
 	if !sbctl.CheckIfKeysInitialized(state.Fs, state.Config.Keydir) {
-		logging.Print("Creating secure boot keys...")
+		logging.Println("Creating secure boot keys...")
 
 		hier, err := backend.CreateKeys(state)
 		if err != nil {
