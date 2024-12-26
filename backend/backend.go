@@ -299,18 +299,16 @@ func GetKeyHierarchy(vfs afero.Fs, state *config.State) (*KeyHierarchy, error) {
 }
 
 func GetBackendType(b []byte) (BackendType, error) {
-	block, _ := pem.Decode(b)
-	if block == nil {
-		//the yubikey data is json
+	if json.Valid(b) {
 		var yubiData YubikeyData
 		err := json.Unmarshal(b, &yubiData)
 		if err != nil {
 			logging.Errorf("Error unmarshalling Yubikey: %v\n", err)
 			return "", err
 		}
-		fmt.Printf("unmarshalled!: %s\n", b)
 		return YubikeyBackend, nil
 	} else {
+		block, _ := pem.Decode(b)
 		// TODO: Add TSS2 keys
 		switch block.Type {
 		case "PRIVATE KEY":
