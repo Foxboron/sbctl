@@ -3,10 +3,12 @@ package backend
 import (
 	"bytes"
 	"crypto"
+	"crypto/md5"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
 	"crypto/x509/pkix"
+	"encoding/base64"
 	"encoding/json"
 	"encoding/pem"
 	"errors"
@@ -96,7 +98,9 @@ func NewYubikeyKey(conf *config.YubiConfig, desc string) (*Yubikey, error) {
 				PINPolicy:   piv.PINPolicyAlways,
 				TouchPolicy: piv.TouchPolicyAlways,
 			}
-			logging.Println("Creating key... please press Yubikey to confirm presence")
+			h := md5.New()
+			h.Write(x509.MarshalPKCS1PublicKey(conf.PubKeyInfo.PublicKey.(*rsa.PublicKey)))
+			logging.Println(fmt.Sprintf("Creating key... please press Yubikey to confirm presence for key RSA2048 MD5:%x", h.Sum(nil)))
 			pub, err = YK.GenerateKey(piv.DefaultManagementKey, piv.SlotSignature, key)
 			if err != nil {
 				return nil, err
@@ -131,7 +135,9 @@ func NewYubikeyKey(conf *config.YubiConfig, desc string) (*Yubikey, error) {
 		},
 	}
 
-	logging.Println("Signing certificate with key... please press Yubikey to confirm presence")
+	h := md5.New()
+	h.Write(x509.MarshalPKCS1PublicKey(conf.PubKeyInfo.PublicKey.(*rsa.PublicKey)))
+	logging.Println(fmt.Sprintf("Creating key... please press Yubikey to confirm presence for key RSA2048 MD5:%x", h.Sum(nil)))
 	derBytes, err := x509.CreateCertificate(rand.Reader, &c, &c, pub, priv)
 	if err != nil {
 		return nil, err
@@ -149,7 +155,7 @@ func NewYubikeyKey(conf *config.YubiConfig, desc string) (*Yubikey, error) {
 	}, nil
 }
 
-func YubikeyFromBytes(_ *config.YubiConfig, keyb, pemb []byte) (*Yubikey, error) {
+func YubikeyFromBytes(c *config.YubiConfig, keyb, pemb []byte) (*Yubikey, error) {
 	var yubiData YubikeyData
 	err := json.Unmarshal(keyb, &yubiData)
 	if err != nil {
@@ -157,7 +163,15 @@ func YubikeyFromBytes(_ *config.YubiConfig, keyb, pemb []byte) (*Yubikey, error)
 		return nil, err
 	}
 
-	pubKey, err := x509.ParsePKCS1PublicKey([]byte(yubiData.PublicKey))
+	pubKeyB64, err := base64.StdEncoding.DecodeString(yubiData.PublicKey)
+	if err != nil {
+		return nil, err
+	}
+	pubKey, err := x509.ParsePKCS1PublicKey(pubKeyB64)
+	if err != nil {
+		logging.Errorf("Error parsing public key: %v\n", err)
+		return nil, err
+	}
 	yubiData.Info.PublicKey = pubKey
 
 	block, _ := pem.Decode(pemb)
@@ -169,6 +183,8 @@ func YubikeyFromBytes(_ *config.YubiConfig, keyb, pemb []byte) (*Yubikey, error)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse cert: %w", err)
 	}
+
+	c.PubKeyInfo = &yubiData.Info
 	return &Yubikey{
 		keytype:    YubikeyBackend,
 		cert:       cert,
@@ -219,7 +235,9 @@ func (f *Yubikey) Signer() crypto.Signer {
 	if err != nil {
 		panic(err)
 	}
-	logging.Println("Signing operation... please press Yubikey to confirm presence")
+	h := md5.New()
+	h.Write(x509.MarshalPKCS1PublicKey(f.pubKeyInfo.PublicKey.(*rsa.PublicKey)))
+	logging.Println(fmt.Sprintf("Signing operation... please press Yubikey to confirm presence for key RSA2048 MD5:%x", h.Sum(nil)))
 	return priv.(crypto.Signer)
 }
 
@@ -239,7 +257,7 @@ func (f *Yubikey) PrivateKeyBytes() []byte {
 	yubiData := YubikeyData{
 		Info:      *f.pubKeyInfo,
 		Slot:      "signature",
-		PublicKey: string(x509.MarshalPKCS1PublicKey(f.pubKeyInfo.PublicKey.(*rsa.PublicKey))),
+		PublicKey: base64.StdEncoding.EncodeToString((x509.MarshalPKCS1PublicKey(f.pubKeyInfo.PublicKey.(*rsa.PublicKey)))),
 	}
 	yubiData.Info.PublicKey = nil
 
