@@ -139,7 +139,6 @@ func main() {
 				if err != nil {
 					log.Fatal(err)
 				}
-				logging.Println("Loading config: /etc/sbctl/sbctl.conf")
 				conf, err = config.NewConfig(state.Fs, b)
 				if err != nil {
 					log.Fatal(err)
