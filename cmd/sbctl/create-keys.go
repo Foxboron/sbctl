@@ -74,15 +74,12 @@ func RunCreateKeys(state *config.State) error {
 		}
 	}
 
-	logging.Println("trying to create GUID:\n")
-	logging.Println(state.Config.GUID)
 	uuid, err := sbctl.CreateGUID(state.Fs, state.Config.GUID)
 	if err != nil {
 		return err
 	}
 	logging.Print("Created Owner UUID %s\n", uuid)
 	if !sbctl.CheckIfKeysInitialized(state.Fs, state.Config.Keydir) {
-		logging.Println("Creating secure boot keys...")
 
 		hier, err := backend.CreateKeys(state)
 		if err != nil {
