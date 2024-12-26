@@ -45,7 +45,7 @@ func PrintConfig(state *config.State) error {
 		if err != nil {
 			return err
 		}
-		state.Config, err = config.NewConfig(b)
+		state.Config, err = config.NewConfig(state.Fs, b)
 		if err != nil {
 			return err
 		}

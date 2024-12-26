@@ -15,6 +15,7 @@ require (
 	github.com/google/uuid v1.4.0
 	github.com/hugelgupf/vmtest v0.0.0-20240110072021-f6f07acb7aa1
 	github.com/landlock-lsm/go-landlock v0.0.0-20240715193425-db0c8d6f1dff
+	github.com/manifoldco/promptui v0.9.0
 	github.com/onsi/gomega v1.7.1
 	github.com/spf13/afero v1.11.0
 	github.com/spf13/cobra v1.8.1
@@ -24,6 +25,7 @@ require (
 
 require (
 	github.com/Netflix/go-expect v0.0.0-20220104043353-73e0943537d2 // indirect
+	github.com/chzyer/readline v0.0.0-20180603132655-2972be24d48e // indirect
 	github.com/creack/pty v1.1.21 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/google/certificate-transparency-go v1.1.2 // indirect
