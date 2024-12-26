@@ -3,6 +3,7 @@ package config
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"os"
 	"path"
 	"strings"
@@ -127,7 +128,19 @@ func HasConfigurationFile(fs afero.Fs, file string) bool {
 	return !os.IsNotExist(err)
 }
 
-func NewConfig(b []byte) (*Config, error) {
+func VerifyConfig(fs afero.Fs, config *Config) error {
+	// TODO more validiation?
+	// TODO make directory if it doesn't exist?
+	// Check that config.Keydir exists
+	_, err := fs.Stat(config.Keydir)
+	if os.IsNotExist(err) {
+		return err
+	}
+
+	return nil
+}
+
+func NewConfig(fs afero.Fs, b []byte) (*Config, error) {
 	conf := &Config{}
 	if err := yaml.Unmarshal(b, conf); err != nil {
 		return nil, err
@@ -143,6 +156,12 @@ func NewConfig(b []byte) (*Config, error) {
 		return nil, err
 	}
 
+	// TODO
+	// Should sbctl make the directories if they do not exist?
+	if err := VerifyConfig(fs, newConf); err != nil {
+		return nil, fmt.Errorf("invalid sbctl config; %w", err)
+	}
+
 	return newConf, nil
 }
 
@@ -151,7 +170,7 @@ type YubiConfig struct {
 	YK         *piv.YubiKey
 }
 
-// Key creation is going to require differen callbacks to we abstract them away
+// Key creation is going to require different callbacks to we abstract them away
 type State struct {
 	Fs             afero.Fs
 	TPM            func() transport.TPMCloser
