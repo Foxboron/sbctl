@@ -39,6 +39,16 @@ type Yubikey struct {
 	pubKeyInfo *piv.KeyInfo
 }
 
+func PIVKeyString(algorithm piv.Algorithm) string {
+	switch algorithm {
+	case piv.AlgorithmRSA2048:
+		return "RSA2048"
+	default:
+		logging.Errorf("Unsupported Yubikey algorithm: %v", algorithm)
+		return ""
+	}
+}
+
 func PromptYubikeyPin() (string, error) {
 	validate := func(input string) error {
 		// Yubikey PIN is 6-8 numbers
@@ -86,7 +96,7 @@ func NewYubikeyKey(conf *config.YubiConfig, desc string) (*Yubikey, error) {
 		}
 		if keyInfo.PublicKey != nil {
 			if keyInfo.Algorithm == piv.AlgorithmRSA2048 {
-				logging.Warn("RSA 2048 Key exists in Yubikey PIV Signature Slot, using the existing key")
+				logging.Warn("RSA2048 Key exists in Yubikey PIV Signature Slot, using the existing key")
 				pub = keyInfo.PublicKey
 				conf.PubKeyInfo = &keyInfo
 			} else {
@@ -101,7 +111,9 @@ func NewYubikeyKey(conf *config.YubiConfig, desc string) (*Yubikey, error) {
 			}
 			h := md5.New()
 			h.Write(x509.MarshalPKCS1PublicKey(conf.PubKeyInfo.PublicKey.(*rsa.PublicKey)))
-			logging.Println(fmt.Sprintf("Creating key... please press Yubikey to confirm presence for key RSA2048 MD5:%x", h.Sum(nil)))
+			logging.Println(fmt.Sprintf("Creating key... please press Yubikey to confirm presence for key %s MD5: %x",
+				PIVKeyString(conf.PubKeyInfo.Algorithm),
+				h.Sum(nil)))
 			pub, err = YK.GenerateKey(piv.DefaultManagementKey, piv.SlotSignature, key)
 			if err != nil {
 				return nil, err
@@ -138,7 +150,9 @@ func NewYubikeyKey(conf *config.YubiConfig, desc string) (*Yubikey, error) {
 
 	h := md5.New()
 	h.Write(x509.MarshalPKCS1PublicKey(conf.PubKeyInfo.PublicKey.(*rsa.PublicKey)))
-	logging.Println(fmt.Sprintf("Creating key... please press Yubikey to confirm presence for key RSA2048 MD5:%x", h.Sum(nil)))
+	logging.Println(fmt.Sprintf("Creating key... please press Yubikey to confirm presence for key %s MD5: %x",
+		PIVKeyString(conf.PubKeyInfo.Algorithm),
+		h.Sum(nil)))
 	derBytes, err := x509.CreateCertificate(rand.Reader, &c, &c, pub, priv)
 	if err != nil {
 		return nil, err
@@ -238,7 +252,9 @@ func (f *Yubikey) Signer() crypto.Signer {
 	}
 	h := md5.New()
 	h.Write(x509.MarshalPKCS1PublicKey(f.pubKeyInfo.PublicKey.(*rsa.PublicKey)))
-	logging.Println(fmt.Sprintf("Signing operation... please press Yubikey to confirm presence for key RSA2048 MD5:%x", h.Sum(nil)))
+	logging.Println(fmt.Sprintf("Signing operation... please press Yubikey to confirm presence for key %s MD5: %x",
+		PIVKeyString(f.pubKeyInfo.Algorithm),
+		h.Sum(nil)))
 	return priv.(crypto.Signer)
 }
 
