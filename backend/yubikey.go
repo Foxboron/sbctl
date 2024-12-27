@@ -57,6 +57,7 @@ func PromptYubikeyPin() (string, error) {
 	prompt := promptui.Prompt{
 		Label:    "Yubikey PIV PIN: ",
 		Validate: validate,
+		Mask:     42, // '*'
 	}
 
 	result, err := prompt.Run()
