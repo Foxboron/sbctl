@@ -201,7 +201,7 @@ func createKey(state *config.State, backend string, hier hierarchy.Hierarchy, de
 	case "tpm":
 		return NewTPMKey(state.TPM, desc)
 	case "yubikey":
-		return NewYubikeyKey(state.YubikeySigKeys, desc)
+		return NewYubikeyKey(state.YubikeySigKeys, hier, desc)
 	default:
 		return NewFileKey(hier, desc)
 	}
