@@ -2,43 +2,33 @@ package backend
 
 import (
 	"fmt"
-	"github.com/foxboron/sbctl/hierarchy"
 	"log"
 	"testing"
 
 	"github.com/foxboron/sbctl/config"
+	"github.com/foxboron/sbctl/hierarchy"
 	"github.com/spf13/afero"
 )
 
 func TestCreateKeys(t *testing.T) {
-	t.Logf("Testing create keys\n")
 	c := &config.Config{
 		Keydir: t.TempDir(),
 		Keys: &config.Keys{
 			PK: &config.KeyConfig{
-				Type: "yubikey",
+				Type: "file",
 			},
-			KEK: &config.KeyConfig{
-				Type: "yubikey",
-			},
-			Db: &config.KeyConfig{
-				Type: "yubikey",
-			},
+			KEK: &config.KeyConfig{},
+			Db:  &config.KeyConfig{},
 		},
 	}
 	state := &config.State{
-		Fs: afero.NewOsFs(),
-		YubikeySigKeys: &config.YubiConfig{
-			Pub:  nil,
-			Priv: nil,
-		},
+		Fs:     afero.NewOsFs(),
 		Config: c,
 	}
 	hier, err := CreateKeys(state)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	t.Logf("Created keys: %v\n", hier)
 
 	err = hier.SaveKeys(afero.NewOsFs(), c.Keydir)
 	if err != nil {
@@ -49,7 +39,5 @@ func TestCreateKeys(t *testing.T) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	signer := key.Signer()
-	fmt.Printf("%v\n", signer)
 	fmt.Println(key.Certificate().Subject.CommonName)
 }
