@@ -167,6 +167,8 @@ func NewConfig(fs afero.Fs, b []byte) (*Config, error) {
 
 type YubiConfig struct {
 	PubKeyInfo *piv.KeyInfo
+	YK         *piv.YubiKey
+	Overwrite  bool
 }
 
 // Key creation is going to require different callbacks to we abstract them away
