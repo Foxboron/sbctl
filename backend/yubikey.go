@@ -31,11 +31,12 @@ type YubikeyData struct {
 	PublicKey string      `json:"PublicKey"`
 }
 
+var YK *piv.YubiKey
+
 type Yubikey struct {
 	keytype    BackendType
 	cert       *x509.Certificate
 	pubKeyInfo *piv.KeyInfo
-	yk         *piv.YubiKey
 }
 
 func PIVKeyString(algorithm piv.Algorithm) string {
@@ -83,15 +84,15 @@ func NewYubikeyKey(conf *config.YubiConfig, hier hierarchy.Hierarchy, desc strin
 	var pub crypto.PublicKey
 	if conf.PubKeyInfo == nil {
 		// Find a YubiKey and open the reader.
-		if conf.YK == nil {
+		if YK == nil {
 			var err error
-			conf.YK, err = connectToYubikey()
+			YK, err = connectToYubikey()
 			if err != nil {
 				return nil, err
 			}
 		}
 
-		keyInfo, err := conf.YK.KeyInfo(piv.SlotSignature)
+		keyInfo, err := YK.KeyInfo(piv.SlotSignature)
 		if err != nil {
 			return nil, err
 		}
@@ -129,11 +130,11 @@ func NewYubikeyKey(conf *config.YubiConfig, hier hierarchy.Hierarchy, desc strin
 				TouchPolicy: piv.TouchPolicyAlways,
 			}
 			logging.Println("Creating RSA2048 key...")
-			pub, err = conf.YK.GenerateKey(piv.DefaultManagementKey, piv.SlotSignature, key)
+			pub, err = YK.GenerateKey(piv.DefaultManagementKey, piv.SlotSignature, key)
 			if err != nil {
 				return nil, err
 			}
-			newKeyInfo, err := conf.YK.KeyInfo(piv.SlotSignature)
+			newKeyInfo, err := YK.KeyInfo(piv.SlotSignature)
 			if err != nil {
 				return nil, err
 			}
@@ -152,7 +153,7 @@ func NewYubikeyKey(conf *config.YubiConfig, hier hierarchy.Hierarchy, desc strin
 		return nil, err
 	}
 	auth := piv.KeyAuth{PIN: pin}
-	priv, err := conf.YK.PrivateKey(piv.SlotSignature, pub, auth)
+	priv, err := YK.PrivateKey(piv.SlotSignature, pub, auth)
 	if err != nil {
 		return nil, err
 	}
@@ -191,7 +192,6 @@ func NewYubikeyKey(conf *config.YubiConfig, hier hierarchy.Hierarchy, desc strin
 		keytype:    YubikeyBackend,
 		cert:       cert,
 		pubKeyInfo: conf.PubKeyInfo,
-		yk:         conf.YK,
 	}, nil
 }
 
@@ -229,7 +229,6 @@ func YubikeyFromBytes(c *config.YubiConfig, keyb, pemb []byte) (*Yubikey, error)
 		keytype:    YubikeyBackend,
 		cert:       cert,
 		pubKeyInfo: &yubiData.Info,
-		yk:         nil,
 	}, nil
 }
 
@@ -265,14 +264,14 @@ func (f *Yubikey) Signer() crypto.Signer {
 		panic(err)
 	}
 	auth := piv.KeyAuth{PIN: pin}
-	if f.yk == nil {
+	if YK == nil {
 		var err error
-		f.yk, err = connectToYubikey()
+		YK, err = connectToYubikey()
 		if err != nil {
 			panic(err)
 		}
 	}
-	priv, err := f.yk.PrivateKey(piv.SlotSignature, f.pubKeyInfo.PublicKey, auth)
+	priv, err := YK.PrivateKey(piv.SlotSignature, f.pubKeyInfo.PublicKey, auth)
 	if err != nil {
 		panic(err)
 	}
