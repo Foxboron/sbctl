@@ -25,17 +25,21 @@ func LandlockRulesFromConfig(conf *config.Config) {
 	rules = append(rules,
 		landlock.RODirs(
 			"/sys/devices/virtual/dmi/id/",
+			"/usr/lib",
 		).IgnoreIfMissing(),
 		landlock.RWDirs(
 			filepath.Dir(conf.Keydir),
 			// It seems to me that RWFiles should work on efivars, but it doesn't.
 			// TODO: Lock this down to individual files?
 			"/sys/firmware/efi/efivars/",
+			"/run/systemd/ask-password/",
 		).IgnoreIfMissing(),
 		landlock.ROFiles(
 			"/sys/kernel/security/tpm0/binary_bios_measurements",
 			// Go timezone reads /etc/localtime
 			"/etc/localtime",
+			"/proc/sys/kernel/cap_last_cap",
+			"/usr/bin/systemd-ask-password",
 		).IgnoreIfMissing(),
 		landlock.RWFiles(
 			conf.GUID,
@@ -43,6 +47,7 @@ func LandlockRulesFromConfig(conf *config.Config) {
 			conf.BundlesDb,
 			//TODO will this be different for others for yubikeys?
 			"/usr/lib/libpcsclite_real.so.1",
+			"/dev/null",
 			// Enable the TPM devices by default if they exist
 			"/dev/tpm0", "/dev/tpmrm0",
 		).IgnoreIfMissing(),
