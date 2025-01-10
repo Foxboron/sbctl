@@ -15,12 +15,13 @@ func SBCTLPrompt(validate func(string) error, label string, mask *rune) (string,
 	} else {
 		logging.Warn("not running in a TTY -- prompting with systemd-ask-password")
 		logging.Warn(fmt.Sprintf("(PROMPT) %s", label))
-		logging.Print("Run \"systemd-tty-ask-password-agent --query\" in another terminal\n")
+		logging.Warn("Run \"systemd-tty-ask-password-agent --query\" in another terminal\n")
 		cmd := exec.Command("/usr/bin/systemd-ask-password",
 			"--emoji=no",
 			"--timeout=0",
 			"-n",
 			"--echo=masked",
+			"sbctl Yubikey PIN",
 		)
 		output, err := cmd.Output()
 		if err != nil {
