@@ -69,13 +69,13 @@ func RunCreateKeys(state *config.State) error {
 		state.Config.Keys.KEK.Type = Keytype
 		state.Config.Keys.Db.Type = Keytype
 	} else {
-		if PKKeytype != "" && (PKKeytype == "file" || PKKeytype == "tpm") {
+		if PKKeytype != "" && (PKKeytype == "file" || PKKeytype == "tpm" || PKKeytype == "yubikey") {
 			state.Config.Keys.PK.Type = PKKeytype
 		}
-		if KEKKeytype != "" && (KEKKeytype == "file" || KEKKeytype == "tpm") {
+		if KEKKeytype != "" && (KEKKeytype == "file" || KEKKeytype == "tpm" || KEKKeytype == "yubikey") {
 			state.Config.Keys.KEK.Type = KEKKeytype
 		}
-		if DbKeytype != "" && (DbKeytype == "file" || DbKeytype == "tpm") {
+		if DbKeytype != "" && (DbKeytype == "file" || DbKeytype == "tpm" || DbKeytype == "yubikey") {
 			state.Config.Keys.Db.Type = DbKeytype
 		}
 	}
