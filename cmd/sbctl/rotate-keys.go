@@ -324,7 +324,7 @@ func rotateKeysCmdFlags(cmd *cobra.Command) {
 	f.StringVarP(&rotateKeysCmdOptions.Keytype, "keytype", "", "", "key type for all keys")
 	f.StringVarP(&rotateKeysCmdOptions.PKKeytype, "pk-keytype", "", "", "PK key type (default: file)")
 	f.StringVarP(&rotateKeysCmdOptions.KEKKeytype, "kek-keytype", "", "", "KEK key type (default: file)")
-	f.StringVarP(&rotateKeysCmdOptions.DbKeytype, "db-keytype", "", "", "db key type (defualt: file)")
+	f.StringVarP(&rotateKeysCmdOptions.DbKeytype, "db-keytype", "", "", "db key type (default: file)")
 }
 
 func init() {
