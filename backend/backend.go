@@ -23,6 +23,7 @@ type BackendType string
 const (
 	FileBackend    BackendType = "file"
 	YubikeyBackend BackendType = "yubikey"
+	PKCS11Backend  BackendType = "pkcs11"
 	TPMBackend     BackendType = "tpm"
 )
 
@@ -200,6 +201,8 @@ func createKey(state *config.State, backend string, hier hierarchy.Hierarchy, de
 		return NewFileKey(hier, desc)
 	case "tpm":
 		return NewTPMKey(state.TPM, desc)
+	case "pkcs11":
+		return NewPKCS11Key(desc)
 	default:
 		return NewFileKey(hier, desc)
 	}
@@ -255,6 +258,8 @@ func readKey(state *config.State, keydir string, kc *config.KeyConfig, hier hier
 		return FileKeyFromBytes(keyb, pemb)
 	case TPMBackend:
 		return TPMKeyFromBytes(state.TPM, keyb, pemb)
+	case PKCS11Backend:
+		return PKCS11KeyFromBytes(keyb, pemb)
 	default:
 		return nil, fmt.Errorf("unknown key")
 	}
@@ -322,6 +327,9 @@ func InitBackendFromKeys(state *config.State, priv, pem []byte, hier hierarchy.H
 		return FileKeyFromBytes(priv, pem)
 	case "tpm":
 		return TPMKeyFromBytes(state.TPM, priv, pem)
+	case "pkcs11":
+		// TODO: This will error with not implemented.
+		return PKCS11KeyFromBytes(priv, pem)
 	default:
 		return nil, fmt.Errorf("unknown key backend: %s", t)
 	}
