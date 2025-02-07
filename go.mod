@@ -7,7 +7,7 @@ toolchain go1.22.5
 require (
 	github.com/fatih/color v1.17.0
 	github.com/foxboron/go-tpm-keyfiles v0.0.0-20240725205618-b7c5a84edf9d
-	github.com/foxboron/go-uefi v0.0.0-20241017190036-fab4fdf2f2f3
+	github.com/foxboron/go-uefi v0.0.0-20250207204325-69fb7dba244f
 	github.com/goccy/go-yaml v1.11.3
 	github.com/google/go-attestation v0.5.1
 	github.com/google/go-tpm v0.9.1
@@ -18,7 +18,7 @@ require (
 	github.com/spf13/afero v1.11.0
 	github.com/spf13/cobra v1.8.1
 	golang.org/x/exp v0.0.0-20231219180239-dc181d75b848
-	golang.org/x/sys v0.22.0
+	golang.org/x/sys v0.28.0
 )
 
 require (
@@ -43,18 +43,19 @@ require (
 	github.com/pierrec/lz4/v4 v4.1.14 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
+	github.com/stretchr/objx v0.5.0 // indirect
 	github.com/u-root/gobusybox/src v0.0.0-20231224233253-2944a440b6b6 // indirect
 	github.com/u-root/u-root v0.11.1-0.20230807200058-f87ad7ccb594 // indirect
 	github.com/u-root/uio v0.0.0-20230305220412-3e8cd9d6bf63 // indirect
 	github.com/ulikunitz/xz v0.5.11 // indirect
 	github.com/vishvananda/netlink v1.2.1-beta.2 // indirect
 	github.com/vishvananda/netns v0.0.4 // indirect
-	golang.org/x/crypto v0.25.0 // indirect
-	golang.org/x/mod v0.17.0 // indirect
-	golang.org/x/net v0.25.0 // indirect
-	golang.org/x/sync v0.7.0 // indirect
-	golang.org/x/text v0.16.0 // indirect
-	golang.org/x/tools v0.21.1-0.20240508182429-e35e4ccd0d2d // indirect
+	golang.org/x/crypto v0.31.0 // indirect
+	golang.org/x/mod v0.20.0 // indirect
+	golang.org/x/net v0.33.0 // indirect
+	golang.org/x/sync v0.10.0 // indirect
+	golang.org/x/text v0.21.0 // indirect
+	golang.org/x/tools v0.24.0 // indirect
 	golang.org/x/xerrors v0.0.0-20231012003039-104605ab7028 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	kernel.org/pub/linux/libs/security/libcap/psx v1.2.70 // indirect
