@@ -29,7 +29,7 @@ func LandlockRulesFromConfig(conf *config.Config) {
 		landlock.RWDirs(
 			filepath.Dir(conf.Keydir),
 			// It seems to me that RWFiles should work on efivars, but it doesn't.
-			// TODO: Lock this down to induvidual files?
+			// TODO: Lock this down to individual files?
 			"/sys/firmware/efi/efivars/",
 		).IgnoreIfMissing(),
 		landlock.ROFiles(
@@ -41,6 +41,8 @@ func LandlockRulesFromConfig(conf *config.Config) {
 			conf.GUID,
 			conf.FilesDb,
 			conf.BundlesDb,
+			//TODO will this be different for others for yubikeys?
+			"/usr/lib/libpcsclite_real.so.1",
 			// Enable the TPM devices by default if they exist
 			"/dev/tpm0", "/dev/tpmrm0",
 		).IgnoreIfMissing(),
