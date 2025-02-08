@@ -82,7 +82,10 @@ func PromptYubikeyPin() (string, error) {
 
 func NewYubikeyKey(conf *config.YubiConfig, hier hierarchy.Hierarchy, desc string) (*Yubikey, error) {
 	var pub crypto.PublicKey
-	if conf.PubKeyInfo == nil {
+	if conf.PubKeyInfo != nil {
+		// Key already setup for sbctl
+		pub = conf.PubKeyInfo.PublicKey
+	} else {
 		// Find a YubiKey and open the reader.
 		if YK == nil {
 			var err error
@@ -143,9 +146,6 @@ func NewYubikeyKey(conf *config.YubiConfig, hier hierarchy.Hierarchy, desc strin
 			h.Write(x509.MarshalPKCS1PublicKey(newKeyInfo.PublicKey.(*rsa.PublicKey)))
 			logging.Println(fmt.Sprintf("Created RSA2048 key MD5: %x", h.Sum(nil)))
 		}
-	} else {
-		// Key already setup for sbctl
-		pub = conf.PubKeyInfo.PublicKey
 	}
 
 	pin, err := PromptYubikeyPin()

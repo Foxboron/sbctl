@@ -301,8 +301,7 @@ func GetKeyHierarchy(vfs afero.Fs, state *config.State) (*KeyHierarchy, error) {
 func GetBackendType(b []byte) (BackendType, error) {
 	if json.Valid(b) {
 		var yubiData YubikeyData
-		err := json.Unmarshal(b, &yubiData)
-		if err != nil {
+		if err := json.Unmarshal(b, &yubiData); err != nil {
 			logging.Errorf("Error unmarshalling Yubikey: %v\n", err)
 			return "", err
 		}
