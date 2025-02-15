@@ -74,8 +74,8 @@ func WithVM(t *testing.T, fn func(*VMTest)) {
 		ovmf:    path.Join(dir, "OVMF_VARS.fd"),
 		secboot: path.Join(dir, "OVMF_CODE.secboot.fd"),
 	}
-	CopyFile("/usr/share/edk2-ovmf/x64/OVMF_VARS.fd", vm.ovmf)
-	CopyFile("/usr/share/edk2-ovmf/x64/OVMF_CODE.secboot.fd", vm.secboot)
+	CopyFile("/usr/share/edk2-ovmf/x64/OVMF_VARS.4m.fd", vm.ovmf)
+	CopyFile("/usr/share/edk2-ovmf/x64/OVMF_CODE.secboot.4m.fd", vm.secboot)
 	fn(&vm)
 }
 
