@@ -10,8 +10,6 @@ jobs:
          - run: pacman --noconfirm --noprogressbar -Syu
          - run: pacman --noconfirm --noprogressbar -S sudo make go asciidoc gcc git edk2-ovmf qemu-system-x86
          - run: sudo mkdir -p /usr/share/edk2-ovmf/x64
-         - run: sudo ln -s /usr/share/edk2/x64/OVMF_VARS.4m.fd /usr/share/edk2-ovmf/x64/OVMF_VARS.fd
-         - run: sudo ln -s /usr/share/edk2/x64/OVMF_CODE.secboot.4m.fd /usr/share/edk2-ovmf/x64/OVMF_CODE.secboot.fd
          - uses: actions/checkout@v1
          - run: git config --global --add safe.directory $(pwd)
          - run: make
