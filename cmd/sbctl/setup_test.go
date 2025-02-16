@@ -39,8 +39,14 @@ func TestSetup(t *testing.T) {
 
 	// Include test file into our file config
 	conf.Files = []*config.FileConfig{
-		{"/boot/test.efi", "/boot/new.efi"},
-		{"/boot/something.efi", ""},
+	    {
+	        Path:   "/boot/test.efi",
+	        Output: "/boot/new.efi",
+	    },
+	    {
+	        Path:   "/boot/something.efi",
+	        Output: "",
+	    },
 	}
 
 	state := &config.State{
@@ -136,8 +142,14 @@ func TestSetupTPMKeys(t *testing.T) {
 
 	// Include test file into our file config
 	conf.Files = []*config.FileConfig{
-		{"/boot/test.efi", "/boot/new.efi"},
-		{"/boot/something.efi", ""},
+	    {
+	        Path:   "/boot/test.efi",
+	        Output: "/boot/new.efi",
+	    },
+	    {
+	        Path:   "/boot/something.efi",
+	        Output: "",
+	    },
 	}
 
 	rwc, err := simulator.OpenSimulator()
