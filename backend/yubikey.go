@@ -205,7 +205,6 @@ func connectToYubikey() (*piv.YubiKey, error) {
 	// Find a YubiKey and open the reader.
 	var yk *piv.YubiKey
 	for _, card := range cards {
-		fmt.Println(strings.ToLower(card))
 		if strings.Contains(strings.ToLower(card), "yubikey") {
 			if yk, err = piv.Open(card); err != nil {
 				return nil, err
