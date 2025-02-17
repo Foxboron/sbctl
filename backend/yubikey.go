@@ -11,6 +11,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"encoding/pem"
+	"errors"
 	"fmt"
 	"github.com/foxboron/sbctl/config"
 	"github.com/foxboron/sbctl/hierarchy"
@@ -74,10 +75,11 @@ func NewYubikeyKey(conf *config.YubiConfig, hier hierarchy.Hierarchy, desc strin
 		}
 
 		keyInfo, err := YK.KeyInfo(piv.SlotSignature)
-		if err != nil {
+		if errors.As(err, &piv.ErrNotFound) {
+			keyInfo.PublicKey = nil
+		} else if err != nil {
 			return nil, err
 		}
-		// if there is a key and overwrite is set, create a new one
 
 		if keyInfo.PublicKey != nil {
 			// if there is a key and it is RSA2048 and overwrite is false, use it
@@ -89,6 +91,7 @@ func NewYubikeyKey(conf *config.YubiConfig, hier hierarchy.Hierarchy, desc strin
 				return nil, fmt.Errorf("yubikey key creation failed; %s key present in signature slot", PIVKeyString(keyInfo.Algorithm))
 			}
 		}
+		// if there is no key or overwrite is set, create a new one
 		if keyInfo.PublicKey == nil || conf.Overwrite {
 			if conf.Overwrite {
 				logging.Warn("Overwriting existing key %s in Signature slot", PIVKeyString(keyInfo.Algorithm))
@@ -100,7 +103,7 @@ func NewYubikeyKey(conf *config.YubiConfig, hier hierarchy.Hierarchy, desc strin
 				PINPolicy:   piv.PINPolicyAlways,
 				TouchPolicy: piv.TouchPolicyAlways,
 			}
-			logging.Println("Creating RSA2048 key...")
+			logging.Println("Creating RSA2048 key...\nPlease press Yubikey to confirm presense")
 			pub, err = YK.GenerateKey(piv.DefaultManagementKey, piv.SlotSignature, key)
 			if err != nil {
 				return nil, err
@@ -110,9 +113,7 @@ func NewYubikeyKey(conf *config.YubiConfig, hier hierarchy.Hierarchy, desc strin
 				return nil, err
 			}
 			conf.PubKeyInfo = &newKeyInfo
-			h := md5.New()
-			h.Write(x509.MarshalPKCS1PublicKey(newKeyInfo.PublicKey.(*rsa.PublicKey)))
-			logging.Println(fmt.Sprintf("Created RSA2048 key MD5: %x", h.Sum(nil)))
+			logging.Println(fmt.Sprintf("Created RSA2048 key MD5: %x", md5sum(newKeyInfo.PublicKey)))
 		}
 	}
 
@@ -136,12 +137,10 @@ func NewYubikeyKey(conf *config.YubiConfig, hier hierarchy.Hierarchy, desc strin
 		},
 	}
 
-	h := md5.New()
-	h.Write(x509.MarshalPKCS1PublicKey(conf.PubKeyInfo.PublicKey.(*rsa.PublicKey)))
 	logging.Println(fmt.Sprintf("Creating %s key...\nPlease press Yubikey to confirm presence for key %s MD5: %x",
 		hier.String(),
 		PIVKeyString(conf.PubKeyInfo.Algorithm),
-		h.Sum(nil)))
+		md5sum(conf.PubKeyInfo.PublicKey)))
 	derBytes, err := x509.CreateCertificate(rand.Reader, &c, &c, pub, priv)
 	if err != nil {
 		return nil, err
@@ -206,6 +205,7 @@ func connectToYubikey() (*piv.YubiKey, error) {
 	// Find a YubiKey and open the reader.
 	var yk *piv.YubiKey
 	for _, card := range cards {
+		fmt.Println(strings.ToLower(card))
 		if strings.Contains(strings.ToLower(card), "yubikey") {
 			if yk, err = piv.Open(card); err != nil {
 				return nil, err
@@ -235,11 +235,9 @@ func (f *Yubikey) Signer() crypto.Signer {
 	if err != nil {
 		panic(err)
 	}
-	h := md5.New()
-	h.Write(x509.MarshalPKCS1PublicKey(f.pubKeyInfo.PublicKey.(*rsa.PublicKey)))
 	logging.Println(fmt.Sprintf("Signing operation... please press Yubikey to confirm presence for key %s MD5: %x",
 		PIVKeyString(f.pubKeyInfo.Algorithm),
-		h.Sum(nil)))
+		md5sum(f.pubKeyInfo.PublicKey)))
 	return priv.(crypto.Signer)
 }
 
@@ -276,4 +274,10 @@ func (f *Yubikey) CertificateBytes() []byte {
 		panic("failed producing PEM encoded certificate")
 	}
 	return b.Bytes()
+}
+
+func md5sum(key crypto.PublicKey) []byte {
+	h := md5.New()
+	h.Write(x509.MarshalPKCS1PublicKey(key.(*rsa.PublicKey)))
+	return h.Sum(nil)
 }

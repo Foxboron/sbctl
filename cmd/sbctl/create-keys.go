@@ -36,7 +36,7 @@ var createKeysCmd = &cobra.Command{
 func RunCreateKeys(state *config.State) error {
 	if state.Config.Landlock {
 		lsm.RestrictAdditionalPaths(
-			landlock.RWDirs(filepath.Dir(filepath.Clean(state.Config.Keydir))),
+			landlock.RWDirs(filepath.Dir(filepath.Dir(filepath.Clean(state.Config.Keydir)))),
 		)
 		if err := lsm.Restrict(); err != nil {
 			return err
@@ -107,7 +107,7 @@ func RunCreateKeys(state *config.State) error {
 
 func createKeysCmdFlags(cmd *cobra.Command) {
 	f := cmd.Flags()
-	f.BoolVar(&OverwriteYubikey, "overwrite", false, "overwrite existing key if it exists in the Yubikey Signature slot")
+	f.BoolVar(&OverwriteYubikey, "--yk-overwrite", false, "overwrite existing key if it exists in the Yubikey Signature slot")
 	f.StringVarP(&exportPath, "export", "e", "", "export file path")
 	f.StringVarP(&databasePath, "database-path", "d", "", "location to create GUID file")
 	f.StringVarP(&Keytype, "keytype", "", "", "key type for all keys")

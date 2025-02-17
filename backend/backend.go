@@ -306,17 +306,16 @@ func GetBackendType(b []byte) (BackendType, error) {
 			return "", err
 		}
 		return YubikeyBackend, nil
-	} else {
-		block, _ := pem.Decode(b)
-		// TODO: Add TSS2 keys
-		switch block.Type {
-		case "PRIVATE KEY":
-			return FileBackend, nil
-		case "TSS2 PRIVATE KEY":
-			return TPMBackend, nil
-		default:
-			return "", fmt.Errorf("unknown file type: %s", block.Type)
-		}
+	} 
+	block, _ := pem.Decode(b)
+	// TODO: Add TSS2 keys
+	switch block.Type {
+	case "PRIVATE KEY":
+		return FileBackend, nil
+	case "TSS2 PRIVATE KEY":
+		return TPMBackend, nil
+	default:
+		return "", fmt.Errorf("unknown file type: %s", block.Type)
 	}
 }
 
