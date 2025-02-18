@@ -3,9 +3,11 @@ package backend
 import (
 	"crypto"
 	"crypto/x509"
+	"encoding/json"
 	"encoding/pem"
 	"errors"
 	"fmt"
+	"github.com/foxboron/sbctl/logging"
 	"io"
 	"os"
 	"path/filepath"
@@ -81,8 +83,6 @@ func (k *KeyHierarchy) GetKeyBackend(e efivar.Efivar) KeyBackend {
 		return k.KEK
 	case efivar.Db:
 		return k.Db
-		// case efivar.Dbx:
-		// 	return k.Dbx
 	default:
 		panic("invalid key hierarchy")
 	}
@@ -200,6 +200,8 @@ func createKey(state *config.State, backend string, hier hierarchy.Hierarchy, de
 		return NewFileKey(hier, desc)
 	case "tpm":
 		return NewTPMKey(state.TPM, desc)
+	case "yubikey":
+		return NewYubikeyKey(state.YubikeySigKeys, hier, desc)
 	default:
 		return NewFileKey(hier, desc)
 	}
@@ -255,6 +257,8 @@ func readKey(state *config.State, keydir string, kc *config.KeyConfig, hier hier
 		return FileKeyFromBytes(keyb, pemb)
 	case TPMBackend:
 		return TPMKeyFromBytes(state.TPM, keyb, pemb)
+	case YubikeyBackend:
+		return YubikeyFromBytes(state.YubikeySigKeys, keyb, pemb)
 	default:
 		return nil, fmt.Errorf("unknown key")
 	}
@@ -295,6 +299,14 @@ func GetKeyHierarchy(vfs afero.Fs, state *config.State) (*KeyHierarchy, error) {
 }
 
 func GetBackendType(b []byte) (BackendType, error) {
+	if json.Valid(b) {
+		var yubiData YubikeyData
+		if err := json.Unmarshal(b, &yubiData); err != nil {
+			logging.Errorf("Error unmarshalling Yubikey: %v\n", err)
+			return "", err
+		}
+		return YubikeyBackend, nil
+	} 
 	block, _ := pem.Decode(b)
 	// TODO: Add TSS2 keys
 	switch block.Type {
@@ -322,6 +334,8 @@ func InitBackendFromKeys(state *config.State, priv, pem []byte, hier hierarchy.H
 		return FileKeyFromBytes(priv, pem)
 	case "tpm":
 		return TPMKeyFromBytes(state.TPM, priv, pem)
+	case "yubikey":
+		return YubikeyFromBytes(state.YubikeySigKeys, priv, pem)
 	default:
 		return nil, fmt.Errorf("unknown key backend: %s", t)
 	}
