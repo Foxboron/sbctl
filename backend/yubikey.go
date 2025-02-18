@@ -17,6 +17,7 @@ import (
 	"github.com/foxboron/sbctl/hierarchy"
 	"github.com/foxboron/sbctl/logging"
 	"math/big"
+	"os"
 	"strings"
 	"time"
 
@@ -118,6 +119,9 @@ func NewYubikeyKey(conf *config.YubiConfig, hier hierarchy.Hierarchy, desc strin
 	}
 
 	auth := piv.KeyAuth{PIN: piv.DefaultPIN}
+	if pin, found := os.LookupEnv("SBCTL_YUBIKEY_PIN"); found {
+		auth = piv.KeyAuth{PIN: pin}
+	}
 	priv, err := YK.PrivateKey(piv.SlotSignature, pub, auth)
 	if err != nil {
 		return nil, err
@@ -223,6 +227,9 @@ func (f *Yubikey) Certificate() *x509.Certificate { return f.cert }
 
 func (f *Yubikey) Signer() crypto.Signer {
 	auth := piv.KeyAuth{PIN: piv.DefaultPIN}
+	if pin, found := os.LookupEnv("SBCTL_YUBIKEY_PIN"); found {
+		auth = piv.KeyAuth{PIN: pin}
+	}
 	if YK == nil {
 		var err error
 		YK, err = connectToYubikey()
