@@ -559,7 +559,7 @@ Files
 ----
 
 **/etc/sbctl/sbctl.conf**:;
-        Defautl configuration file.
+        Default configuration file.
         See linkman:sbctl.conf[5]
 
 **/var/lib/sbctl**::
