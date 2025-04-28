@@ -53,7 +53,7 @@ func VerifyOneFile(state *config.State, f string) error {
 		logging.Error(fmt.Errorf("failed to read file %s: %s", f, err))
 	}
 	if !ok {
-		return ErrInvalidHeader
+		return fmt.Errorf("%s: %w", f, ErrInvalidHeader)
 	}
 
 	kh, err := backend.GetKeyHierarchy(state.Fs, state)
