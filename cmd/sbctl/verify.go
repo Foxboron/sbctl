@@ -101,7 +101,7 @@ func RunVerify(cmd *cobra.Command, args []string) error {
 	if len(args) > 0 {
 		for _, file := range args {
 			if err := VerifyOneFile(state, file); err != nil {
-				if errors.Is(ErrInvalidHeader, err) {
+				if errors.Is(err, ErrInvalidHeader) {
 					logging.Error(fmt.Errorf("%s is not a valid EFI binary", file))
 					return nil
 				}
@@ -136,7 +136,7 @@ func RunVerify(cmd *cobra.Command, args []string) error {
 		}
 		if err = VerifyOneFile(state, path); err != nil {
 			// We are scanning the ESP, so ignore invalid files
-			if errors.Is(ErrInvalidHeader, err) {
+			if errors.Is(err, ErrInvalidHeader) {
 				return nil
 			}
 			logging.Error(fmt.Errorf("failed to verify file %s: %s", path, err))
