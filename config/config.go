@@ -12,6 +12,7 @@ import (
 
 	"github.com/foxboron/go-uefi/efi/util"
 	"github.com/foxboron/go-uefi/efivarfs"
+	"github.com/go-piv/piv-go/v2/piv"
 	"github.com/google/go-tpm/tpm2/transport"
 	"github.com/google/uuid"
 	"github.com/spf13/afero"
@@ -33,6 +34,11 @@ type KeyConfig struct {
 	Pubkey      string `json:"pubkey"`
 	Type        string `json:"type"`
 	Description string `json:"description,omitempty"`
+}
+
+type YubiConfig struct {
+	PubKeyInfo *piv.KeyInfo
+	Overwrite  bool
 }
 
 type Keys struct {
@@ -135,10 +141,11 @@ func NewConfig(b []byte) (*Config, error) {
 
 // Key creation is going to require differen callbacks to we abstract them away
 type State struct {
-	Fs       afero.Fs
-	TPM      func() transport.TPMCloser
-	Config   *Config
-	Efivarfs *efivarfs.Efivarfs
+	Fs             afero.Fs
+	TPM            func() transport.TPMCloser
+	Config         *Config
+	Efivarfs       *efivarfs.Efivarfs
+	YubikeySigKeys *YubiConfig
 }
 
 func (s *State) IsInstalled() bool {
