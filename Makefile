@@ -42,6 +42,7 @@ install: sbctl completions man
 	install -Dm644 contrib/completions/zsh/site-functions/_sbctl '$(DESTDIR)$(SHRDIR)/zsh/site-functions/_sbctl'
 	install -Dm644 contrib/completions/fish/vendor_completions.d/sbctl.fish '$(DESTDIR)$(SHRDIR)/fish/vendor_completions.d/sbctl.fish'
 	install -Dm755 contrib/kernel-install/91-sbctl.install '$(DESTDIR)$(LIBDIR)/kernel/install.d/91-sbctl.install'
+	install -Dm755 contrib/installkernel/91-sbctl.install '$(DESTDIR)$(LIBDIR)/kernel/postinst.d/91-sbctl.install'
 	install -Dm644 LICENSE -t '$(DESTDIR)$(SHRDIR)/licenses/$(PROGNM)'
 
 .PHONY: release
