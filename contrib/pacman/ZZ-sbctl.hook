@@ -13,4 +13,4 @@ Target = usr/share/**/*.efi*
 [Action]
 Description = Signing EFI binaries...
 When = PostTransaction
-Exec = /usr/bin/sbctl sign-all -g
+Exec = /usr/bin/sbctl sign-all -g --quiet
