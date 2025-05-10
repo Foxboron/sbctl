@@ -37,7 +37,6 @@ func NewFileKey(_ hierarchy.Hierarchy, desc string) (*FileKey, error) {
 		NotBefore:          time.Now(),
 		NotAfter:           time.Now().AddDate(5, 0, 0),
 		Subject: pkix.Name{
-			Country:    []string{desc},
 			CommonName: desc,
 		},
 	}

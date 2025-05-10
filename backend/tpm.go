@@ -45,7 +45,6 @@ func NewTPMKey(tpmcb func() transport.TPMCloser, desc string) (*TPMKey, error) {
 		NotBefore:          time.Now(),
 		NotAfter:           time.Now().AddDate(5, 0, 0),
 		Subject: pkix.Name{
-			Country:    []string{desc},
 			CommonName: desc,
 		},
 	}

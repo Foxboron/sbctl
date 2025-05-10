@@ -35,7 +35,7 @@ func TestExportEnrolledKeysDer(t *testing.T) {
 	cert, err := x509.ParseCertificate(derBytes)
 	g.Expect(err).ToNot(HaveOccurred())
 
-	g.Expect(cert.Issuer.String()).To(MatchRegexp("CN=Platform Key,C=Platform Key"))
+	g.Expect(cert.Issuer.String()).To(MatchRegexp("CN=Platform Key"))
 }
 
 func TestExportEnrolledKeysEsl(t *testing.T) {
