@@ -1,5 +1,5 @@
 #!/bin/sh
-#  This file is part of sbctl.
+# This file is part of sbctl.
 
 COMMAND="$1"
 KERNEL_VERSION="$2"
@@ -9,6 +9,16 @@ KERNEL_IMAGE="$4"
 
 IMAGE_FILE="$ENTRY_DIR_ABS/linux"
 
+die() {
+	echo -e " ${NOCOLOR-\e[1;31m*\e[0m }${*}" >&2
+	exit 1
+}
+
+einfo() {
+	[[ ${KERNEL_INSTALL_VERBOSE} -gt ]] || return 0
+	echo -e " ${NOCOLOR-\e[1;32m*\e[0m }${*}"
+}
+
 if [ "$KERNEL_INSTALL_LAYOUT" = "uki" ]; then
 	UKI_DIR="$KERNEL_INSTALL_BOOT_ROOT/EFI/Linux"
 	TRIES_FILE="${KERNEL_INSTALL_CONF_ROOT:-/etc/kernel}/tries"
@@ -16,8 +26,7 @@ if [ "$KERNEL_INSTALL_LAYOUT" = "uki" ]; then
 	if [ -f "$TRIES_FILE" ]; then
 		read -r TRIES <"$TRIES_FILE"
 		if ! echo "$TRIES" | grep -q '^[0-9][0-9]*$'; then
-			echo "$TRIES_FILE does not contain an integer." >&2
-			exit 1
+			die "$TRIES_FILE does not contain an integer."
 		fi
 		IMAGE_FILE="$UKI_DIR/$KERNEL_INSTALL_ENTRY_TOKEN-$KERNEL_VERSION+$TRIES.efi"
 	else
@@ -27,20 +36,19 @@ fi
 
 case "$COMMAND" in
 add)
-	printf 'sbctl: Signing kernel %s\n' "$IMAGE_FILE"
+	einfo 'sbctl: Signing kernel $IMAGE_FILE'
 
 	# exit without error if keys don't exist
 	# https://github.com/Foxboron/sbctl/issues/187
 	if ! [ "$(sbctl setup --print-state --json | awk '/installed/ { gsub(/,$/,"",$2); print $2 }')" = "true" ]; then
-		echo "Secureboot key directory doesn't exist, not signing!"
+		einfo "Secureboot key directory doesn't exist, not signing!"
 		exit 0
 	fi
 
 	sbctl sign "$IMAGE_FILE" 1>/dev/null
 	;;
 remove)
-	[ "$KERNEL_INSTALL_VERBOSE" -gt 0 ] &&
-		printf 'sbctl: Removing kernel %s from signing database\n' "$IMAGE_FILE"
+	einfo 'sbctl: Removing kernel $IMAGE_FILE from signing database'
 	sbctl remove-file "$IMAGE_FILE" 1>/dev/null || :
 	;;
 esac
