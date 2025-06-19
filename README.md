@@ -261,3 +261,32 @@ Enrolled bundles:
 Generating EFI bundles....
 Wrote EFI bundle /efi/EFI/Linux/linux-linux.efi
 ```
+
+
+## Yubikey Support
+To create a signing key with a yubikey, use the `--keytype yubikey` flag with the `create-key` command. For example:
+
+```
+$ sbctl create-keys --keytype yubikey
+Created Owner UUID da774306-c007-4fb7-835d-91146a8795ef
+Please connect yubikey! Waiting 90 seconds...
+Using RSA4096 Key MD5: bb466f955d182cfd38225a5c326c5329 in Yubikey PIV Signature Slot
+Creating Platform Key (PK) key...
+Please press Yubikey to confirm presence for RSA4096 MD5: bb466f955d182cfd38225a5c326c5329
+Using RSA4096 Key MD5: bb466f955d182cfd38225a5c326c5329 in Yubikey PIV Signature Slot
+Creating Key Exchange Key (KEK) key...
+Please press Yubikey to confirm presence for RSA4096 MD5: bb466f955d182cfd38225a5c326c5329
+Using RSA4096 Key MD5: bb466f955d182cfd38225a5c326c5329 in Yubikey PIV Signature Slot
+Creating Database Key (db) key...
+Please press Yubikey to confirm presence for RSA4096 MD5: bb466f955d182cfd38225a5c326c5329
+✓
+Secure boot keys created!
+```
+
+The command will create a RSA4096 key in the Yubikey's PIV Signature Slot. `sbctl` will then use the key for signing the UKI. To specify the PIN for the Yubikey, use the `SBCTL_YUBIKEY_PIN` environment variable:
+
+```
+$ SBCTL_YUBIKEY_PIN=123123 sbctl create-keys --keytype yubikey
+```
+
+Remember to specify the `SBCTL_YUBIKEY_PIN` when signing the UKI or performing operations that will trigger the sbctl hooks (like `mkinitcpio`).
