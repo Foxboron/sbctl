@@ -8,6 +8,7 @@ require (
 	github.com/fatih/color v1.17.0
 	github.com/foxboron/go-tpm-keyfiles v0.0.0-20240725205618-b7c5a84edf9d
 	github.com/foxboron/go-uefi v0.0.0-20250207204325-69fb7dba244f
+	github.com/go-piv/piv-go/v2 v2.3.0
 	github.com/goccy/go-yaml v1.11.3
 	github.com/google/go-attestation v0.5.1
 	github.com/google/go-tpm v0.9.1

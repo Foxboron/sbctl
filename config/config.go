@@ -139,6 +139,7 @@ type State struct {
 	TPM      func() transport.TPMCloser
 	Config   *Config
 	Efivarfs *efivarfs.Efivarfs
+	Yubikey  *YubikeyReader
 }
 
 func (s *State) IsInstalled() bool {

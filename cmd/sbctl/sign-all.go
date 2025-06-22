@@ -33,6 +33,9 @@ var signAllCmd = &cobra.Command{
 			}
 		}
 
+		// If the signing operation opens a Yubikey, ensure it is closed properly at the end
+		defer state.Yubikey.Close()
+
 		if generate {
 			sign = true
 			if err := generateBundlesCmd.RunE(cmd, args); err != nil {

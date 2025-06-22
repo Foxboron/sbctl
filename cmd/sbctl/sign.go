@@ -26,6 +26,9 @@ var signCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		state := cmd.Context().Value(stateDataKey{}).(*config.State)
 
+		// If the signing operation opens a Yubikey, ensure it is closed properly at the end
+		defer state.Yubikey.Close()
+
 		if len(args) < 1 {
 			logging.Print("Requires a file to sign\n")
 			os.Exit(1)
