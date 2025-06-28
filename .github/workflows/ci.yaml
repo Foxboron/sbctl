@@ -8,7 +8,7 @@ jobs:
          options: --device /dev/kvm
       steps:
          - run: pacman --noconfirm --noprogressbar -Syu
-         - run: pacman --noconfirm --noprogressbar -S make go asciidoc gcc git edk2-ovmf qemu-system-x86 pkgconf
+         - run: pacman --noconfirm --noprogressbar -S make go asciidoc gcc git edk2-ovmf qemu-system-x86 pkgconf pcsclite
          - uses: actions/checkout@v1
          - run: git config --global --add safe.directory $(pwd)
          - run: make
@@ -21,7 +21,7 @@ jobs:
       steps:
          # update xbps, if necessary
          - run: xbps-install -Syu || ( xbps-install -yu xbps && xbps-install -Syu)
-         - run: xbps-install -y make go asciidoc gcc git openssl-devel pkg-config
+         - run: xbps-install -y make go asciidoc gcc git openssl-devel pkg-config pcsclite-devel
          - uses: actions/checkout@v1
          - run: git config --global --add safe.directory $(pwd)
          - run: make
