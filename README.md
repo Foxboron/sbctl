@@ -69,6 +69,10 @@ For Gentoo Linux:
 ```
 # emerge --ask app-crypt/sbctl
 ```
+For Debian
+```
+# apt install sbctl
+```
 
 For openSUSE:
 ```
