@@ -1,0 +1,36 @@
+#!/bin/sh
+# This file is part of sbctl.
+
+#shellcheck disable=SC2034
+
+ver=${1}
+img=${2}
+
+die() {
+	echo -e " ${NOCOLOR-\e[1;31m*\e[0m }${*}" >&2
+	exit 1
+}
+
+einfo() {
+	[[ ${INSTALLKERNEL_VERBOSE} == 1 ]] || return 0
+	echo -e " ${NOCOLOR-\e[1;32m*\e[0m }${*}"
+}
+
+main() {
+	# re-define for subst to work
+	[[ -n ${NOCOLOR+yes} ]] && NOCOLOR=
+
+	# do nothing if secureboot key directory doesn't exist
+	if ! [ "$(sbctl setup --print-state --json | awk '/installed/ { gsub(/,$/,"",$2); print $2 }')" = "true" ]; then
+		einfo "Secureboot key directory doesn't exist, not signing!"
+		exit 0
+	fi
+
+	[[ ${EUID} -eq 0 ]] || die "Please run this script as root"
+
+	einfo "sbctl: Signing kernel $img"
+	sbctl sign -s $img 1> /dev/null
+}
+
+main
+
