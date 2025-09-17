@@ -76,7 +76,7 @@ func PrintStatus(s *Status) {
 	}
 	if len(s.FirmwareQuirks) > 0 {
 		logging.Print("Firmware:\t")
-		logging.Print(logging.Warnf("Your firmware has known quirks"))
+		logging.Print("%s", logging.Warnf("Your firmware has known quirks"))
 		for _, quirk := range s.FirmwareQuirks {
 			logging.Println("\t\t- " + quirk.ID + ": " + quirk.Name + " (" + quirk.Severity + ")\n\t\t  " + quirk.Link)
 		}
