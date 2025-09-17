@@ -27,6 +27,7 @@ jobs:
           fetch-depth: 0
       - name: Build binary
         run: |
+          export CGO_ENABLED=1
           cp LICENSE "$RUNNER_TEMP/LICENSE"
           echo -e "\n---\n" >> "$RUNNER_TEMP/LICENSE"
           curl -L "https://go.dev/LICENSE?m=text" >> "$RUNNER_TEMP/LICENSE"
