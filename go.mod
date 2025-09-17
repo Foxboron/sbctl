@@ -1,8 +1,6 @@
 module github.com/foxboron/sbctl
 
-go 1.22.0
-
-toolchain go1.22.5
+go 1.24.0
 
 require (
 	github.com/fatih/color v1.17.0
@@ -19,7 +17,7 @@ require (
 	github.com/spf13/afero v1.11.0
 	github.com/spf13/cobra v1.8.1
 	golang.org/x/exp v0.0.0-20231219180239-dc181d75b848
-	golang.org/x/sys v0.28.0
+	golang.org/x/sys v0.36.0
 )
 
 require (
@@ -51,12 +49,12 @@ require (
 	github.com/ulikunitz/xz v0.5.11 // indirect
 	github.com/vishvananda/netlink v1.2.1-beta.2 // indirect
 	github.com/vishvananda/netns v0.0.4 // indirect
-	golang.org/x/crypto v0.31.0 // indirect
-	golang.org/x/mod v0.20.0 // indirect
-	golang.org/x/net v0.33.0 // indirect
-	golang.org/x/sync v0.10.0 // indirect
-	golang.org/x/text v0.21.0 // indirect
-	golang.org/x/tools v0.24.0 // indirect
+	golang.org/x/crypto v0.42.0 // indirect
+	golang.org/x/mod v0.28.0 // indirect
+	golang.org/x/net v0.44.0 // indirect
+	golang.org/x/sync v0.17.0 // indirect
+	golang.org/x/text v0.29.0 // indirect
+	golang.org/x/tools v0.37.0 // indirect
 	golang.org/x/xerrors v0.0.0-20231012003039-104605ab7028 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	kernel.org/pub/linux/libs/security/libcap/psx v1.2.70 // indirect
