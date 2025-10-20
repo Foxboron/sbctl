@@ -67,7 +67,7 @@ EFI signing commands
 
         *-f*, *--firmware-builtin*;;
                 Enroll signatures from dbDefault, KEKDefault or PKDefault. This
-                is usefull if sbctl does not vendor your OEM certificates, or
+                is useful if sbctl does not vendor your OEM certificates, or
                 doesn't include all of them.
                 +
                 Valid values are "db", "KEK" or "PK" passed as a comma
@@ -412,7 +412,7 @@ RSA 2048, which is usually the highest bit strength supported by TPMs.
 
 When creating a key hierarchy for Secure Boot, the user can decide which key
 type each of the keys in the hierarchy gets. Because TPMs can be slow to sign,
-it's generally adviced to keep PK and KEK in the TPM, while the db key can be a
+it's generally advised to keep PK and KEK in the TPM, while the db key can be a
 standard *file* key.
 
 Note that password protection is currently not supported.
@@ -547,7 +547,7 @@ Environment variables
 **SYSTEMD_ESP_PATH**, **ESP_PATH**::
         Defines the EFI system partition (ESP) location. This overrides the
         behaviour from **sbctl** where we query for the correct partition with
-        **lsblk**. No checks are performed on this path and can be usefull for testing
+        **lsblk**. No checks are performed on this path and can be useful for testing
         purposes.
 
 **SBCTL_UNICODE**::
