@@ -172,7 +172,7 @@ func RunReset(cmd *cobra.Command, args []string) error {
 func resetKeysCmdFlags(cmd *cobra.Command) {
 	f := cmd.Flags()
 	f.VarPF(&resetCmdOpts.Partial, "partial", "p", "reset a partial set of keys")
-	f.StringVarP(&resetCmdOpts.CertFiles, "cert-files", "c", "", "optional paths to certificate file to remove from the hierachy (seperate individual paths by ';')")
+	f.StringVarP(&resetCmdOpts.CertFiles, "cert-files", "c", "", "optional paths to certificate file to remove from the hierarchy (separate individual paths by ';')")
 }
 
 func init() {
