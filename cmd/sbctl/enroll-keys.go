@@ -85,7 +85,15 @@ var (
 )
 
 func SignSiglist(k *backend.KeyHierarchy, e efivar.Efivar, sigdb efivar.Marshallable) ([]byte, error) {
-	signer := k.GetKeyBackend(e)
+	var signer backend.KeyBackend
+	switch e {
+	case efivar.PK:
+		signer = k.GetKeyBackend(efivar.PK)
+	case efivar.KEK:
+		signer = k.GetKeyBackend(efivar.PK)
+	case efivar.Db:
+		signer = k.GetKeyBackend(efivar.KEK)
+	}
 	_, em, err := signature.SignEFIVariable(e, sigdb, signer.Signer(), signer.Certificate())
 	if err != nil {
 		return nil, err
