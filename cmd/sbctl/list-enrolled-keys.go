@@ -89,7 +89,7 @@ func printCertsPlainText(certList map[string][]*x509.Certificate) {
 	for db, certs := range certList {
 		fmt.Printf("%s:\n", db)
 		for _, c := range certs {
-			fmt.Printf("  %s\n", c.Issuer.CommonName)
+			fmt.Printf("  %s\n", c.Subject.CommonName)
 		}
 	}
 }
