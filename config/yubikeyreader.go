@@ -58,6 +58,10 @@ func yubikeyWithTimeout(waitTime time.Duration) (string, error) {
 end:
 	select {
 	case cards := <-c:
+		// short circuit if no cards are found at all.
+		if len(cards) == 0 {
+			return "", fmt.Errorf("no yubikeys connected")
+		}
 		// Filter out non yubikeys for users that have a smartcard reader.
 		var yubicards []string
 		for i := range cards {
