@@ -127,11 +127,11 @@ func (k *KeyHierarchy) RotateKeyWithBackend(hier hierarchy.Hierarchy, backend Ba
 	var err error
 	switch hier {
 	case hierarchy.PK:
-		k.PK, err = createKey(k.state, string(backend), hier, k.PK.Description())
+		k.PK, err = CreateKey(k.state, k.state.Config.Keys.PK, hier)
 	case hierarchy.KEK:
-		k.KEK, err = createKey(k.state, string(backend), hier, k.KEK.Description())
+		k.KEK, err = CreateKey(k.state, k.state.Config.Keys.KEK, hier)
 	case hierarchy.Db:
-		k.Db, err = createKey(k.state, string(backend), hier, k.Db.Description())
+		k.Db, err = CreateKey(k.state, k.state.Config.Keys.Db, hier)
 	}
 	return err
 }
@@ -190,17 +190,18 @@ func (k *KeyHierarchy) SignFile(hier hierarchy.Hierarchy, peBinary *authenticode
 	return peBinary.Bytes(), nil
 }
 
-func createKey(state *config.State, backend string, hier hierarchy.Hierarchy, desc string) (KeyBackend, error) {
+func CreateKey(state *config.State, key *config.KeyConfig, hier hierarchy.Hierarchy) (KeyBackend, error) {
+	desc := key.Description
 	if desc == "" {
 		desc = hier.Description()
 	}
-	switch backend {
+	switch key.Type {
 	case "file", "":
 		return NewFileKey(hier, desc)
 	case "tpm":
 		return NewTPMKey(state.TPM, desc)
 	case "yubikey":
-		return NewYubikeyKey(state.Yubikey, hier)
+		return NewYubikeyKey(state.Yubikey, hier, key)
 	default:
 		return NewFileKey(hier, desc)
 	}
@@ -211,17 +212,17 @@ func CreateKeys(state *config.State) (*KeyHierarchy, error) {
 	var err error
 
 	c := state.Config
-	hier.PK, err = createKey(state, c.Keys.PK.Type, hierarchy.PK, c.Keys.PK.Description)
+	hier.PK, err = CreateKey(state, c.Keys.PK, hierarchy.PK)
 	if err != nil {
 		return nil, err
 	}
 
-	hier.KEK, err = createKey(state, c.Keys.KEK.Type, hierarchy.KEK, c.Keys.KEK.Description)
+	hier.KEK, err = CreateKey(state, c.Keys.KEK, hierarchy.KEK)
 	if err != nil {
 		return nil, err
 	}
 
-	hier.Db, err = createKey(state, c.Keys.Db.Type, hierarchy.Db, c.Keys.Db.Description)
+	hier.Db, err = CreateKey(state, c.Keys.Db, hierarchy.Db)
 	if err != nil {
 		return nil, err
 	}
@@ -229,7 +230,7 @@ func CreateKeys(state *config.State) (*KeyHierarchy, error) {
 	return &hier, nil
 }
 
-func readKey(state *config.State, keydir string, kc *config.KeyConfig, hier hierarchy.Hierarchy) (KeyBackend, error) {
+func readKey(state *config.State, keydir string, hier hierarchy.Hierarchy) (KeyBackend, error) {
 	path := filepath.Join(keydir, hier.String())
 	keyname := filepath.Join(path, fmt.Sprintf("%s.key", hier.String()))
 	certname := filepath.Join(path, fmt.Sprintf("%s.pem", hier.String()))
@@ -267,11 +268,11 @@ func GetKeyBackend(state *config.State, k hierarchy.Hierarchy) (KeyBackend, erro
 	c := state.Config
 	switch k {
 	case hierarchy.PK:
-		return readKey(state, c.Keydir, c.Keys.PK, k)
+		return readKey(state, c.Keydir, k)
 	case hierarchy.KEK:
-		return readKey(state, c.Keydir, c.Keys.KEK, k)
+		return readKey(state, c.Keydir, k)
 	case hierarchy.Db:
-		return readKey(state, c.Keydir, c.Keys.Db, k)
+		return readKey(state, c.Keydir, k)
 	}
 	return nil, nil
 }
