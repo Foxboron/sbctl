@@ -164,7 +164,7 @@ func Sign(state *config.State, keys *backend.KeyHierarchy, file, output string, 
 	} else {
 		err = SignFile(state, kh, hierarchy.Db, file, output)
 		// return early if signing fails
-		if err != nil {
+		if err != nil && (!enroll || !errors.Is(err, ErrAlreadySigned)) {
 			return err
 		}
 	}
