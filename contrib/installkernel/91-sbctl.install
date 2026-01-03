@@ -7,30 +7,32 @@ ver=${1}
 img=${2}
 
 die() {
-	echo -e " ${NOCOLOR-\e[1;31m*\e[0m }${*}" >&2
-	exit 1
+  printf ' \033[1;31m*\033[0m %s\n' "$*" >&2
+  exit 1
 }
 
 einfo() {
-	[[ ${INSTALLKERNEL_VERBOSE} == 1 ]] || return 0
-	echo -e " ${NOCOLOR-\e[1;32m*\e[0m }${*}"
+  : "${INSTALLKERNEL_VERBOSE:=1}"
+  printf ' \033[1;32m*\033[0m %s\n' "$*" >&2
 }
 
 main() {
-	# re-define for subst to work
-	[[ -n ${NOCOLOR+yes} ]] && NOCOLOR=
+  [ -t 2 ] || NOCOLOR=1
+  # re-define for subst to work
+  [ "${NOCOLOR+yes}" ] && NOCOLOR=
 
-	# do nothing if secureboot key directory doesn't exist
-	if ! [ "$(sbctl setup --print-state --json | awk '/installed/ { gsub(/,$/,"",$2); print $2 }')" = "true" ]; then
-		einfo "Secureboot key directory doesn't exist, not signing!"
-		exit 0
-	fi
+  # do nothing if secureboot key directory doesn't exist
+  if ! [ "$(sbctl setup --print-state --json | awk '/installed/ { gsub(/,$/,"",$2); print $2 }')" = "true" ]; then
+    einfo "Secureboot key directory doesn't exist, not signing!"
+    exit 0
+  fi
 
-	[[ ${EUID} -eq 0 ]] || die "Please run this script as root"
+  [ "$(id -u)" -eq 0 ] || die "Please run this script as root"
 
-	einfo "sbctl: Signing kernel $img"
-	sbctl sign -s $img 1> /dev/null
+  einfo "sbctl: Signing kernel $img"
+  if ! sbctl sign -s "$img" >/dev/null 2>&1; then
+    die "Failed to sign kernel: $img"
+  fi
 }
 
-main
-
+main "$@"
