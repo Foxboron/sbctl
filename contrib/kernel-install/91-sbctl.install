@@ -4,10 +4,7 @@
 COMMAND="$1"
 KERNEL_VERSION="$2"
 ENTRY_DIR_ABS="$3"
-# shellcheck disable=SC2034  # Unused variables left for readability
 KERNEL_IMAGE="$4"
-
-IMAGE_FILE="$ENTRY_DIR_ABS/linux"
 
 if [ "$KERNEL_INSTALL_LAYOUT" = "uki" ]; then
 	UKI_DIR="$KERNEL_INSTALL_BOOT_ROOT/EFI/Linux"
@@ -23,6 +20,10 @@ if [ "$KERNEL_INSTALL_LAYOUT" = "uki" ]; then
 	else
 		IMAGE_FILE="$UKI_DIR/$KERNEL_INSTALL_ENTRY_TOKEN-$KERNEL_VERSION.efi"
 	fi
+elif [ "$KERNEL_INSTALL_LAYOUT" = "grub" ]; then
+	IMAGE_FILE="$KERNEL_IMAGE"
+else
+	IMAGE_FILE="$ENTRY_DIR_ABS/linux"
 fi
 
 case "$COMMAND" in
