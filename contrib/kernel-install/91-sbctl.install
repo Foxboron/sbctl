@@ -4,6 +4,7 @@
 COMMAND="$1"
 KERNEL_VERSION="$2"
 ENTRY_DIR_ABS="$3"
+# shellcheck disable=SC2034  # Unused variables left for readability
 KERNEL_IMAGE="$4"
 
 if [ "$KERNEL_INSTALL_LAYOUT" = "uki" ]; then
@@ -20,6 +21,9 @@ if [ "$KERNEL_INSTALL_LAYOUT" = "uki" ]; then
 	else
 		IMAGE_FILE="$UKI_DIR/$KERNEL_INSTALL_ENTRY_TOKEN-$KERNEL_VERSION.efi"
 	fi
+# Gentoo uses grub layout where kernel-install doesn't copy the kernel
+# to the entry directory but installs it to /boot/ directly.
+# See: https://github.com/Foxboron/sbctl/issues/491
 elif [ "$KERNEL_INSTALL_LAYOUT" = "grub" ]; then
 	IMAGE_FILE="$KERNEL_IMAGE"
 else
