@@ -21,11 +21,13 @@ if [ "$KERNEL_INSTALL_LAYOUT" = "uki" ]; then
 	else
 		IMAGE_FILE="$UKI_DIR/$KERNEL_INSTALL_ENTRY_TOKEN-$KERNEL_VERSION.efi"
 	fi
-# Gentoo uses grub layout where kernel-install doesn't copy the kernel
-# to the entry directory but installs it to /boot/ directly.
+# layout=grub is a Gentoo convention (not upstream systemd). Gentoo's
+# 90-compat.install copies the kernel to /boot/kernel-<version>, so we
+# must sign the installed copy, not the source $KERNEL_IMAGE (which may
+# point to the build tree, e.g. /usr/src/linux-.../arch/x86/boot/bzImage).
 # See: https://github.com/Foxboron/sbctl/issues/491
 elif [ "$KERNEL_INSTALL_LAYOUT" = "grub" ]; then
-	IMAGE_FILE="$KERNEL_IMAGE"
+	IMAGE_FILE="/boot/kernel-${KERNEL_VERSION}"
 else
 	IMAGE_FILE="$ENTRY_DIR_ABS/linux"
 fi
