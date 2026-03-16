@@ -7,8 +7,6 @@ ENTRY_DIR_ABS="$3"
 # shellcheck disable=SC2034  # Unused variables left for readability
 KERNEL_IMAGE="$4"
 
-IMAGE_FILE="$ENTRY_DIR_ABS/linux"
-
 if [ "$KERNEL_INSTALL_LAYOUT" = "uki" ]; then
 	UKI_DIR="$KERNEL_INSTALL_BOOT_ROOT/EFI/Linux"
 	TRIES_FILE="${KERNEL_INSTALL_CONF_ROOT:-/etc/kernel}/tries"
@@ -23,6 +21,15 @@ if [ "$KERNEL_INSTALL_LAYOUT" = "uki" ]; then
 	else
 		IMAGE_FILE="$UKI_DIR/$KERNEL_INSTALL_ENTRY_TOKEN-$KERNEL_VERSION.efi"
 	fi
+# layout=grub is a Gentoo convention (not upstream systemd). Gentoo's
+# 90-compat.install copies the kernel to /boot/kernel-<version>, so we
+# must sign the installed copy, not the source $KERNEL_IMAGE (which may
+# point to the build tree, e.g. /usr/src/linux-.../arch/x86/boot/bzImage).
+# See: https://github.com/Foxboron/sbctl/issues/491
+elif [ "$KERNEL_INSTALL_LAYOUT" = "grub" ]; then
+	IMAGE_FILE="/boot/kernel-${KERNEL_VERSION}"
+else
+	IMAGE_FILE="$ENTRY_DIR_ABS/linux"
 fi
 
 case "$COMMAND" in
