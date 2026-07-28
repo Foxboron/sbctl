@@ -7,6 +7,7 @@ import (
 
 	"github.com/foxboron/go-uefi/efi/efitest"
 	"github.com/foxboron/go-uefi/efi/signature"
+	"github.com/foxboron/go-uefi/efivar"
 	"github.com/foxboron/go-uefi/efivarfs/testfs"
 	"github.com/foxboron/sbctl"
 	"github.com/foxboron/sbctl/backend"
@@ -89,9 +90,13 @@ func TestSetup(t *testing.T) {
 	if err != nil {
 		t.Fatalf("can't get db from efivarfs")
 	}
+	kb, err := kh.GetKeyBackend(efivar.Db)
+	if err != nil {
+		t.Error(err)
+	}
 	data := &signature.SignatureData{
 		Owner: *guid,
-		Data:  kh.Db.Certificate().Raw,
+		Data:  kb.Certificate().Raw,
 	}
 	if !sb.SigDataExists(signature.CERT_X509_GUID, data) {
 		t.Fatalf("can't find db cert in efivarfs")
@@ -101,9 +106,13 @@ func TestSetup(t *testing.T) {
 	if err != nil {
 		t.Fatalf("can't get kek from efivarfs")
 	}
+	kb, err = kh.GetKeyBackend(efivar.KEK)
+	if err != nil {
+		t.Error(err)
+	}
 	data = &signature.SignatureData{
 		Owner: *guid,
-		Data:  kh.KEK.Certificate().Raw,
+		Data:  kb.Certificate().Raw,
 	}
 	if !sb.SigDataExists(signature.CERT_X509_GUID, data) {
 		t.Fatalf("can't find kek cert in efivarfs")
@@ -113,9 +122,13 @@ func TestSetup(t *testing.T) {
 	if err != nil {
 		t.Fatalf("can't get pk from efivarfs")
 	}
+	kb, err = kh.GetKeyBackend(efivar.PK)
+	if err != nil {
+		t.Error(err)
+	}
 	data = &signature.SignatureData{
 		Owner: *guid,
-		Data:  kh.PK.Certificate().Raw,
+		Data:  kb.Certificate().Raw,
 	}
 	if !sb.SigDataExists(signature.CERT_X509_GUID, data) {
 		t.Fatalf("can't find pk cert in efivarfs")
@@ -201,9 +214,13 @@ func TestSetupTPMKeys(t *testing.T) {
 	if err != nil {
 		t.Fatalf("can't get db from efivarfs")
 	}
+	kb, err := kh.GetKeyBackend(efivar.Db)
+	if err != nil {
+		t.Error(err)
+	}
 	data := &signature.SignatureData{
 		Owner: *guid,
-		Data:  kh.Db.Certificate().Raw,
+		Data:  kb.Certificate().Raw,
 	}
 	if !sb.SigDataExists(signature.CERT_X509_GUID, data) {
 		t.Fatalf("can't find db cert in efivarfs")
@@ -213,9 +230,13 @@ func TestSetupTPMKeys(t *testing.T) {
 	if err != nil {
 		t.Fatalf("can't get kek from efivarfs")
 	}
+	kb, err = kh.GetKeyBackend(efivar.KEK)
+	if err != nil {
+		t.Error(err)
+	}
 	data = &signature.SignatureData{
 		Owner: *guid,
-		Data:  kh.KEK.Certificate().Raw,
+		Data:  kb.Certificate().Raw,
 	}
 	if !sb.SigDataExists(signature.CERT_X509_GUID, data) {
 		t.Fatalf("can't find kek cert in efivarfs")
@@ -225,9 +246,13 @@ func TestSetupTPMKeys(t *testing.T) {
 	if err != nil {
 		t.Fatalf("can't get pk from efivarfs")
 	}
+	kb, err = kh.GetKeyBackend(efivar.PK)
+	if err != nil {
+		t.Error(err)
+	}
 	data = &signature.SignatureData{
 		Owner: *guid,
-		Data:  kh.PK.Certificate().Raw,
+		Data:  kb.Certificate().Raw,
 	}
 	if !sb.SigDataExists(signature.CERT_X509_GUID, data) {
 		t.Fatalf("can't find pk cert in efivarfs")

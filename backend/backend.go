@@ -78,14 +78,33 @@ var (
 	ErrAlreadySigned = errors.New("already signed file")
 )
 
-func (k *KeyHierarchy) GetKeyBackend(e efivar.Efivar) KeyBackend {
+// GetKeyBackend returns the currently loaded KeyBackend of the given efivar,
+// or attempts to load it from disk if none is currently loaded.
+func (k *KeyHierarchy) GetKeyBackend(e efivar.Efivar) (KeyBackend, error) {
+	var err error
+
 	switch e {
 	case efivar.PK:
-		return k.PK
+		if k.PK == nil {
+			if k.PK, err = readKey(k.state, k.state.Config.Keydir, k.state.Config.Keys.PK, hierarchy.PK); err != nil {
+				return nil, err
+			}
+		}
+		return k.PK, nil
 	case efivar.KEK:
-		return k.KEK
+		if k.KEK == nil {
+			if k.KEK, err = readKey(k.state, k.state.Config.Keydir, k.state.Config.Keys.KEK, hierarchy.KEK); err != nil {
+				return nil, err
+			}
+		}
+		return k.KEK, nil
 	case efivar.Db:
-		return k.Db
+		if k.Db == nil {
+			if k.Db, err = readKey(k.state, k.state.Config.Keydir, k.state.Config.Keys.Db, hierarchy.Db); err != nil {
+				return nil, err
+			}
+		}
+		return k.Db, nil
 	default:
 		panic("invalid key hierarchy")
 	}
@@ -101,14 +120,17 @@ func (k *KeyHierarchy) SaveKey(vfs afero.Fs, hier hierarchy.Hierarchy, keydir st
 		}
 		return nil
 	}
-	key := k.GetKeyBackend(hier.Efivar())
+	kb, err := k.GetKeyBackend(hier.Efivar())
+	if err != nil {
+		return err
+	}
 	path := filepath.Join(keydir, hier.String())
 	keyname := filepath.Join(path, fmt.Sprintf("%s.key", hier.String()))
 	certname := filepath.Join(path, fmt.Sprintf("%s.pem", hier.String()))
-	if err := writeFile(keyname, key.PrivateKeyBytes()); err != nil {
+	if err := writeFile(keyname, kb.PrivateKeyBytes()); err != nil {
 		return err
 	}
-	if err := writeFile(certname, key.CertificateBytes()); err != nil {
+	if err := writeFile(certname, kb.CertificateBytes()); err != nil {
 		return err
 	}
 	return nil
@@ -141,7 +163,11 @@ func (k *KeyHierarchy) RotateKeyWithBackend(hier hierarchy.Hierarchy, backend Ba
 }
 
 func (k *KeyHierarchy) RotateKey(hier hierarchy.Hierarchy) error {
-	return k.RotateKeyWithBackend(hier, k.GetKeyBackend(hier.Efivar()).Type())
+	kb, err := k.GetKeyBackend(hier.Efivar())
+	if err != nil {
+		return err
+	}
+	return k.RotateKeyWithBackend(hier, kb.Type())
 }
 
 func (k *KeyHierarchy) RotateKeys() error {
@@ -158,7 +184,10 @@ func (k *KeyHierarchy) RotateKeys() error {
 }
 
 func (k *KeyHierarchy) VerifyFile(hier hierarchy.Hierarchy, r io.ReaderAt) (bool, error) {
-	kk := k.GetKeyBackend(hier.Efivar())
+	kb, err := k.GetKeyBackend(hier.Efivar())
+	if err != nil {
+		return false, err
+	}
 
 	peBinary, err := authenticode.Parse(r)
 	if err != nil {
@@ -174,7 +203,7 @@ func (k *KeyHierarchy) VerifyFile(hier hierarchy.Hierarchy, r io.ReaderAt) (bool
 		return false, nil
 	}
 
-	ok, err := peBinary.Verify(kk.Certificate())
+	ok, err := peBinary.Verify(kb.Certificate())
 	if errors.Is(err, authenticode.ErrNoValidSignatures) {
 		return false, nil
 	} else if err != nil {
@@ -184,10 +213,13 @@ func (k *KeyHierarchy) VerifyFile(hier hierarchy.Hierarchy, r io.ReaderAt) (bool
 }
 
 func (k *KeyHierarchy) SignFile(hier hierarchy.Hierarchy, peBinary *authenticode.PECOFFBinary) ([]byte, error) {
-	kk := k.GetKeyBackend(hier.Efivar())
-	signer := kk.Signer()
+	kb, err := k.GetKeyBackend(hier.Efivar())
+	if err != nil {
+		return nil, err
+	}
+	signer := kb.Signer()
 
-	_, err := peBinary.Sign(signer, kk.Certificate())
+	_, err = peBinary.Sign(signer, kb.Certificate())
 	if err != nil {
 		return nil, err
 	}

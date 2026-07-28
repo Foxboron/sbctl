@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/foxboron/go-uefi/efi/signature"
+	"github.com/foxboron/go-uefi/efivar"
 	"github.com/foxboron/sbctl"
 	"github.com/foxboron/sbctl/backend"
 	"github.com/foxboron/sbctl/config"
@@ -56,35 +57,63 @@ func rotateCerts(state *config.State, hier hierarchy.Hierarchy, oldkeys *backend
 	case hierarchy.PK:
 		// fmt.Printf("Old PK: %s\n", oldkeys.PK.Certificate().SerialNumber.String())
 		// fmt.Printf("New PK: %s\n", newkeys.PK.Certificate().SerialNumber.String())
-		cert := oldkeys.PK.Certificate().Raw
+
+		kb, err := oldkeys.GetKeyBackend(efivar.PK)
+		if err != nil {
+			return err
+		}
+		cert := kb.Certificate().Raw
 		if efistate.PK.SigDataExists(signature.CERT_X509_GUID, &signature.SignatureData{Owner: *guid, Data: cert}) {
 			if err := efistate.PK.Remove(signature.CERT_X509_GUID, *guid, cert); err != nil {
 				return fmt.Errorf("can't remove old key from PK siglist: %v", err)
 			}
 		}
-		efistate.PK.Append(signature.CERT_X509_GUID, *guid, newkeys.PK.CertificateBytes())
+		kb, err = newkeys.GetKeyBackend(efivar.PK)
+		if err != nil {
+			return err
+		}
+		newCertBytes := kb.CertificateBytes()
+		efistate.PK.Append(signature.CERT_X509_GUID, *guid, newCertBytes)
 		return efistate.EnrollKey(hier.Efivar(), oldkeys)
 	case hierarchy.KEK:
 		// fmt.Printf("Old KEK: %s\n", oldkeys.KEK.Certificate().SerialNumber.String())
 		// fmt.Printf("New KEK: %s\n", newkeys.KEK.Certificate().SerialNumber.String())
-		cert := oldkeys.KEK.Certificate().Raw
+		kb, err := oldkeys.GetKeyBackend(efivar.KEK)
+		if err != nil {
+			return err
+		}
+		cert := kb.Certificate().Raw
 		if efistate.KEK.SigDataExists(signature.CERT_X509_GUID, &signature.SignatureData{Owner: *guid, Data: cert}) {
 			if err := efistate.KEK.Remove(signature.CERT_X509_GUID, *guid, cert); err != nil {
 				return fmt.Errorf("can't remove old key from KEK siglist: %v", err)
 			}
 		}
-		efistate.KEK.Append(signature.CERT_X509_GUID, *guid, newkeys.KEK.CertificateBytes())
+		kb, err = newkeys.GetKeyBackend(efivar.KEK)
+		if err != nil {
+			return err
+		}
+		newCertBytes := kb.CertificateBytes()
+		efistate.KEK.Append(signature.CERT_X509_GUID, *guid, newCertBytes)
 		return efistate.EnrollKey(hier.Efivar(), newkeys)
 	case hierarchy.Db:
 		// fmt.Printf("Old Db: %s\n", oldkeys.Db.Certificate().SerialNumber.String())
 		// fmt.Printf("New Db: %s\n", newkeys.Db.Certificate().SerialNumber.String())
-		cert := oldkeys.Db.Certificate().Raw
+		kb, err := oldkeys.GetKeyBackend(efivar.Db)
+		if err != nil {
+			return err
+		}
+		cert := kb.Certificate().Raw
 		if efistate.Db.SigDataExists(signature.CERT_X509_GUID, &signature.SignatureData{Owner: *guid, Data: cert}) {
 			if err := efistate.Db.Remove(signature.CERT_X509_GUID, *guid, cert); err != nil {
 				return fmt.Errorf("can't remove old key from Db siglist: %v", err)
 			}
 		}
-		efistate.Db.Append(signature.CERT_X509_GUID, *guid, newkeys.Db.CertificateBytes())
+		kb, err = newkeys.GetKeyBackend(efivar.Db)
+		if err != nil {
+			return err
+		}
+		newCertBytes := kb.CertificateBytes()
+		efistate.Db.Append(signature.CERT_X509_GUID, *guid, newCertBytes)
 		return efistate.EnrollKey(hier.Efivar(), newkeys)
 	default:
 		return fmt.Errorf("unknown efivar hierarchy")

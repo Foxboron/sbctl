@@ -86,13 +86,21 @@ var (
 
 func SignSiglist(k *backend.KeyHierarchy, e efivar.Efivar, sigdb efivar.Marshallable) ([]byte, error) {
 	var signer backend.KeyBackend
+	var err error
+
 	switch e {
 	case efivar.PK:
-		signer = k.GetKeyBackend(efivar.PK)
+		if signer, err = k.GetKeyBackend(efivar.PK); err != nil {
+			return nil, err
+		}
 	case efivar.KEK:
-		signer = k.GetKeyBackend(efivar.PK)
+		if signer, err = k.GetKeyBackend(efivar.PK); err != nil {
+			return nil, err
+		}
 	case efivar.Db:
-		signer = k.GetKeyBackend(efivar.KEK)
+		if signer, err = k.GetKeyBackend(efivar.KEK); err != nil {
+			return nil, err
+		}
 	}
 	_, em, err := signature.SignEFIVariable(e, sigdb, signer.Signer(), signer.Certificate())
 	if err != nil {
@@ -124,15 +132,30 @@ func KeySync(state *config.State, oems []string) error {
 		}
 	}
 
-	if err = efistate.Db.Append(signature.CERT_X509_GUID, *guid, kh.Db.CertificateBytes()); err != nil {
+	kb, err := kh.GetKeyBackend(efivar.Db)
+	if err != nil {
 		return err
 	}
 
-	if err = efistate.KEK.Append(signature.CERT_X509_GUID, *guid, kh.KEK.CertificateBytes()); err != nil {
+	if err = efistate.Db.Append(signature.CERT_X509_GUID, *guid, kb.CertificateBytes()); err != nil {
 		return err
 	}
 
-	if err = efistate.PK.Append(signature.CERT_X509_GUID, *guid, kh.PK.CertificateBytes()); err != nil {
+	kb, err = kh.GetKeyBackend(efivar.KEK)
+	if err != nil {
+		return err
+	}
+
+	if err = efistate.KEK.Append(signature.CERT_X509_GUID, *guid, kb.CertificateBytes()); err != nil {
+		return err
+	}
+
+	kb, err = kh.GetKeyBackend(efivar.PK)
+	if err != nil {
+		return err
+	}
+
+	if err = efistate.PK.Append(signature.CERT_X509_GUID, *guid, kb.CertificateBytes()); err != nil {
 		return err
 	}
 
