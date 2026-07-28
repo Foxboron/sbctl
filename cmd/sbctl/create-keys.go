@@ -8,8 +8,10 @@ import (
 	"github.com/foxboron/sbctl"
 	"github.com/foxboron/sbctl/backend"
 	"github.com/foxboron/sbctl/config"
+	"github.com/foxboron/sbctl/hierarchy"
 	"github.com/foxboron/sbctl/logging"
 	"github.com/foxboron/sbctl/lsm"
+	"github.com/foxboron/sbctl/stringset"
 	"github.com/landlock-lsm/go-landlock/landlock"
 	"github.com/spf13/cobra"
 )
@@ -24,12 +26,15 @@ type CreateKeysCmdOptions struct {
 	PKSubject        string
 	KEKSubject       string
 	DbSubject        string
+	Partial          stringset.StringSet
 	OverwriteYubikey bool
 }
 
 var (
-	createKeysCmdOptions = CreateKeysCmdOptions{}
-	createKeysCmd        = &cobra.Command{
+	createKeysCmdOptions = CreateKeysCmdOptions{
+		Partial: stringset.StringSet{Allowed: []string{"PK", "KEK", "db"}},
+	}
+	createKeysCmd = &cobra.Command{
 		Use:   "create-keys",
 		Short: "Create a set of secure boot signing keys",
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -106,27 +111,62 @@ func RunCreateKeys(state *config.State) error {
 	}
 	logging.Print("Created Owner UUID %s\n", uuid)
 
-	if sbctl.CheckIfKeysInitialized(state.Fs, state.Config.Keydir) {
-		logging.Ok("Secure boot keys have already been created!")
+	var hier hierarchy.Hierarchy
+	var keyConfig *config.KeyConfig
+	kh := backend.NewKeyHierarchy(state)
+
+	switch createKeysCmdOptions.Partial.Value {
+	case "PK":
+		hier = hierarchy.PK
+		keyConfig = state.Config.Keys.PK
+
+	case "KEK":
+		hier = hierarchy.KEK
+		keyConfig = state.Config.Keys.KEK
+
+	case "db":
+		hier = hierarchy.Db
+		keyConfig = state.Config.Keys.Db
+
+	default:
+		// if no partial flag is given, create all keys
+		if sbctl.CheckIfKeysInitialized(state.Fs, state.Config.Keydir) {
+			logging.Ok("Secure boot keys have already been created!")
+			return nil
+		}
+
+		err := kh.CreateKeys()
+		if err != nil {
+			logging.NotOk("")
+			return fmt.Errorf("couldn't initialize secure boot: %w", err)
+		}
+		err = kh.SaveKeys(state.Fs, state.Config.Keydir)
+		if err != nil {
+			logging.NotOk("")
+			return fmt.Errorf("couldn't initialize secure boot: %w", err)
+		}
+
+		logging.Ok("")
+		logging.Println("Secure boot keys created!")
 		return nil
 	}
 
-	hier := backend.NewKeyHierarchy(state)
-
-	err = hier.CreateKeys()
-	if err != nil {
-		logging.NotOk("")
-		return fmt.Errorf("couldn't initialize secure boot: %w", err)
+	if sbctl.CheckIfKeyInitialized(state.Fs, state.Config.Keydir, hier) {
+		logging.Ok("%s has already been created!", hier.String())
+		return nil
 	}
 
-	err = hier.SaveKeys(state.Fs, state.Config.Keydir)
+	err = kh.CreateKey(hier, keyConfig)
 	if err != nil {
-		logging.NotOk("")
-		return fmt.Errorf("couldn't initialize secure boot: %w", err)
+		return fmt.Errorf("couldn't initialize %s: %w", hier.String(), err)
+	}
+	err = kh.SaveKey(state.Fs, hier, state.Config.Keydir)
+	if err != nil {
+		return fmt.Errorf("couldn't initialize %s: %w", hier.String(), err)
 	}
 
 	logging.Ok("")
-	logging.Println("Secure boot keys created!")
+	logging.Print("%s created!\n", hier.String())
 	return nil
 }
 
@@ -142,6 +182,7 @@ func createKeysCmdFlags(cmd *cobra.Command) {
 	f.StringVarP(&createKeysCmdOptions.PKSubject, "pk-subj", "", "", "Distinguished name for Platform Key certificate (openssl style, e.g. /CN=Platform Key/C=WW/)")
 	f.StringVarP(&createKeysCmdOptions.KEKSubject, "kek-subj", "", "", "Distinguished name for Key Exchange Key certificate (openssl style, e.g. /CN=Key Exchange Key/C=WW/)")
 	f.StringVarP(&createKeysCmdOptions.DbSubject, "db-subj", "", "", "Distinguished name for Database Key certificate (openssl style, e.g. /CN=Database Key/C=WW/)")
+	f.VarPF(&createKeysCmdOptions.Partial, "partial", "p", "create a partial set of keys")
 }
 
 func init() {
