@@ -175,6 +175,11 @@ func (k *KeyHierarchy) CreateKeys() error {
 	return nil
 }
 
+// TODO: fix this
+func (k *KeyHierarchy) ImportKeys(keydir string) error {
+	return fmt.Errorf("importing keys not implemented!")
+}
+
 func (k *KeyHierarchy) SaveKey(vfs afero.Fs, hier hierarchy.Hierarchy, keydir string) error {
 	writeFile := func(file string, b []byte) error {
 		if err := vfs.MkdirAll(filepath.Dir(file), os.ModePerm); err != nil {
@@ -361,11 +366,6 @@ func GetBackendType(b []byte) (BackendType, error) {
 	default:
 		return "", fmt.Errorf("unknown file type: %s", block.Type)
 	}
-}
-
-// TODO: fix this
-func ImportKeys(keydir string) (*KeyHierarchy, error) {
-	return nil, nil
 }
 
 func InitBackendFromKeys(state *config.State, priv, pem []byte, hier hierarchy.Hierarchy) (KeyBackend, error) {

@@ -211,7 +211,7 @@ func rotateAllKeys(state *config.State, backupDir, newKeysDir string) error {
 
 	} else {
 		logging.Print("Importing new secure boot keys from %s...", newKeysDir)
-		newKeyHierarchy, err = backend.ImportKeys(newKeysDir)
+		err = newKeyHierarchy.ImportKeys(newKeysDir)
 		if err != nil {
 			logging.NotOk("")
 			return fmt.Errorf("couldn't import secure boot keys: %w", err)
