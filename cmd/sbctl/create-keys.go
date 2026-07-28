@@ -105,25 +105,28 @@ func RunCreateKeys(state *config.State) error {
 		return err
 	}
 	logging.Print("Created Owner UUID %s\n", uuid)
-	if !sbctl.CheckIfKeysInitialized(state.Fs, state.Config.Keydir) {
 
-		hier := backend.NewKeyHierarchy(state)
-
-		err := hier.CreateKeys()
-		if err != nil {
-			logging.NotOk("")
-			return fmt.Errorf("couldn't initialize secure boot: %w", err)
-		}
-		err = hier.SaveKeys(state.Fs, state.Config.Keydir)
-		if err != nil {
-			logging.NotOk("")
-			return fmt.Errorf("couldn't initialize secure boot: %w", err)
-		}
-		logging.Ok("")
-		logging.Println("Secure boot keys created!")
-	} else {
+	if sbctl.CheckIfKeysInitialized(state.Fs, state.Config.Keydir) {
 		logging.Ok("Secure boot keys have already been created!")
+		return nil
 	}
+
+	hier := backend.NewKeyHierarchy(state)
+
+	err = hier.CreateKeys()
+	if err != nil {
+		logging.NotOk("")
+		return fmt.Errorf("couldn't initialize secure boot: %w", err)
+	}
+
+	err = hier.SaveKeys(state.Fs, state.Config.Keydir)
+	if err != nil {
+		logging.NotOk("")
+		return fmt.Errorf("couldn't initialize secure boot: %w", err)
+	}
+
+	logging.Ok("")
+	logging.Println("Secure boot keys created!")
 	return nil
 }
 
