@@ -192,11 +192,11 @@ func rotateAllKeys(state *config.State, backupDir, newKeysDir string) error {
 		}
 	}
 
-	var newKeyHierarchy *backend.KeyHierarchy
+	newKeyHierarchy := backend.NewKeyHierarchy(state)
 
 	if newKeysDir == "" {
 		logging.Print("Creating secure boot keys...")
-		newKeyHierarchy, err = backend.CreateKeys(state)
+		err = newKeyHierarchy.CreateKeys()
 		if err != nil {
 			logging.NotOk("")
 			return fmt.Errorf("couldn't initialize secure boot: %w", err)
