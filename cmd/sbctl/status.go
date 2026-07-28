@@ -85,10 +85,7 @@ func PrintStatus(s *Status) {
 }
 
 func RunDebug(state *config.State) error {
-	kh, err := backend.GetKeyHierarchy(state.Fs, state)
-	if err != nil {
-		return err
-	}
+	kh := backend.NewKeyHierarchy(state)
 
 	efistate, err := sbctl.SystemEFIVariables(state.Efivarfs)
 	if err != nil {

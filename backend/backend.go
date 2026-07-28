@@ -68,12 +68,6 @@ func (k *KeyHierarchy) GetConfig(keydir string) *config.Keys {
 	}
 }
 
-func NewKeyHierarchy(state *config.State) *KeyHierarchy {
-	return &KeyHierarchy{
-		state: state,
-	}
-}
-
 var (
 	ErrAlreadySigned = errors.New("already signed file")
 )
@@ -311,25 +305,10 @@ func GetKeyBackend(state *config.State, k hierarchy.Hierarchy) (KeyBackend, erro
 	return nil, nil
 }
 
-func GetKeyHierarchy(vfs afero.Fs, state *config.State) (*KeyHierarchy, error) {
-	db, err := GetKeyBackend(state, hierarchy.Db)
-	if err != nil {
-		return nil, err
-	}
-	kek, err := GetKeyBackend(state, hierarchy.KEK)
-	if err != nil {
-		return nil, err
-	}
-	pk, err := GetKeyBackend(state, hierarchy.PK)
-	if err != nil {
-		return nil, err
-	}
+func NewKeyHierarchy(state *config.State) *KeyHierarchy {
 	return &KeyHierarchy{
-		PK:    pk,
-		KEK:   kek,
-		Db:    db,
 		state: state,
-	}, nil
+	}
 }
 
 func GetBackendType(b []byte) (BackendType, error) {

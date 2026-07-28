@@ -79,10 +79,7 @@ var signCmd = &cobra.Command{
 			}
 		}
 
-		kh, err := backend.GetKeyHierarchy(state.Fs, state)
-		if err != nil {
-			return err
-		}
+		kh := backend.NewKeyHierarchy(state)
 
 		err = sbctl.Sign(state, kh, file, output, save)
 		if errors.Is(err, sbctl.ErrAlreadySigned) {

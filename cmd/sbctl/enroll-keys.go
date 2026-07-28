@@ -111,10 +111,7 @@ func SignSiglist(k *backend.KeyHierarchy, e efivar.Efivar, sigdb efivar.Marshall
 
 // Sync keys from a key directory into efivarfs
 func KeySync(state *config.State, oems []string) error {
-	kh, err := backend.GetKeyHierarchy(state.Fs, state)
-	if err != nil {
-		return err
-	}
+	kh := backend.NewKeyHierarchy(state)
 
 	guid, err := state.Config.GetGUID(state.Fs)
 	if err != nil {

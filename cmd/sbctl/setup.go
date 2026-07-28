@@ -50,10 +50,7 @@ func PrintConfig(state *config.State) error {
 			return err
 		}
 	} else {
-		kh, err := backend.GetKeyHierarchy(state.Fs, state)
-		if err != nil {
-			return err
-		}
+		kh := backend.NewKeyHierarchy(state)
 		state.Config.Keys = kh.GetConfig(state.Config.Keydir)
 		state.Config.DbAdditions = sbctl.GetEnrolledVendorCerts()
 	}

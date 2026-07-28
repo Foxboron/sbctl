@@ -38,10 +38,7 @@ var generateBundlesCmd = &cobra.Command{
 			logging.Print("Wrote EFI bundle %s\n", bundle.Output)
 			if sign {
 				file := bundle.Output
-				kh, err := backend.GetKeyHierarchy(state.Fs, state)
-				if err != nil {
-					return err
-				}
+				kh := backend.NewKeyHierarchy(state)
 				err = sbctl.SignFile(state, kh, hierarchy.Db, file, file)
 				if errors.Is(err, sbctl.ErrAlreadySigned) {
 					logging.Unknown("Bundle has already been signed")

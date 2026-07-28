@@ -69,10 +69,7 @@ func TestSetup(t *testing.T) {
 	}
 
 	// Check that we can sign and verify a file
-	kh, err := backend.GetKeyHierarchy(state.Fs, state)
-	if err != nil {
-		t.Fatalf("can't get key hierarchy: %v", err)
-	}
+	kh := backend.NewKeyHierarchy(state)
 	ok, err := sbctl.VerifyFile(state, kh, hierarchy.Db, "/boot/new.efi")
 	if err != nil {
 		t.Fatalf("can't verify file: %v", err)
@@ -193,10 +190,7 @@ func TestSetupTPMKeys(t *testing.T) {
 	}
 
 	// Check that we can sign and verify a file
-	kh, err := backend.GetKeyHierarchy(state.Fs, state)
-	if err != nil {
-		t.Fatalf("can't get key hierarchy: %v", err)
-	}
+	kh := backend.NewKeyHierarchy(state)
 	ok, err := sbctl.VerifyFile(state, kh, hierarchy.Db, "/boot/new.efi")
 	if err != nil {
 		t.Fatalf("can't verify file: %v", err)

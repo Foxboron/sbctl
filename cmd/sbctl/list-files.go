@@ -43,10 +43,7 @@ func RunList(cmd *cobra.Command, args []string) error {
 	var isSigned bool
 	err := sbctl.SigningEntryIter(state,
 		func(s *sbctl.SigningEntry) error {
-			kh, err := backend.GetKeyHierarchy(state.Fs, state)
-			if err != nil {
-				return err
-			}
+			kh := backend.NewKeyHierarchy(state)
 			ok, err := sbctl.VerifyFile(state, kh, hierarchy.Db, s.OutputFile)
 			if err != nil {
 				logging.Error(fmt.Errorf("%s: %w", s.OutputFile, err))
