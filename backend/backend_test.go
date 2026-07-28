@@ -39,7 +39,7 @@ func TestCreateKeys(t *testing.T) {
 		t.Fatalf("%v", err)
 	}
 
-	key, err := GetKeyBackend(state, hierarchy.PK)
+	key, err := hier.ReadKey(hierarchy.PK)
 	if err != nil {
 		log.Fatal(err)
 	}

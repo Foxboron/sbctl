@@ -87,21 +87,21 @@ func (k *KeyHierarchy) GetKeyBackend(e efivar.Efivar) (KeyBackend, error) {
 	switch e {
 	case efivar.PK:
 		if k.pk == nil {
-			if k.pk, err = readKey(k.state, k.state.Config.Keydir, k.state.Config.Keys.PK, hierarchy.PK); err != nil {
+			if k.pk, err = k.ReadKey(hierarchy.PK); err != nil {
 				return nil, err
 			}
 		}
 		return k.pk, nil
 	case efivar.KEK:
 		if k.kek == nil {
-			if k.kek, err = readKey(k.state, k.state.Config.Keydir, k.state.Config.Keys.KEK, hierarchy.KEK); err != nil {
+			if k.kek, err = k.ReadKey(hierarchy.KEK); err != nil {
 				return nil, err
 			}
 		}
 		return k.kek, nil
 	case efivar.Db:
 		if k.db == nil {
-			if k.db, err = readKey(k.state, k.state.Config.Keydir, k.state.Config.Keys.Db, hierarchy.Db); err != nil {
+			if k.db, err = k.ReadKey(hierarchy.Db); err != nil {
 				return nil, err
 			}
 		}
@@ -219,6 +219,64 @@ func (k *KeyHierarchy) SaveKeys(fs afero.Fs, keydir string) error {
 	return nil
 }
 
+// ReadKey loads the given hierarchy from disk and returns its KeyBackend.
+func (k *KeyHierarchy) ReadKey(hier hierarchy.Hierarchy) (KeyBackend, error) {
+	path := filepath.Join(k.state.Config.Keydir, hier.String())
+	keyname := filepath.Join(path, fmt.Sprintf("%s.key", hier.String()))
+	certname := filepath.Join(path, fmt.Sprintf("%s.pem", hier.String()))
+
+	// Read privatekey
+	keyb, err := fs.ReadFile(k.state.Fs, keyname)
+	if err != nil {
+		return nil, err
+	}
+
+	// Read certificate
+	pemb, err := fs.ReadFile(k.state.Fs, certname)
+	if err != nil {
+		return nil, err
+	}
+
+	t, err := GetBackendType(keyb)
+	if err != nil {
+		return nil, err
+	}
+
+	switch t {
+	case FileBackend:
+		return FileKeyFromBytes(keyb, pemb)
+	case TPMBackend:
+		return TPMKeyFromBytes(k.state.TPM, keyb, pemb)
+	case YubikeyBackend:
+		return YubikeyFromBytes(k.state.Yubikey, keyb, pemb)
+	default:
+		return nil, fmt.Errorf("unknown key")
+	}
+}
+
+// ReadKeys loads the entire hierarchy from disk and updates their KeyBackends.
+func (k *KeyHierarchy) ReadKeys() error {
+	var kb KeyBackend
+	var err error
+
+	if kb, err = k.ReadKey(hierarchy.PK); err != nil {
+		return err
+	}
+	k.UpdateKeyBackend(kb, hierarchy.PK)
+
+	if kb, err = k.ReadKey(hierarchy.KEK); err != nil {
+		return err
+	}
+	k.UpdateKeyBackend(kb, hierarchy.KEK)
+
+	if kb, err = k.ReadKey(hierarchy.Db); err != nil {
+		return err
+	}
+	k.UpdateKeyBackend(kb, hierarchy.Db)
+
+	return nil
+}
+
 func (k *KeyHierarchy) RotateKeyWithBackend(hier hierarchy.Hierarchy, backend BackendType) error {
 	var err error
 	switch hier {
@@ -294,53 +352,6 @@ func (k *KeyHierarchy) SignFile(hier hierarchy.Hierarchy, peBinary *authenticode
 		return nil, err
 	}
 	return peBinary.Bytes(), nil
-}
-
-func readKey(state *config.State, keydir string, kc *config.KeyConfig, hier hierarchy.Hierarchy) (KeyBackend, error) {
-	path := filepath.Join(keydir, hier.String())
-	keyname := filepath.Join(path, fmt.Sprintf("%s.key", hier.String()))
-	certname := filepath.Join(path, fmt.Sprintf("%s.pem", hier.String()))
-
-	// Read privatekey
-	keyb, err := fs.ReadFile(state.Fs, keyname)
-	if err != nil {
-		return nil, err
-	}
-
-	// Read certificate
-	pemb, err := fs.ReadFile(state.Fs, certname)
-	if err != nil {
-		return nil, err
-	}
-
-	t, err := GetBackendType(keyb)
-	if err != nil {
-		return nil, err
-	}
-
-	switch t {
-	case FileBackend:
-		return FileKeyFromBytes(keyb, pemb)
-	case TPMBackend:
-		return TPMKeyFromBytes(state.TPM, keyb, pemb)
-	case YubikeyBackend:
-		return YubikeyFromBytes(state.Yubikey, keyb, pemb)
-	default:
-		return nil, fmt.Errorf("unknown key")
-	}
-}
-
-func GetKeyBackend(state *config.State, k hierarchy.Hierarchy) (KeyBackend, error) {
-	c := state.Config
-	switch k {
-	case hierarchy.PK:
-		return readKey(state, c.Keydir, c.Keys.PK, k)
-	case hierarchy.KEK:
-		return readKey(state, c.Keydir, c.Keys.KEK, k)
-	case hierarchy.Db:
-		return readKey(state, c.Keydir, c.Keys.Db, k)
-	}
-	return nil, nil
 }
 
 func NewKeyHierarchy(state *config.State) *KeyHierarchy {
