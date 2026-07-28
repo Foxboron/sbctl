@@ -75,20 +75,19 @@ func RunCreateKeys(state *config.State) error {
 	}
 
 	// Should be own flag type
-	if createKeysCmdOptions.Keytype != "" && (createKeysCmdOptions.Keytype == "file" || createKeysCmdOptions.Keytype == "tpm" || createKeysCmdOptions.Keytype == "yubikey") {
+	if createKeysCmdOptions.Keytype != "" {
 		state.Config.Keys.PK.Type = createKeysCmdOptions.Keytype
 		state.Config.Keys.KEK.Type = createKeysCmdOptions.Keytype
 		state.Config.Keys.Db.Type = createKeysCmdOptions.Keytype
-	} else {
-		if createKeysCmdOptions.PKKeytype != "" && (createKeysCmdOptions.PKKeytype == "file" || createKeysCmdOptions.PKKeytype == "tpm" || createKeysCmdOptions.PKKeytype == "yubikey") {
-			state.Config.Keys.PK.Type = createKeysCmdOptions.PKKeytype
-		}
-		if createKeysCmdOptions.KEKKeytype != "" && (createKeysCmdOptions.KEKKeytype == "file" || createKeysCmdOptions.KEKKeytype == "tpm" || createKeysCmdOptions.KEKKeytype == "yubikey") {
-			state.Config.Keys.KEK.Type = createKeysCmdOptions.KEKKeytype
-		}
-		if createKeysCmdOptions.DbKeytype != "" && (createKeysCmdOptions.DbKeytype == "file" || createKeysCmdOptions.DbKeytype == "tpm" || createKeysCmdOptions.DbKeytype == "yubikey") {
-			state.Config.Keys.Db.Type = createKeysCmdOptions.DbKeytype
-		}
+	}
+	if createKeysCmdOptions.PKKeytype != "" {
+		state.Config.Keys.PK.Type = createKeysCmdOptions.PKKeytype
+	}
+	if createKeysCmdOptions.KEKKeytype != "" {
+		state.Config.Keys.KEK.Type = createKeysCmdOptions.KEKKeytype
+	}
+	if createKeysCmdOptions.DbKeytype != "" {
+		state.Config.Keys.Db.Type = createKeysCmdOptions.DbKeytype
 	}
 
 	if createKeysCmdOptions.PKSubject != "" {
@@ -175,7 +174,7 @@ func createKeysCmdFlags(cmd *cobra.Command) {
 	f.BoolVar(&createKeysCmdOptions.OverwriteYubikey, "yk-overwrite", false, "overwrite existing key if it exists in the Yubikey Signature slot")
 	f.StringVarP(&createKeysCmdOptions.exportPath, "export", "e", "", "export file path")
 	f.StringVarP(&createKeysCmdOptions.databasePath, "database-path", "d", "", "location to create GUID file")
-	f.StringVarP(&createKeysCmdOptions.Keytype, "keytype", "", "", "key type for all keys")
+	f.StringVarP(&createKeysCmdOptions.Keytype, "keytype", "", "", "key type for all keys (individual types take priority)")
 	f.StringVarP(&createKeysCmdOptions.PKKeytype, "pk-keytype", "", "", "PK key type (default: file)")
 	f.StringVarP(&createKeysCmdOptions.KEKKeytype, "kek-keytype", "", "", "KEK key type (default: file)")
 	f.StringVarP(&createKeysCmdOptions.DbKeytype, "db-keytype", "", "", "db key type (default: file)")

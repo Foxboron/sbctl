@@ -18,6 +18,7 @@ import (
 	"github.com/foxboron/sbctl/config"
 	"github.com/foxboron/sbctl/fs"
 	"github.com/foxboron/sbctl/hierarchy"
+	"github.com/foxboron/sbctl/logging"
 	"github.com/spf13/afero"
 )
 
@@ -137,9 +138,10 @@ func (k *KeyHierarchy) CreateKey(hier hierarchy.Hierarchy, key *config.KeyConfig
 		kb, err = NewTPMKey(k.state.TPM, subject)
 
 	case YubikeyBackend:
-		kb, err = NewYubikeyKey(k.state.Yubikey, hier, subject)
+		kb, err = NewYubikeyKey(k.state.Yubikey, subject)
 
 	default:
+		logging.Warn("backend unknown, falling back to '%s'", FileBackend)
 		kb, err = NewFileKey(hier, subject)
 	}
 

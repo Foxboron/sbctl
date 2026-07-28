@@ -176,20 +176,19 @@ func rotateAllKeys(state *config.State, backupDir, newKeysDir string) error {
 
 	// Should be own flag type, and deduplicated
 	// It should be fine to modify the state here?
-	if rotateKeysCmdOptions.Keytype != "" && (rotateKeysCmdOptions.Keytype == "file" || rotateKeysCmdOptions.Keytype == "tpm") {
+	if rotateKeysCmdOptions.Keytype != "" {
 		state.Config.Keys.PK.Type = rotateKeysCmdOptions.Keytype
 		state.Config.Keys.KEK.Type = rotateKeysCmdOptions.Keytype
 		state.Config.Keys.Db.Type = rotateKeysCmdOptions.Keytype
-	} else {
-		if rotateKeysCmdOptions.PKKeytype != "" && (rotateKeysCmdOptions.PKKeytype == "file" || rotateKeysCmdOptions.PKKeytype == "tpm") {
-			state.Config.Keys.PK.Type = rotateKeysCmdOptions.PKKeytype
-		}
-		if rotateKeysCmdOptions.KEKKeytype != "" && (rotateKeysCmdOptions.KEKKeytype == "file" || rotateKeysCmdOptions.KEKKeytype == "tpm") {
-			state.Config.Keys.KEK.Type = rotateKeysCmdOptions.KEKKeytype
-		}
-		if rotateKeysCmdOptions.DbKeytype != "" && (rotateKeysCmdOptions.DbKeytype == "file" || rotateKeysCmdOptions.DbKeytype == "tpm") {
-			state.Config.Keys.Db.Type = rotateKeysCmdOptions.DbKeytype
-		}
+	}
+	if rotateKeysCmdOptions.PKKeytype != "" {
+		state.Config.Keys.PK.Type = rotateKeysCmdOptions.PKKeytype
+	}
+	if rotateKeysCmdOptions.KEKKeytype != "" {
+		state.Config.Keys.KEK.Type = rotateKeysCmdOptions.KEKKeytype
+	}
+	if rotateKeysCmdOptions.DbKeytype != "" {
+		state.Config.Keys.Db.Type = rotateKeysCmdOptions.DbKeytype
 	}
 
 	newKeyHierarchy := backend.NewKeyHierarchy(state)
@@ -278,20 +277,19 @@ func rotateKey(state *config.State, hiera string, keyPath, certPath string) erro
 
 	// Should be own flag type, and deduplicated
 	// It should be fine to modify the state here?
-	if rotateKeysCmdOptions.Keytype != "" && (rotateKeysCmdOptions.Keytype == "file" || rotateKeysCmdOptions.Keytype == "tpm") {
+	if rotateKeysCmdOptions.Keytype != "" {
 		state.Config.Keys.PK.Type = rotateKeysCmdOptions.Keytype
 		state.Config.Keys.KEK.Type = rotateKeysCmdOptions.Keytype
 		state.Config.Keys.Db.Type = rotateKeysCmdOptions.Keytype
-	} else {
-		if rotateKeysCmdOptions.PKKeytype != "" && (rotateKeysCmdOptions.PKKeytype == "file" || rotateKeysCmdOptions.PKKeytype == "tpm") {
-			state.Config.Keys.PK.Type = rotateKeysCmdOptions.PKKeytype
-		}
-		if rotateKeysCmdOptions.KEKKeytype != "" && (rotateKeysCmdOptions.KEKKeytype == "file" || rotateKeysCmdOptions.KEKKeytype == "tpm") {
-			state.Config.Keys.KEK.Type = rotateKeysCmdOptions.KEKKeytype
-		}
-		if rotateKeysCmdOptions.DbKeytype != "" && (rotateKeysCmdOptions.DbKeytype == "file" || rotateKeysCmdOptions.DbKeytype == "tpm") {
-			state.Config.Keys.Db.Type = rotateKeysCmdOptions.DbKeytype
-		}
+	}
+	if rotateKeysCmdOptions.PKKeytype != "" {
+		state.Config.Keys.PK.Type = rotateKeysCmdOptions.PKKeytype
+	}
+	if rotateKeysCmdOptions.KEKKeytype != "" {
+		state.Config.Keys.KEK.Type = rotateKeysCmdOptions.KEKKeytype
+	}
+	if rotateKeysCmdOptions.DbKeytype != "" {
+		state.Config.Keys.Db.Type = rotateKeysCmdOptions.DbKeytype
 	}
 
 	switch hiera {
@@ -341,7 +339,7 @@ func rotateKeysCmdFlags(cmd *cobra.Command) {
 	f.StringVarP(&rotateKeysCmdOptions.KeyFile, "key-file", "k", "", "key file to replace (only with partial flag)")
 	f.StringVarP(&rotateKeysCmdOptions.CertFile, "cert-file", "c", "", "certificate file to replace (only with partial flag)")
 
-	f.StringVarP(&rotateKeysCmdOptions.Keytype, "keytype", "", "", "key type for all keys")
+	f.StringVarP(&rotateKeysCmdOptions.Keytype, "keytype", "", "", "key type for all keys (individual types take priority)")
 	f.StringVarP(&rotateKeysCmdOptions.PKKeytype, "pk-keytype", "", "", "PK key type (default: file)")
 	f.StringVarP(&rotateKeysCmdOptions.KEKKeytype, "kek-keytype", "", "", "KEK key type (default: file)")
 	f.StringVarP(&rotateKeysCmdOptions.DbKeytype, "db-keytype", "", "", "db key type (default: file)")
