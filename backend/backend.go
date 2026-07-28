@@ -38,32 +38,39 @@ type KeyBackend interface {
 }
 
 type KeyHierarchy struct {
-	PK  KeyBackend
-	KEK KeyBackend
-	Db  KeyBackend
+	pk  KeyBackend
+	kek KeyBackend
+	db  KeyBackend
 	// We need the callbacks
 	state *config.State
 }
 
 func (k *KeyHierarchy) GetConfig(keydir string) *config.Keys {
+	keyType := func(key interface{ Type() BackendType }) string {
+		if key == nil {
+			return string(FileBackend)
+		}
+		return string(key.Type())
+	}
+
 	return &config.Keys{
 		PK: &config.KeyConfig{
 			Privkey: filepath.Join(keydir, "PK/PK.key"),
 			Pubkey:  filepath.Join(keydir, "PK/PK.pem"),
-			Type:    string(k.PK.Type()),
-			Subject: k.PK.Certificate().Subject.String(),
+			Type:    keyType(k.pk),
+			Subject: k.pk.Certificate().Subject.String(),
 		},
 		KEK: &config.KeyConfig{
 			Privkey: filepath.Join(keydir, "KEK/KEK.key"),
 			Pubkey:  filepath.Join(keydir, "KEK/KEK.pem"),
-			Type:    string(k.KEK.Type()),
-			Subject: k.KEK.Certificate().Subject.String(),
+			Type:    keyType(k.kek),
+			Subject: k.kek.Certificate().Subject.String(),
 		},
 		Db: &config.KeyConfig{
 			Privkey: filepath.Join(keydir, "db/db.key"),
 			Pubkey:  filepath.Join(keydir, "db/db.pem"),
-			Type:    string(k.Db.Type()),
-			Subject: k.Db.Certificate().Subject.String(),
+			Type:    keyType(k.db),
+			Subject: k.db.Certificate().Subject.String(),
 		},
 	}
 }
@@ -79,28 +86,39 @@ func (k *KeyHierarchy) GetKeyBackend(e efivar.Efivar) (KeyBackend, error) {
 
 	switch e {
 	case efivar.PK:
-		if k.PK == nil {
-			if k.PK, err = readKey(k.state, k.state.Config.Keydir, k.state.Config.Keys.PK, hierarchy.PK); err != nil {
+		if k.pk == nil {
+			if k.pk, err = readKey(k.state, k.state.Config.Keydir, k.state.Config.Keys.PK, hierarchy.PK); err != nil {
 				return nil, err
 			}
 		}
-		return k.PK, nil
+		return k.pk, nil
 	case efivar.KEK:
-		if k.KEK == nil {
-			if k.KEK, err = readKey(k.state, k.state.Config.Keydir, k.state.Config.Keys.KEK, hierarchy.KEK); err != nil {
+		if k.kek == nil {
+			if k.kek, err = readKey(k.state, k.state.Config.Keydir, k.state.Config.Keys.KEK, hierarchy.KEK); err != nil {
 				return nil, err
 			}
 		}
-		return k.KEK, nil
+		return k.kek, nil
 	case efivar.Db:
-		if k.Db == nil {
-			if k.Db, err = readKey(k.state, k.state.Config.Keydir, k.state.Config.Keys.Db, hierarchy.Db); err != nil {
+		if k.db == nil {
+			if k.db, err = readKey(k.state, k.state.Config.Keydir, k.state.Config.Keys.Db, hierarchy.Db); err != nil {
 				return nil, err
 			}
 		}
-		return k.Db, nil
+		return k.db, nil
 	default:
 		panic("invalid key hierarchy")
+	}
+}
+
+func (k *KeyHierarchy) UpdateKeyBackend(kb KeyBackend, hier hierarchy.Hierarchy) {
+	switch hier {
+	case hierarchy.PK:
+		k.pk = kb
+	case hierarchy.KEK:
+		k.kek = kb
+	case hierarchy.Db:
+		k.db = kb
 	}
 }
 
@@ -147,11 +165,11 @@ func (k *KeyHierarchy) RotateKeyWithBackend(hier hierarchy.Hierarchy, backend Ba
 	var err error
 	switch hier {
 	case hierarchy.PK:
-		k.PK, err = createKey(k.state, k.state.Config.Keys.PK, hier)
+		k.pk, err = createKey(k.state, k.state.Config.Keys.PK, hier)
 	case hierarchy.KEK:
-		k.KEK, err = createKey(k.state, k.state.Config.Keys.KEK, hier)
+		k.kek, err = createKey(k.state, k.state.Config.Keys.KEK, hier)
 	case hierarchy.Db:
-		k.Db, err = createKey(k.state, k.state.Config.Keys.Db, hier)
+		k.db, err = createKey(k.state, k.state.Config.Keys.Db, hier)
 	}
 	return err
 }
@@ -240,17 +258,17 @@ func CreateKeys(state *config.State) (*KeyHierarchy, error) {
 	var err error
 
 	c := state.Config
-	hier.PK, err = createKey(state, c.Keys.PK, hierarchy.PK)
+	hier.pk, err = createKey(state, c.Keys.PK, hierarchy.PK)
 	if err != nil {
 		return nil, err
 	}
 
-	hier.KEK, err = createKey(state, c.Keys.KEK, hierarchy.KEK)
+	hier.kek, err = createKey(state, c.Keys.KEK, hierarchy.KEK)
 	if err != nil {
 		return nil, err
 	}
 
-	hier.Db, err = createKey(state, c.Keys.Db, hierarchy.Db)
+	hier.db, err = createKey(state, c.Keys.Db, hierarchy.Db)
 	if err != nil {
 		return nil, err
 	}

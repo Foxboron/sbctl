@@ -300,7 +300,7 @@ func rotateKey(state *config.State, hiera string, keyPath, certPath string) erro
 		if err != nil {
 			return fmt.Errorf("could not rotate PK: %v", err)
 		}
-		newKH.PK = bk
+		newKH.UpdateKeyBackend(bk, hierarchy.PK)
 		if err := rotateCerts(state, hierarchy.PK, oldKH, newKH, efistate); err != nil {
 			return fmt.Errorf("could not rotate PK: %v", err)
 		}
@@ -309,7 +309,7 @@ func rotateKey(state *config.State, hiera string, keyPath, certPath string) erro
 		if err != nil {
 			return fmt.Errorf("could not rotate KEK: %v", err)
 		}
-		newKH.KEK = bk
+		newKH.UpdateKeyBackend(bk, hierarchy.KEK)
 		if err := rotateCerts(state, hierarchy.KEK, oldKH, newKH, efistate); err != nil {
 			return fmt.Errorf("could not rotate KEK: %v", err)
 		}
@@ -318,7 +318,7 @@ func rotateKey(state *config.State, hiera string, keyPath, certPath string) erro
 		if err != nil {
 			return fmt.Errorf("could not rotate db: %v", err)
 		}
-		newKH.Db = bk
+		newKH.UpdateKeyBackend(bk, hierarchy.Db)
 		if err := rotateCerts(state, hierarchy.Db, oldKH, newKH, efistate); err != nil {
 			return fmt.Errorf("could not rotate db: %v", err)
 		}
