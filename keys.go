@@ -139,10 +139,19 @@ var SecureBootKeys = []struct {
 // Check if we have already intialized keys in the given output directory
 func CheckIfKeysInitialized(vfs afero.Fs, output string) bool {
 	for _, key := range SecureBootKeys {
-		path := filepath.Join(output, key.Key)
-		if _, err := vfs.Stat(path); errors.Is(err, os.ErrNotExist) {
+		found := CheckIfKeyFileExists(vfs, output, key.Key)
+		if !found {
 			return false
 		}
+	}
+	return true
+}
+
+// Check if a specific key hierarchy key file exists
+func CheckIfKeyFileExists(vfs afero.Fs, output string, key string) bool {
+	path := filepath.Join(output, key+".key")
+	if _, err := vfs.Stat(path); errors.Is(err, os.ErrNotExist) {
+		return false
 	}
 	return true
 }
