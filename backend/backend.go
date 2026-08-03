@@ -16,6 +16,7 @@ import (
 	"github.com/foxboron/sbctl/config"
 	"github.com/foxboron/sbctl/fs"
 	"github.com/foxboron/sbctl/hierarchy"
+	"github.com/foxboron/sbctl/logging"
 	"github.com/spf13/afero"
 )
 
@@ -37,36 +38,37 @@ type KeyBackend interface {
 }
 
 type KeyHierarchy struct {
-	PK  KeyBackend
-	KEK KeyBackend
-	Db  KeyBackend
+	pk  KeyBackend
+	kek KeyBackend
+	db  KeyBackend
 	// We need the callbacks
 	state *config.State
 }
 
 func (k *KeyHierarchy) GetConfig(keydir string) *config.Keys {
+	keyType := func(key interface{ Type() BackendType }) string {
+		if key == nil {
+			return string(FileBackend)
+		}
+		return string(key.Type())
+	}
+
 	return &config.Keys{
 		PK: &config.KeyConfig{
 			Privkey: filepath.Join(keydir, "PK/PK.key"),
 			Pubkey:  filepath.Join(keydir, "PK/PK.pem"),
-			Type:    string(k.PK.Type()),
+			Type:    keyType(k.pk),
 		},
 		KEK: &config.KeyConfig{
 			Privkey: filepath.Join(keydir, "KEK/KEK.key"),
 			Pubkey:  filepath.Join(keydir, "KEK/KEK.pem"),
-			Type:    string(k.KEK.Type()),
+			Type:    keyType(k.kek),
 		},
 		Db: &config.KeyConfig{
 			Privkey: filepath.Join(keydir, "db/db.key"),
 			Pubkey:  filepath.Join(keydir, "db/db.pem"),
-			Type:    string(k.Db.Type()),
+			Type:    keyType(k.db),
 		},
-	}
-}
-
-func NewKeyHierarchy(state *config.State) *KeyHierarchy {
-	return &KeyHierarchy{
-		state: state,
 	}
 }
 
@@ -74,17 +76,108 @@ var (
 	ErrAlreadySigned = errors.New("already signed file")
 )
 
-func (k *KeyHierarchy) GetKeyBackend(e efivar.Efivar) KeyBackend {
+// GetKeyBackend returns the currently loaded KeyBackend of the given efivar,
+// or attempts to load it from disk if none is currently loaded.
+func (k *KeyHierarchy) GetKeyBackend(e efivar.Efivar) (KeyBackend, error) {
+	var err error
+
 	switch e {
 	case efivar.PK:
-		return k.PK
+		if k.pk == nil {
+			if k.pk, err = k.ReadKey(hierarchy.PK); err != nil {
+				return nil, err
+			}
+		}
+		return k.pk, nil
 	case efivar.KEK:
-		return k.KEK
+		if k.kek == nil {
+			if k.kek, err = k.ReadKey(hierarchy.KEK); err != nil {
+				return nil, err
+			}
+		}
+		return k.kek, nil
 	case efivar.Db:
-		return k.Db
+		if k.db == nil {
+			if k.db, err = k.ReadKey(hierarchy.Db); err != nil {
+				return nil, err
+			}
+		}
+		return k.db, nil
 	default:
 		panic("invalid key hierarchy")
 	}
+}
+
+func (k *KeyHierarchy) UpdateKeyBackend(kb KeyBackend, hier hierarchy.Hierarchy) {
+	switch hier {
+	case hierarchy.PK:
+		k.pk = kb
+	case hierarchy.KEK:
+		k.kek = kb
+	case hierarchy.Db:
+		k.db = kb
+	}
+}
+
+// CreateKey generates private and public parts of the given hierarchy and updates its KeyBackend.
+func (k *KeyHierarchy) CreateKey(backend BackendType, hier hierarchy.Hierarchy, desc string) error {
+	var kb KeyBackend
+	var err error
+
+	if desc == "" {
+		desc = hier.Description()
+	}
+
+	switch backend {
+	case FileBackend:
+		kb, err = NewFileKey(hier, desc)
+
+	case TPMBackend:
+		kb, err = NewTPMKey(k.state.TPM, desc)
+
+	case YubikeyBackend:
+		kb, err = NewYubikeyKey(k.state.Yubikey, hier)
+
+	default:
+		logging.Warn("backend '%s' unknown, falling back to '%s'", backend, FileBackend)
+		kb, err = NewFileKey(hier, desc)
+	}
+
+	if err != nil {
+		return err
+	}
+
+	k.UpdateKeyBackend(kb, hier)
+
+	return nil
+}
+
+// CreateKeys generates private and public parts of the entire hierarchy and updates their KeyBackends.
+func (k *KeyHierarchy) CreateKeys() error {
+	var err error
+	c := k.state.Config
+
+	err = k.CreateKey(BackendType(c.Keys.PK.Type), hierarchy.PK, c.Keys.PK.Description)
+	if err != nil {
+		return err
+	}
+
+	err = k.CreateKey(BackendType(c.Keys.KEK.Type), hierarchy.KEK, c.Keys.KEK.Description)
+	if err != nil {
+		return err
+	}
+
+	err = k.CreateKey(BackendType(c.Keys.Db.Type), hierarchy.Db, c.Keys.Db.Description)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// TODO: fix this
+func (k *KeyHierarchy) ImportKeys(keydir string) error {
+	return fmt.Errorf("importing keys not implemented!")
 }
 
 func (k *KeyHierarchy) SaveKey(vfs afero.Fs, hier hierarchy.Hierarchy, keydir string) error {
@@ -97,14 +190,17 @@ func (k *KeyHierarchy) SaveKey(vfs afero.Fs, hier hierarchy.Hierarchy, keydir st
 		}
 		return nil
 	}
-	key := k.GetKeyBackend(hier.Efivar())
+	kb, err := k.GetKeyBackend(hier.Efivar())
+	if err != nil {
+		return err
+	}
 	path := filepath.Join(keydir, hier.String())
 	keyname := filepath.Join(path, fmt.Sprintf("%s.key", hier.String()))
 	certname := filepath.Join(path, fmt.Sprintf("%s.pem", hier.String()))
-	if err := writeFile(keyname, key.PrivateKeyBytes()); err != nil {
+	if err := writeFile(keyname, kb.PrivateKeyBytes()); err != nil {
 		return err
 	}
-	if err := writeFile(certname, key.CertificateBytes()); err != nil {
+	if err := writeFile(certname, kb.CertificateBytes()); err != nil {
 		return err
 	}
 	return nil
@@ -123,21 +219,83 @@ func (k *KeyHierarchy) SaveKeys(fs afero.Fs, keydir string) error {
 	return nil
 }
 
+// ReadKey loads the given hierarchy from disk and returns its KeyBackend.
+func (k *KeyHierarchy) ReadKey(hier hierarchy.Hierarchy) (KeyBackend, error) {
+	path := filepath.Join(k.state.Config.Keydir, hier.String())
+	keyname := filepath.Join(path, fmt.Sprintf("%s.key", hier.String()))
+	certname := filepath.Join(path, fmt.Sprintf("%s.pem", hier.String()))
+
+	// Read privatekey
+	keyb, err := fs.ReadFile(k.state.Fs, keyname)
+	if err != nil {
+		return nil, err
+	}
+
+	// Read certificate
+	pemb, err := fs.ReadFile(k.state.Fs, certname)
+	if err != nil {
+		return nil, err
+	}
+
+	t, err := GetBackendType(keyb)
+	if err != nil {
+		return nil, err
+	}
+
+	switch t {
+	case FileBackend:
+		return FileKeyFromBytes(keyb, pemb)
+	case TPMBackend:
+		return TPMKeyFromBytes(k.state.TPM, keyb, pemb)
+	case YubikeyBackend:
+		return YubikeyFromBytes(k.state.Yubikey, keyb, pemb)
+	default:
+		return nil, fmt.Errorf("unknown key")
+	}
+}
+
+// ReadKeys loads the entire hierarchy from disk and updates their KeyBackends.
+func (k *KeyHierarchy) ReadKeys() error {
+	var kb KeyBackend
+	var err error
+
+	if kb, err = k.ReadKey(hierarchy.PK); err != nil {
+		return err
+	}
+	k.UpdateKeyBackend(kb, hierarchy.PK)
+
+	if kb, err = k.ReadKey(hierarchy.KEK); err != nil {
+		return err
+	}
+	k.UpdateKeyBackend(kb, hierarchy.KEK)
+
+	if kb, err = k.ReadKey(hierarchy.Db); err != nil {
+		return err
+	}
+	k.UpdateKeyBackend(kb, hierarchy.Db)
+
+	return nil
+}
+
 func (k *KeyHierarchy) RotateKeyWithBackend(hier hierarchy.Hierarchy, backend BackendType) error {
 	var err error
 	switch hier {
 	case hierarchy.PK:
-		k.PK, err = createKey(k.state, string(backend), hier, k.PK.Description())
+		err = k.CreateKey(backend, hier, k.pk.Description())
 	case hierarchy.KEK:
-		k.KEK, err = createKey(k.state, string(backend), hier, k.KEK.Description())
+		err = k.CreateKey(backend, hier, k.kek.Description())
 	case hierarchy.Db:
-		k.Db, err = createKey(k.state, string(backend), hier, k.Db.Description())
+		err = k.CreateKey(backend, hier, k.db.Description())
 	}
 	return err
 }
 
 func (k *KeyHierarchy) RotateKey(hier hierarchy.Hierarchy) error {
-	return k.RotateKeyWithBackend(hier, k.GetKeyBackend(hier.Efivar()).Type())
+	kb, err := k.GetKeyBackend(hier.Efivar())
+	if err != nil {
+		return err
+	}
+	return k.RotateKeyWithBackend(hier, kb.Type())
 }
 
 func (k *KeyHierarchy) RotateKeys() error {
@@ -154,7 +312,10 @@ func (k *KeyHierarchy) RotateKeys() error {
 }
 
 func (k *KeyHierarchy) VerifyFile(hier hierarchy.Hierarchy, r io.ReaderAt) (bool, error) {
-	kk := k.GetKeyBackend(hier.Efivar())
+	kb, err := k.GetKeyBackend(hier.Efivar())
+	if err != nil {
+		return false, err
+	}
 
 	peBinary, err := authenticode.Parse(r)
 	if err != nil {
@@ -170,7 +331,7 @@ func (k *KeyHierarchy) VerifyFile(hier hierarchy.Hierarchy, r io.ReaderAt) (bool
 		return false, nil
 	}
 
-	ok, err := peBinary.Verify(kk.Certificate())
+	ok, err := peBinary.Verify(kb.Certificate())
 	if errors.Is(err, authenticode.ErrNoValidSignatures) {
 		return false, nil
 	} else if err != nil {
@@ -180,121 +341,23 @@ func (k *KeyHierarchy) VerifyFile(hier hierarchy.Hierarchy, r io.ReaderAt) (bool
 }
 
 func (k *KeyHierarchy) SignFile(hier hierarchy.Hierarchy, peBinary *authenticode.PECOFFBinary) ([]byte, error) {
-	kk := k.GetKeyBackend(hier.Efivar())
-	signer := kk.Signer()
+	kb, err := k.GetKeyBackend(hier.Efivar())
+	if err != nil {
+		return nil, err
+	}
+	signer := kb.Signer()
 
-	_, err := peBinary.Sign(signer, kk.Certificate())
+	_, err = peBinary.Sign(signer, kb.Certificate())
 	if err != nil {
 		return nil, err
 	}
 	return peBinary.Bytes(), nil
 }
 
-func createKey(state *config.State, backend string, hier hierarchy.Hierarchy, desc string) (KeyBackend, error) {
-	if desc == "" {
-		desc = hier.Description()
-	}
-	switch backend {
-	case "file", "":
-		return NewFileKey(hier, desc)
-	case "tpm":
-		return NewTPMKey(state.TPM, desc)
-	case "yubikey":
-		return NewYubikeyKey(state.Yubikey, hier)
-	default:
-		return NewFileKey(hier, desc)
-	}
-}
-
-func CreateKeys(state *config.State) (*KeyHierarchy, error) {
-	var hier KeyHierarchy
-	var err error
-
-	c := state.Config
-	hier.PK, err = createKey(state, c.Keys.PK.Type, hierarchy.PK, c.Keys.PK.Description)
-	if err != nil {
-		return nil, err
-	}
-
-	hier.KEK, err = createKey(state, c.Keys.KEK.Type, hierarchy.KEK, c.Keys.KEK.Description)
-	if err != nil {
-		return nil, err
-	}
-
-	hier.Db, err = createKey(state, c.Keys.Db.Type, hierarchy.Db, c.Keys.Db.Description)
-	if err != nil {
-		return nil, err
-	}
-
-	return &hier, nil
-}
-
-func readKey(state *config.State, keydir string, kc *config.KeyConfig, hier hierarchy.Hierarchy) (KeyBackend, error) {
-	path := filepath.Join(keydir, hier.String())
-	keyname := filepath.Join(path, fmt.Sprintf("%s.key", hier.String()))
-	certname := filepath.Join(path, fmt.Sprintf("%s.pem", hier.String()))
-
-	// Read privatekey
-	keyb, err := fs.ReadFile(state.Fs, keyname)
-	if err != nil {
-		return nil, err
-	}
-
-	// Read certificate
-	pemb, err := fs.ReadFile(state.Fs, certname)
-	if err != nil {
-		return nil, err
-	}
-
-	t, err := GetBackendType(keyb)
-	if err != nil {
-		return nil, err
-	}
-
-	switch t {
-	case FileBackend:
-		return FileKeyFromBytes(keyb, pemb)
-	case TPMBackend:
-		return TPMKeyFromBytes(state.TPM, keyb, pemb)
-	case YubikeyBackend:
-		return YubikeyFromBytes(state.Yubikey, keyb, pemb)
-	default:
-		return nil, fmt.Errorf("unknown key")
-	}
-}
-
-func GetKeyBackend(state *config.State, k hierarchy.Hierarchy) (KeyBackend, error) {
-	c := state.Config
-	switch k {
-	case hierarchy.PK:
-		return readKey(state, c.Keydir, c.Keys.PK, k)
-	case hierarchy.KEK:
-		return readKey(state, c.Keydir, c.Keys.KEK, k)
-	case hierarchy.Db:
-		return readKey(state, c.Keydir, c.Keys.Db, k)
-	}
-	return nil, nil
-}
-
-func GetKeyHierarchy(vfs afero.Fs, state *config.State) (*KeyHierarchy, error) {
-	db, err := GetKeyBackend(state, hierarchy.Db)
-	if err != nil {
-		return nil, err
-	}
-	kek, err := GetKeyBackend(state, hierarchy.KEK)
-	if err != nil {
-		return nil, err
-	}
-	pk, err := GetKeyBackend(state, hierarchy.PK)
-	if err != nil {
-		return nil, err
-	}
+func NewKeyHierarchy(state *config.State) *KeyHierarchy {
 	return &KeyHierarchy{
-		PK:    pk,
-		KEK:   kek,
-		Db:    db,
 		state: state,
-	}, nil
+	}
 }
 
 func GetBackendType(b []byte) (BackendType, error) {
@@ -314,11 +377,6 @@ func GetBackendType(b []byte) (BackendType, error) {
 	default:
 		return "", fmt.Errorf("unknown file type: %s", block.Type)
 	}
-}
-
-// TODO: fix this
-func ImportKeys(keydir string) (*KeyHierarchy, error) {
-	return nil, nil
 }
 
 func InitBackendFromKeys(state *config.State, priv, pem []byte, hier hierarchy.Hierarchy) (KeyBackend, error) {

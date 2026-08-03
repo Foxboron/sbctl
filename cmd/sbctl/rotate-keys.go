@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/foxboron/go-uefi/efi/signature"
+	"github.com/foxboron/go-uefi/efivar"
 	"github.com/foxboron/sbctl"
 	"github.com/foxboron/sbctl/backend"
 	"github.com/foxboron/sbctl/config"
@@ -56,35 +57,63 @@ func rotateCerts(state *config.State, hier hierarchy.Hierarchy, oldkeys *backend
 	case hierarchy.PK:
 		// fmt.Printf("Old PK: %s\n", oldkeys.PK.Certificate().SerialNumber.String())
 		// fmt.Printf("New PK: %s\n", newkeys.PK.Certificate().SerialNumber.String())
-		cert := oldkeys.PK.Certificate().Raw
+
+		kb, err := oldkeys.GetKeyBackend(efivar.PK)
+		if err != nil {
+			return err
+		}
+		cert := kb.Certificate().Raw
 		if efistate.PK.SigDataExists(signature.CERT_X509_GUID, &signature.SignatureData{Owner: *guid, Data: cert}) {
 			if err := efistate.PK.Remove(signature.CERT_X509_GUID, *guid, cert); err != nil {
 				return fmt.Errorf("can't remove old key from PK siglist: %v", err)
 			}
 		}
-		efistate.PK.Append(signature.CERT_X509_GUID, *guid, newkeys.PK.CertificateBytes())
+		kb, err = newkeys.GetKeyBackend(efivar.PK)
+		if err != nil {
+			return err
+		}
+		newCertBytes := kb.CertificateBytes()
+		efistate.PK.Append(signature.CERT_X509_GUID, *guid, newCertBytes)
 		return efistate.EnrollKey(hier.Efivar(), oldkeys)
 	case hierarchy.KEK:
 		// fmt.Printf("Old KEK: %s\n", oldkeys.KEK.Certificate().SerialNumber.String())
 		// fmt.Printf("New KEK: %s\n", newkeys.KEK.Certificate().SerialNumber.String())
-		cert := oldkeys.KEK.Certificate().Raw
+		kb, err := oldkeys.GetKeyBackend(efivar.KEK)
+		if err != nil {
+			return err
+		}
+		cert := kb.Certificate().Raw
 		if efistate.KEK.SigDataExists(signature.CERT_X509_GUID, &signature.SignatureData{Owner: *guid, Data: cert}) {
 			if err := efistate.KEK.Remove(signature.CERT_X509_GUID, *guid, cert); err != nil {
 				return fmt.Errorf("can't remove old key from KEK siglist: %v", err)
 			}
 		}
-		efistate.KEK.Append(signature.CERT_X509_GUID, *guid, newkeys.KEK.CertificateBytes())
+		kb, err = newkeys.GetKeyBackend(efivar.KEK)
+		if err != nil {
+			return err
+		}
+		newCertBytes := kb.CertificateBytes()
+		efistate.KEK.Append(signature.CERT_X509_GUID, *guid, newCertBytes)
 		return efistate.EnrollKey(hier.Efivar(), newkeys)
 	case hierarchy.Db:
 		// fmt.Printf("Old Db: %s\n", oldkeys.Db.Certificate().SerialNumber.String())
 		// fmt.Printf("New Db: %s\n", newkeys.Db.Certificate().SerialNumber.String())
-		cert := oldkeys.Db.Certificate().Raw
+		kb, err := oldkeys.GetKeyBackend(efivar.Db)
+		if err != nil {
+			return err
+		}
+		cert := kb.Certificate().Raw
 		if efistate.Db.SigDataExists(signature.CERT_X509_GUID, &signature.SignatureData{Owner: *guid, Data: cert}) {
 			if err := efistate.Db.Remove(signature.CERT_X509_GUID, *guid, cert); err != nil {
 				return fmt.Errorf("can't remove old key from Db siglist: %v", err)
 			}
 		}
-		efistate.Db.Append(signature.CERT_X509_GUID, *guid, newkeys.Db.CertificateBytes())
+		kb, err = newkeys.GetKeyBackend(efivar.Db)
+		if err != nil {
+			return err
+		}
+		newCertBytes := kb.CertificateBytes()
+		efistate.Db.Append(signature.CERT_X509_GUID, *guid, newCertBytes)
 		return efistate.EnrollKey(hier.Efivar(), newkeys)
 	default:
 		return fmt.Errorf("unknown efivar hierarchy")
@@ -125,10 +154,7 @@ func RunRotateKeys(cmd *cobra.Command, args []string) error {
 }
 
 func rotateAllKeys(state *config.State, backupDir, newKeysDir string) error {
-	oldKeys, err := backend.GetKeyHierarchy(state.Fs, state)
-	if err != nil {
-		return fmt.Errorf("can't read old keys from dir: %v", err)
-	}
+	oldKeys := backend.NewKeyHierarchy(state)
 
 	efistate, err := sbctl.SystemEFIVariables(state.Efivarfs)
 	if err != nil {
@@ -150,27 +176,26 @@ func rotateAllKeys(state *config.State, backupDir, newKeysDir string) error {
 
 	// Should be own flag type, and deduplicated
 	// It should be fine to modify the state here?
-	if rotateKeysCmdOptions.Keytype != "" && (rotateKeysCmdOptions.Keytype == "file" || rotateKeysCmdOptions.Keytype == "tpm") {
+	if rotateKeysCmdOptions.Keytype != "" {
 		state.Config.Keys.PK.Type = rotateKeysCmdOptions.Keytype
 		state.Config.Keys.KEK.Type = rotateKeysCmdOptions.Keytype
 		state.Config.Keys.Db.Type = rotateKeysCmdOptions.Keytype
-	} else {
-		if rotateKeysCmdOptions.PKKeytype != "" && (rotateKeysCmdOptions.PKKeytype == "file" || rotateKeysCmdOptions.PKKeytype == "tpm") {
-			state.Config.Keys.PK.Type = rotateKeysCmdOptions.PKKeytype
-		}
-		if rotateKeysCmdOptions.KEKKeytype != "" && (rotateKeysCmdOptions.KEKKeytype == "file" || rotateKeysCmdOptions.KEKKeytype == "tpm") {
-			state.Config.Keys.KEK.Type = rotateKeysCmdOptions.KEKKeytype
-		}
-		if rotateKeysCmdOptions.DbKeytype != "" && (rotateKeysCmdOptions.DbKeytype == "file" || rotateKeysCmdOptions.DbKeytype == "tpm") {
-			state.Config.Keys.Db.Type = rotateKeysCmdOptions.DbKeytype
-		}
+	}
+	if rotateKeysCmdOptions.PKKeytype != "" {
+		state.Config.Keys.PK.Type = rotateKeysCmdOptions.PKKeytype
+	}
+	if rotateKeysCmdOptions.KEKKeytype != "" {
+		state.Config.Keys.KEK.Type = rotateKeysCmdOptions.KEKKeytype
+	}
+	if rotateKeysCmdOptions.DbKeytype != "" {
+		state.Config.Keys.Db.Type = rotateKeysCmdOptions.DbKeytype
 	}
 
-	var newKeyHierarchy *backend.KeyHierarchy
+	newKeyHierarchy := backend.NewKeyHierarchy(state)
 
 	if newKeysDir == "" {
 		logging.Print("Creating secure boot keys...")
-		newKeyHierarchy, err = backend.CreateKeys(state)
+		err = newKeyHierarchy.CreateKeys()
 		if err != nil {
 			logging.NotOk("")
 			return fmt.Errorf("couldn't initialize secure boot: %w", err)
@@ -185,7 +210,7 @@ func rotateAllKeys(state *config.State, backupDir, newKeysDir string) error {
 
 	} else {
 		logging.Print("Importing new secure boot keys from %s...", newKeysDir)
-		newKeyHierarchy, err = backend.ImportKeys(newKeysDir)
+		err = newKeyHierarchy.ImportKeys(newKeysDir)
 		if err != nil {
 			logging.NotOk("")
 			return fmt.Errorf("couldn't import secure boot keys: %w", err)
@@ -230,10 +255,7 @@ func rotateKey(state *config.State, hiera string, keyPath, certPath string) erro
 		return fmt.Errorf("a new certificate needs to be provided for a partial reset of %s", hiera)
 	}
 
-	oldKH, err := backend.GetKeyHierarchy(state.Fs, state)
-	if err != nil {
-		return fmt.Errorf("can't read old keys from dir: %v", err)
-	}
+	oldKH := backend.NewKeyHierarchy(state)
 
 	newCert, err := fs.ReadFile(state.Fs, certPath)
 	if err != nil {
@@ -246,10 +268,7 @@ func rotateKey(state *config.State, hiera string, keyPath, certPath string) erro
 	}
 
 	// We will mutate this to the new state
-	newKH, err := backend.GetKeyHierarchy(state.Fs, state)
-	if err != nil {
-		return fmt.Errorf("can't read old keys from dir: %v", err)
-	}
+	newKH := backend.NewKeyHierarchy(state)
 
 	efistate, err := sbctl.SystemEFIVariables(state.Efivarfs)
 	if err != nil {
@@ -258,20 +277,19 @@ func rotateKey(state *config.State, hiera string, keyPath, certPath string) erro
 
 	// Should be own flag type, and deduplicated
 	// It should be fine to modify the state here?
-	if rotateKeysCmdOptions.Keytype != "" && (rotateKeysCmdOptions.Keytype == "file" || rotateKeysCmdOptions.Keytype == "tpm") {
+	if rotateKeysCmdOptions.Keytype != "" {
 		state.Config.Keys.PK.Type = rotateKeysCmdOptions.Keytype
 		state.Config.Keys.KEK.Type = rotateKeysCmdOptions.Keytype
 		state.Config.Keys.Db.Type = rotateKeysCmdOptions.Keytype
-	} else {
-		if rotateKeysCmdOptions.PKKeytype != "" && (rotateKeysCmdOptions.PKKeytype == "file" || rotateKeysCmdOptions.PKKeytype == "tpm") {
-			state.Config.Keys.PK.Type = rotateKeysCmdOptions.PKKeytype
-		}
-		if rotateKeysCmdOptions.KEKKeytype != "" && (rotateKeysCmdOptions.KEKKeytype == "file" || rotateKeysCmdOptions.KEKKeytype == "tpm") {
-			state.Config.Keys.KEK.Type = rotateKeysCmdOptions.KEKKeytype
-		}
-		if rotateKeysCmdOptions.DbKeytype != "" && (rotateKeysCmdOptions.DbKeytype == "file" || rotateKeysCmdOptions.DbKeytype == "tpm") {
-			state.Config.Keys.Db.Type = rotateKeysCmdOptions.DbKeytype
-		}
+	}
+	if rotateKeysCmdOptions.PKKeytype != "" {
+		state.Config.Keys.PK.Type = rotateKeysCmdOptions.PKKeytype
+	}
+	if rotateKeysCmdOptions.KEKKeytype != "" {
+		state.Config.Keys.KEK.Type = rotateKeysCmdOptions.KEKKeytype
+	}
+	if rotateKeysCmdOptions.DbKeytype != "" {
+		state.Config.Keys.Db.Type = rotateKeysCmdOptions.DbKeytype
 	}
 
 	switch hiera {
@@ -280,7 +298,7 @@ func rotateKey(state *config.State, hiera string, keyPath, certPath string) erro
 		if err != nil {
 			return fmt.Errorf("could not rotate PK: %v", err)
 		}
-		newKH.PK = bk
+		newKH.UpdateKeyBackend(bk, hierarchy.PK)
 		if err := rotateCerts(state, hierarchy.PK, oldKH, newKH, efistate); err != nil {
 			return fmt.Errorf("could not rotate PK: %v", err)
 		}
@@ -289,7 +307,7 @@ func rotateKey(state *config.State, hiera string, keyPath, certPath string) erro
 		if err != nil {
 			return fmt.Errorf("could not rotate KEK: %v", err)
 		}
-		newKH.KEK = bk
+		newKH.UpdateKeyBackend(bk, hierarchy.KEK)
 		if err := rotateCerts(state, hierarchy.KEK, oldKH, newKH, efistate); err != nil {
 			return fmt.Errorf("could not rotate KEK: %v", err)
 		}
@@ -298,7 +316,7 @@ func rotateKey(state *config.State, hiera string, keyPath, certPath string) erro
 		if err != nil {
 			return fmt.Errorf("could not rotate db: %v", err)
 		}
-		newKH.Db = bk
+		newKH.UpdateKeyBackend(bk, hierarchy.Db)
 		if err := rotateCerts(state, hierarchy.Db, oldKH, newKH, efistate); err != nil {
 			return fmt.Errorf("could not rotate db: %v", err)
 		}
@@ -321,7 +339,7 @@ func rotateKeysCmdFlags(cmd *cobra.Command) {
 	f.StringVarP(&rotateKeysCmdOptions.KeyFile, "key-file", "k", "", "key file to replace (only with partial flag)")
 	f.StringVarP(&rotateKeysCmdOptions.CertFile, "cert-file", "c", "", "certificate file to replace (only with partial flag)")
 
-	f.StringVarP(&rotateKeysCmdOptions.Keytype, "keytype", "", "", "key type for all keys")
+	f.StringVarP(&rotateKeysCmdOptions.Keytype, "keytype", "", "", "key type for all keys (individual types take priority)")
 	f.StringVarP(&rotateKeysCmdOptions.PKKeytype, "pk-keytype", "", "", "PK key type (default: file)")
 	f.StringVarP(&rotateKeysCmdOptions.KEKKeytype, "kek-keytype", "", "", "KEK key type (default: file)")
 	f.StringVarP(&rotateKeysCmdOptions.DbKeytype, "db-keytype", "", "", "db key type (default: file)")

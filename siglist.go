@@ -35,13 +35,21 @@ func (e *EFIVariables) GetSiglist(ev efivar.Efivar) *signature.SignatureDatabase
 func (e *EFIVariables) EnrollKey(ev efivar.Efivar, hier *backend.KeyHierarchy) error {
 	// Ensure we are using the correct signer for the backend
 	var signer backend.KeyBackend
+	var err error
+
 	switch ev {
 	case efivar.PK:
-		signer = hier.GetKeyBackend(efivar.PK)
+		if signer, err = hier.GetKeyBackend(efivar.PK); err != nil {
+			return err
+		}
 	case efivar.KEK:
-		signer = hier.GetKeyBackend(efivar.PK)
+		if signer, err = hier.GetKeyBackend(efivar.PK); err != nil {
+			return err
+		}
 	case efivar.Db:
-		signer = hier.GetKeyBackend(efivar.KEK)
+		if signer, err = hier.GetKeyBackend(efivar.KEK); err != nil {
+			return err
+		}
 	}
 	// fmt.Printf("%s is signed by %s\n", ev.Name, signer.Certificate().SerialNumber.String())
 	return e.fs.WriteSignedUpdate(ev, e.GetSiglist(ev), signer.Signer(), signer.Certificate())
