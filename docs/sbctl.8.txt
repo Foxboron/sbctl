@@ -95,11 +95,11 @@ EFI signing commands
 
         *-p*, *--partial*;;
                 Enroll keys only for the hierarchy specified.
-                + 
+                +
                 Valid values are: db, KEK, PK.
 
         *--custom-bytes*;;
-                Enroll a custom bytefile provided by its path to the efivar specified by partial. 
+                Enroll a custom bytefile provided by its path to the efivar specified by partial.
 
         *-a*, *--append*;;
                 Instead of replacing the currently enrolled keys, append the provided one.
@@ -108,30 +108,30 @@ EFI signing commands
                 Set the keytype for all signing keys used by sbctl. This
                 includes PK, KEK and db keys.
                 +
-                Default: file 
+                Default: file
                 +
-                Valid values are: file, tpm
-                
+                Valid values are: file, tpm, yubikey
+
         *--pk-keytype*;;
                 Set the PK key type.
                 +
-                Default: file 
+                Default: file
                 +
-                Valid values are: file, tpm
+                Valid values are: file, tpm, yubikey
 
         *--kek-keytype*;;
                 Set the KEK key type.
                 +
-                Default: file 
+                Default: file
                 +
-                Valid values are: file, tpm
+                Valid values are: file, tpm, yubikey
 
         *--db-keytype*;;
                 Set the db key type.
                 +
-                Default: file 
+                Default: file
                 +
-                Valid values are: file, tpm
+                Valid values are: file, tpm, yubikey
 
 
 **sign** <FILE>...::
@@ -197,7 +197,7 @@ EFI signing commands
 
         *-p*, *--partial*;;
                Reset keys only for the hierarchy specified.
-               + 
+               +
                Valid values are: db, KEK, PK.
 
 **rotate-keys**::
@@ -210,7 +210,7 @@ EFI signing commands
 
         *-p*, *--partial*;;
                Rotate keys only for the hierarchy specified.
-               + 
+               +
                Valid values are: db, KEK, PK.
 
         *-k*, *--key-file*;;
@@ -223,30 +223,30 @@ EFI signing commands
                 Set the keytype for all signing keys used by sbctl. This
                 includes PK, KEK and db keys.
                 +
-                Default: file 
+                Default: file
                 +
-                Valid values are: file, tpm
-                
+                Valid values are: file, tpm, yubikey
+
         *--pk-keytype*;;
                 Set the PK key type.
                 +
-                Default: file 
+                Default: file
                 +
-                Valid values are: file, tpm
+                Valid values are: file, tpm, yubikey
 
         *--kek-keytype*;;
                 Set the KEK key type.
                 +
-                Default: file 
+                Default: file
                 +
-                Valid values are: file, tpm
+                Valid values are: file, tpm, yubikey
 
         *--db-keytype*;;
                 Set the db key type.
                 +
-                Default: file 
+                Default: file
                 +
-                Valid values are: file, tpm
+                Valid values are: file, tpm, yubikey
 
 **export-enrolled-keys**::
         Export already enrolled keys from the system.
@@ -398,8 +398,8 @@ Tip: systemd-boot will automatically show entries for any bundles found in
 Supported key types
 -------------------
 
-sbctl currently supports storing keys as plain unencrypted files, or as TPM
-shielded keys.
+sbctl currently supports storing keys as plain unencrypted files, as TPM
+shielded keys, or as PIV key/certificate on a YubiKey.
 
 Plain unencrypted files (*file*) should only be used when the root partition is
 encrypted. This is the default key type for historic reasons. File keys are
@@ -409,6 +409,15 @@ TPM shielded keys (*tpm*) are shielded inside the TPM and available if there is
 an accessible TPM on the system. TPM policies are not supported which means we
 can't seal keys towards the system state. Note that TPM keys are hardcoded to
 RSA 2048, which is usually the highest bit strength supported by TPMs.
+
+PIV keys/certificates on YubiKeys (*yubikey*) are utilizing the PIV slots of a
+YubiKey, by default the PIV Signature slot. If there already are existing keys
+or certificates they will be reused, otherwise they are created and saved to the
+YubiKey. By default, the keys are RSA4096, but both algorithm and PIV slot can
+be specified by appending to the yubikey type: default is *yubikey:RSA4096:9c*.
+Supported algorithms are RSA4096, RSA3072, and RSA2048.
+If a non-default PIV-PIN is set, it needs to be specified on env
+*SBCTL_YUBIKEY_PIN*.
 
 When creating a key hierarchy for Secure Boot, the user can decide which key
 type each of the keys in the hierarchy gets. Because TPMs can be slow to sign,

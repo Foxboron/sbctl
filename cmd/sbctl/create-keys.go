@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"path"
 	"path/filepath"
+	"strings"
 
 	"github.com/foxboron/sbctl"
 	"github.com/foxboron/sbctl/backend"
@@ -63,25 +64,24 @@ func RunCreateKeys(state *config.State) error {
 		return err
 	}
 
-	// Should be own flag type
-	if Keytype != "" && (Keytype == "file" || Keytype == "tpm" || Keytype == "yubikey") {
+	if Keytype != "" && (strings.HasPrefix(Keytype, "file") || strings.HasPrefix(Keytype, "tpm") || strings.HasPrefix(Keytype, "yubikey")) {
 		state.Config.Keys.PK.Type = Keytype
 		state.Config.Keys.KEK.Type = Keytype
 		state.Config.Keys.Db.Type = Keytype
 	} else {
-		if PKKeytype != "" && (PKKeytype == "file" || PKKeytype == "tpm" || PKKeytype == "yubikey") {
+		if PKKeytype != "" && (strings.HasPrefix(PKKeytype, "file") || strings.HasPrefix(PKKeytype, "tpm") || strings.HasPrefix(PKKeytype, "yubikey")) {
 			state.Config.Keys.PK.Type = PKKeytype
 		}
-		if KEKKeytype != "" && (KEKKeytype == "file" || KEKKeytype == "tpm" || KEKKeytype == "yubikey") {
+		if KEKKeytype != "" && (strings.HasPrefix(KEKKeytype, "file") || strings.HasPrefix(KEKKeytype, "tpm") || strings.HasPrefix(KEKKeytype, "yubikey")) {
 			state.Config.Keys.KEK.Type = KEKKeytype
 		}
-		if DbKeytype != "" && (DbKeytype == "file" || DbKeytype == "tpm" || DbKeytype == "yubikey") {
+		if DbKeytype != "" && (strings.HasPrefix(DbKeytype, "file") || strings.HasPrefix(DbKeytype, "tpm") || strings.HasPrefix(DbKeytype, "yubikey")) {
 			state.Config.Keys.Db.Type = DbKeytype
 		}
 	}
 
 	// if any keytype is yubikey close it appropriately at the end
-	if Keytype == "yubikey" || PKKeytype == "yubikey" || KEKKeytype == "yubikey" || DbKeytype == "yubikey" {
+	if strings.HasPrefix(Keytype, "yubikey") || strings.HasPrefix(PKKeytype, "yubikey") || strings.HasPrefix(KEKKeytype, "yubikey") || strings.HasPrefix(DbKeytype, "yubikey") {
 		defer state.Yubikey.Close()
 	}
 
@@ -91,7 +91,6 @@ func RunCreateKeys(state *config.State) error {
 	}
 	logging.Print("Created Owner UUID %s\n", uuid)
 	if !sbctl.CheckIfKeysInitialized(state.Fs, state.Config.Keydir) {
-
 		hier, err := backend.CreateKeys(state)
 		if err != nil {
 			logging.NotOk("")
@@ -102,8 +101,7 @@ func RunCreateKeys(state *config.State) error {
 			logging.NotOk("")
 			return fmt.Errorf("couldn't initialize secure boot: %w", err)
 		}
-		logging.Ok("")
-		logging.Println("Secure boot keys created!")
+		logging.Ok("Secure boot keys created!")
 	} else {
 		logging.Ok("Secure boot keys have already been created!")
 	}
@@ -112,10 +110,10 @@ func RunCreateKeys(state *config.State) error {
 
 func createKeysCmdFlags(cmd *cobra.Command) {
 	f := cmd.Flags()
-	f.BoolVar(&OverwriteYubikey, "yk-overwrite", false, "overwrite existing key if it exists in the Yubikey Signature slot")
+	f.BoolVar(&OverwriteYubikey, "yk-overwrite", false, "overwrite existing key and certificate in the Yubikey slot")
 	f.StringVarP(&exportPath, "export", "e", "", "export file path")
 	f.StringVarP(&databasePath, "database-path", "d", "", "location to create GUID file")
-	f.StringVarP(&Keytype, "keytype", "", "", "key type for all keys")
+	f.StringVarP(&Keytype, "keytype", "", "", "key type for all keys. (default: file)")
 	f.StringVarP(&PKKeytype, "pk-keytype", "", "", "PK key type (default: file)")
 	f.StringVarP(&KEKKeytype, "kek-keytype", "", "", "KEK key type (default: file)")
 	f.StringVarP(&DbKeytype, "db-keytype", "", "", "db key type (default: file)")

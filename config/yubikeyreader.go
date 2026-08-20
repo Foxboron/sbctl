@@ -4,6 +4,7 @@ import (
 	"crypto"
 	"crypto/x509"
 	"fmt"
+	"os"
 	"strings"
 	"time"
 
@@ -15,13 +16,50 @@ import (
 type YubikeyReader struct {
 	key       *piv.YubiKey
 	Overwrite bool
+	pin       string
 }
 
-func (y *YubikeyReader) GetPIVKeyCert() (*x509.Certificate, error) {
+// Fetches PIN protected management key. If it is not stored, default is returned
+func (y *YubikeyReader) GetManagementKey() ([]byte, error) {
+	var err error
+	if err = y.connectToYubikey(); err != nil {
+		return nil, err
+	}
+	// FIXME: Should swallow error and return default key?
+	metadata, err := y.key.Metadata(y.pin)
+	if err != nil {
+		return nil, err
+	}
+	if metadata.ManagementKey != nil {
+		return *metadata.ManagementKey, nil
+	} else {
+		return piv.DefaultManagementKey, nil
+	}
+}
+
+func (y *YubikeyReader) GetPIVKeyCert(slot piv.Slot) (*x509.Certificate, error) {
 	if err := y.connectToYubikey(); err != nil {
 		return nil, err
 	}
-	return y.key.Attest(piv.SlotSignature)
+	return y.key.Certificate(slot)
+}
+
+func (y *YubikeyReader) GetPIVAttestationCert(slot piv.Slot) (*x509.Certificate, error) {
+	if err := y.connectToYubikey(); err != nil {
+		return nil, err
+	}
+	return y.key.Attest(slot)
+}
+
+func (y *YubikeyReader) SetPIVCert(slot piv.Slot, cert *x509.Certificate) error {
+	if err := y.connectToYubikey(); err != nil {
+		return err
+	}
+	managementKey, err := y.GetManagementKey()
+	if err != nil {
+		return err
+	}
+	return y.key.SetCertificate(managementKey, slot, cert)
 }
 
 func (y *YubikeyReader) GenerateKey(key []byte, slot piv.Slot, opts piv.Key) (crypto.PublicKey, error) {
@@ -31,11 +69,40 @@ func (y *YubikeyReader) GenerateKey(key []byte, slot piv.Slot, opts piv.Key) (cr
 	return y.key.GenerateKey(key, slot, opts)
 }
 
-func (y *YubikeyReader) PrivateKey(slot piv.Slot, public crypto.PublicKey, auth piv.KeyAuth) (crypto.PrivateKey, error) {
+func (y *YubikeyReader) PrivateKey(slot piv.Slot) (crypto.PrivateKey, crypto.PublicKey, error) {
+	var pubKey crypto.PublicKey
+
 	if err := y.connectToYubikey(); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	return y.key.PrivateKey(slot, public, auth)
+	auth := piv.KeyAuth{PIN: y.pin}
+
+	version := y.key.Version()
+
+	if version.Major > 5 || (version.Major == 5 && version.Minor >= 3) {
+		keyInfo, err := y.key.KeyInfo(slot)
+		if err != nil {
+			return nil, nil, err
+		}
+		pubKey = keyInfo.PublicKey
+
+	} else if version.Major > 4 || (version.Major == 4 && version.Minor >= 3) {
+		attestationCert, err := y.key.Attest(slot)
+		if err != nil {
+			return nil, nil, err
+		}
+		pubKey = attestationCert.PublicKey
+
+	} else {
+		return nil, nil, fmt.Errorf("Unsupported YubiKey Version, too old: %d.%d.%d", version.Major, version.Minor, version.Patch)
+	}
+
+	privKey, err := y.key.PrivateKey(slot, pubKey, auth)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return privKey, pubKey, err
 }
 
 func connectToYubikeyWithTimeout(waitTime time.Duration) (*piv.YubiKey, error) {
@@ -101,6 +168,12 @@ func (y *YubikeyReader) connectToYubikey() error {
 	yk, err := connectToYubikeyWithTimeout(90 * time.Second)
 	if err != nil {
 		return err
+	}
+
+	if pin, found := os.LookupEnv("SBCTL_YUBIKEY_PIN"); found {
+		y.pin = pin
+	} else {
+		y.pin = piv.DefaultPIN
 	}
 
 	y.key = yk
