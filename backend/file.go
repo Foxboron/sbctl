@@ -27,7 +27,7 @@ type FileKey struct {
 	privkey *rsa.PrivateKey
 }
 
-func NewFileKey(_ hierarchy.Hierarchy, desc string) (*FileKey, error) {
+func NewFileKey(_ hierarchy.Hierarchy, subject pkix.Name) (*FileKey, error) {
 	serialNumberLimit := new(big.Int).Lsh(big.NewInt(1), 128)
 	serialNumber, _ := rand.Int(rand.Reader, serialNumberLimit)
 	c := x509.Certificate{
@@ -36,9 +36,7 @@ func NewFileKey(_ hierarchy.Hierarchy, desc string) (*FileKey, error) {
 		SignatureAlgorithm: x509.SHA256WithRSA,
 		NotBefore:          time.Now(),
 		NotAfter:           time.Now().AddDate(5, 0, 0),
-		Subject: pkix.Name{
-			CommonName: desc,
-		},
+		Subject:            subject,
 	}
 	priv, err := rsa.GenerateKey(rand.Reader, RSAKeySize)
 	if err != nil {
@@ -116,7 +114,6 @@ func FileKeyFromBytes(keyb, pemb []byte) (*FileKey, error) {
 func (f *FileKey) Type() BackendType              { return f.keytype }
 func (f *FileKey) Certificate() *x509.Certificate { return f.cert }
 func (f *FileKey) Signer() crypto.Signer          { return f.privkey }
-func (f *FileKey) Description() string            { return f.Certificate().Subject.SerialNumber }
 
 func (f *FileKey) PrivateKeyBytes() []byte {
 	privateKeyBytes, err := x509.MarshalPKCS8PrivateKey(f.privkey)

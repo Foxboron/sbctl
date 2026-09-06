@@ -27,10 +27,10 @@ type TPMKey struct {
 	tpm     func() transport.TPMCloser
 }
 
-func NewTPMKey(tpmcb func() transport.TPMCloser, desc string) (*TPMKey, error) {
+func NewTPMKey(tpmcb func() transport.TPMCloser, subject pkix.Name) (*TPMKey, error) {
 	rwc := tpmcb()
 	key, err := keyfile.NewLoadableKey(rwc, tpm2.TPMAlgRSA, 2048, []byte(nil),
-		keyfile.WithDescription(desc),
+		keyfile.WithDescription(subject.String()),
 	)
 	if err != nil {
 		return nil, err
@@ -44,9 +44,7 @@ func NewTPMKey(tpmcb func() transport.TPMCloser, desc string) (*TPMKey, error) {
 		SignatureAlgorithm: x509.SHA256WithRSA,
 		NotBefore:          time.Now(),
 		NotAfter:           time.Now().AddDate(5, 0, 0),
-		Subject: pkix.Name{
-			CommonName: desc,
-		},
+		Subject:            subject,
 	}
 
 	pubkey, err := key.PublicKey()
@@ -78,7 +76,6 @@ func NewTPMKey(tpmcb func() transport.TPMCloser, desc string) (*TPMKey, error) {
 
 func (t *TPMKey) Type() BackendType              { return t.keytype }
 func (t *TPMKey) Certificate() *x509.Certificate { return t.cert }
-func (t *TPMKey) Description() string            { return t.TPMKey.Description }
 
 func (t *TPMKey) Signer() crypto.Signer {
 	s, err := t.TPMKey.Signer(t.tpm(), []byte(nil), []byte(nil))

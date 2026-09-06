@@ -3,6 +3,7 @@ package backend
 import (
 	"crypto"
 	"crypto/x509"
+	"crypto/x509/pkix"
 	"encoding/json"
 	"encoding/pem"
 	"errors"
@@ -10,6 +11,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/foxboron/go-uefi/authenticode"
 	"github.com/foxboron/go-uefi/efivar"
@@ -33,7 +35,6 @@ type KeyBackend interface {
 	Signer() crypto.Signer
 	Certificate() *x509.Certificate
 	Type() BackendType
-	Description() string
 }
 
 type KeyHierarchy struct {
@@ -50,16 +51,19 @@ func (k *KeyHierarchy) GetConfig(keydir string) *config.Keys {
 			Privkey: filepath.Join(keydir, "PK/PK.key"),
 			Pubkey:  filepath.Join(keydir, "PK/PK.pem"),
 			Type:    string(k.PK.Type()),
+			Subject: k.PK.Certificate().Subject.String(),
 		},
 		KEK: &config.KeyConfig{
 			Privkey: filepath.Join(keydir, "KEK/KEK.key"),
 			Pubkey:  filepath.Join(keydir, "KEK/KEK.pem"),
 			Type:    string(k.KEK.Type()),
+			Subject: k.KEK.Certificate().Subject.String(),
 		},
 		Db: &config.KeyConfig{
 			Privkey: filepath.Join(keydir, "db/db.key"),
 			Pubkey:  filepath.Join(keydir, "db/db.pem"),
 			Type:    string(k.Db.Type()),
+			Subject: k.Db.Certificate().Subject.String(),
 		},
 	}
 }
@@ -127,11 +131,11 @@ func (k *KeyHierarchy) RotateKeyWithBackend(hier hierarchy.Hierarchy, backend Ba
 	var err error
 	switch hier {
 	case hierarchy.PK:
-		k.PK, err = createKey(k.state, string(backend), hier, k.PK.Description())
+		k.PK, err = createKey(k.state, k.state.Config.Keys.PK, hier)
 	case hierarchy.KEK:
-		k.KEK, err = createKey(k.state, string(backend), hier, k.KEK.Description())
+		k.KEK, err = createKey(k.state, k.state.Config.Keys.KEK, hier)
 	case hierarchy.Db:
-		k.Db, err = createKey(k.state, string(backend), hier, k.Db.Description())
+		k.Db, err = createKey(k.state, k.state.Config.Keys.Db, hier)
 	}
 	return err
 }
@@ -190,19 +194,18 @@ func (k *KeyHierarchy) SignFile(hier hierarchy.Hierarchy, peBinary *authenticode
 	return peBinary.Bytes(), nil
 }
 
-func createKey(state *config.State, backend string, hier hierarchy.Hierarchy, desc string) (KeyBackend, error) {
-	if desc == "" {
-		desc = hier.Description()
-	}
-	switch backend {
+func createKey(state *config.State, key *config.KeyConfig, hier hierarchy.Hierarchy) (KeyBackend, error) {
+	subject := parseSubject(key.Subject, hier)
+
+	switch key.Type {
 	case "file", "":
-		return NewFileKey(hier, desc)
+		return NewFileKey(hier, subject)
 	case "tpm":
-		return NewTPMKey(state.TPM, desc)
+		return NewTPMKey(state.TPM, subject)
 	case "yubikey":
-		return NewYubikeyKey(state.Yubikey, hier)
+		return NewYubikeyKey(state.Yubikey, subject)
 	default:
-		return NewFileKey(hier, desc)
+		return NewFileKey(hier, subject)
 	}
 }
 
@@ -211,17 +214,17 @@ func CreateKeys(state *config.State) (*KeyHierarchy, error) {
 	var err error
 
 	c := state.Config
-	hier.PK, err = createKey(state, c.Keys.PK.Type, hierarchy.PK, c.Keys.PK.Description)
+	hier.PK, err = createKey(state, c.Keys.PK, hierarchy.PK)
 	if err != nil {
 		return nil, err
 	}
 
-	hier.KEK, err = createKey(state, c.Keys.KEK.Type, hierarchy.KEK, c.Keys.KEK.Description)
+	hier.KEK, err = createKey(state, c.Keys.KEK, hierarchy.KEK)
 	if err != nil {
 		return nil, err
 	}
 
-	hier.Db, err = createKey(state, c.Keys.Db.Type, hierarchy.Db, c.Keys.Db.Description)
+	hier.Db, err = createKey(state, c.Keys.Db, hierarchy.Db)
 	if err != nil {
 		return nil, err
 	}
@@ -336,4 +339,56 @@ func InitBackendFromKeys(state *config.State, priv, pem []byte, hier hierarchy.H
 	default:
 		return nil, fmt.Errorf("unknown key backend: %s", t)
 	}
+}
+
+func parseSubject(subj string, hier hierarchy.Hierarchy) pkix.Name {
+	var subject pkix.Name
+
+	if subj != "" {
+		subject = pkix.Name{}
+
+		fields := strings.SplitSeq(subj, "/")
+		for field := range fields {
+			if field == "" {
+				continue
+			}
+			kv := strings.SplitN(field, "=", 2)
+			if len(kv) != 2 {
+				continue
+			}
+			key := strings.ToUpper(strings.TrimSpace(kv[0]))
+			value := strings.TrimSpace(kv[1])
+
+			switch key {
+			case "C":
+				subject.Country = append(subject.Country, value)
+			case "O":
+				subject.Organization = append(subject.Organization, value)
+			case "OU":
+				subject.OrganizationalUnit = append(subject.OrganizationalUnit, value)
+			case "L":
+				subject.Locality = append(subject.Locality, value)
+			case "ST":
+				subject.Province = append(subject.Province, value)
+			case "CN":
+				subject.CommonName = value
+			case "SERIALNUMBER":
+				subject.SerialNumber = value
+			default:
+			}
+		}
+
+		// Basic sanity: CN must be supplied
+		if subject.CommonName == "" {
+			panic("subject has no common name")
+		}
+	} else {
+		// return default
+		subject = pkix.Name{
+			Country:    []string{"WW"},
+			CommonName: hier.Description(),
+		}
+	}
+
+	return subject
 }

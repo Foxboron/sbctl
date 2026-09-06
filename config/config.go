@@ -29,10 +29,10 @@ type FileConfig struct {
 }
 
 type KeyConfig struct {
-	Privkey     string `json:"privkey"`
-	Pubkey      string `json:"pubkey"`
-	Type        string `json:"type"`
-	Description string `json:"description,omitempty"`
+	Privkey string `json:"privkey"`
+	Pubkey  string `json:"pubkey"`
+	Type    string `json:"type"`
+	Subject string `json:"subject,omitempty"`
 }
 
 type Keys struct {
@@ -88,16 +88,19 @@ func MkConfig(dir string) *Config {
 			Privkey: path.Join(conf.Keydir, "PK", "PK.key"),
 			Pubkey:  path.Join(conf.Keydir, "PK", "PK.pem"),
 			Type:    "file",
+			Subject: "/CN=Platform Key/C=WW/",
 		},
 		KEK: &KeyConfig{
 			Privkey: path.Join(conf.Keydir, "KEK", "KEK.key"),
 			Pubkey:  path.Join(conf.Keydir, "KEK", "KEK.pem"),
 			Type:    "file",
+			Subject: "/CN=Key Exchange Key/C=WW/",
 		},
 		Db: &KeyConfig{
 			Privkey: path.Join(conf.Keydir, "db", "db.key"),
 			Pubkey:  path.Join(conf.Keydir, "db", "db.pem"),
 			Type:    "file",
+			Subject: "/CN=Database Key/C=WW/",
 		},
 	}
 	return conf

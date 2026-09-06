@@ -18,7 +18,6 @@ import (
 	"time"
 
 	"github.com/foxboron/sbctl/config"
-	"github.com/foxboron/sbctl/hierarchy"
 	"github.com/foxboron/sbctl/logging"
 
 	"github.com/go-piv/piv-go/v2/piv"
@@ -41,7 +40,7 @@ type Yubikey struct {
 	touchPolicy   piv.TouchPolicy
 }
 
-func NewYubikeyKey(yubikeyReader *config.YubikeyReader, hier hierarchy.Hierarchy) (*Yubikey, error) {
+func NewYubikeyKey(yubikeyReader *config.YubikeyReader, subject pkix.Name) (*Yubikey, error) {
 	cert, err := yubikeyReader.GetPIVKeyCert()
 	if err != nil {
 		if !errors.Is(err, piv.ErrNotFound) {
@@ -107,16 +106,10 @@ func NewYubikeyKey(yubikeyReader *config.YubikeyReader, hier hierarchy.Hierarchy
 		SignatureAlgorithm: x509.SHA256WithRSA,
 		NotBefore:          time.Now(),
 		NotAfter:           time.Now().AddDate(20, 0, 0),
-		Subject: pkix.Name{
-			Country:    []string{hier.Description()},
-			CommonName: hier.Description(),
-		},
+		Subject:            subject,
 	}
 
-	logging.Println(fmt.Sprintf("Creating %s (%s) key...\nPlease press Yubikey to confirm presence for RSA4096 MD5: %x",
-		hier.Description(),
-		hier.String(),
-		md5sum(ykCert.PublicKey)))
+	logging.Println(fmt.Sprintf("Please press Yubikey to confirm presence for RSA4096 MD5: %x", md5sum(ykCert.PublicKey)))
 	derBytes, err := x509.CreateCertificate(rand.Reader, &c, &c, ykCert.PublicKey, priv)
 	if err != nil {
 		return nil, err
@@ -182,8 +175,6 @@ func (f *Yubikey) Signer() crypto.Signer {
 		md5sum(f.cert.PublicKey)))
 	return priv.(crypto.Signer)
 }
-
-func (f *Yubikey) Description() string { return f.Certificate().Subject.SerialNumber }
 
 // save YubiKey data to file
 func (f *Yubikey) PrivateKeyBytes() []byte {

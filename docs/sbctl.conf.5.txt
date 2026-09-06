@@ -111,6 +111,16 @@ Options
         +
         Default: file
 
+    *subject:* distinguished name ;;
+        Distinguished name to be used for the creation of certificates.
+        +
+        Needs to be given in openssl fashion.
+        +
+        Default:
+            * *pk:* /CN=Platform Key/C=WW/
+            * *kek:* /CN=Key Exchange Key/C=WW/
+            * *db*: /CN=Database Key/C=WW/
+
 
 Example
 -------
@@ -135,14 +145,17 @@ An example of a /etc/sbctl/sbctl.conf file with the default values.
         privkey: /var/lib/sbctl/keys/PK/PK.key
         pubkey: /var/lib/sbctl/keys/PK/PK.pem
         type: file
+        subject: /CN=Platform Key/C=WW/
       kek:
         privkey: /var/lib/sbctl/keys/KEK/KEK.key
         pubkey: /var/lib/sbctl/keys/KEK/KEK.pem
         type: file
+        subject: /CN=Key Exchange Key/C=WW/
       db:
         privkey: /var/lib/sbctl/keys/db/db.key
         pubkey: /var/lib/sbctl/keys/db/db.pem
         type: file
+        subject: /CN=Database Key/C=WW/
 
 See Also
 --------
