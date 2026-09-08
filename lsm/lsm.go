@@ -1,8 +1,11 @@
 package lsm
 
 import (
+	"bufio"
 	"log/slog"
+	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/foxboron/sbctl/config"
 	"github.com/landlock-lsm/go-landlock/landlock"
@@ -21,7 +24,54 @@ func TruncFile(p string) landlock.FSRule {
 	return landlock.PathAccess(truncFile, p)
 }
 
+// pcscRealLibraryPath returns the path to libpcsclite_real.so.1 when sbctl
+// is linked against the PC/SC spy wrapper. The real library is installed next
+// to the loaded libpcsclite.so.1, but that directory is distro- and
+// architecture-specific (for example /usr/lib64 or /usr/lib/x86_64-linux-gnu).
+func pcscRealLibraryPath() string {
+	maps, err := os.Open("/proc/self/maps")
+	if err != nil {
+		return ""
+	}
+	defer maps.Close()
+
+	scanner := bufio.NewScanner(maps)
+	for scanner.Scan() {
+		fields := strings.Fields(scanner.Text())
+		if len(fields) < 6 {
+			continue
+		}
+
+		path := strings.TrimSuffix(fields[len(fields)-1], " (deleted)")
+		if filepath.Base(path) != "libpcsclite.so.1" {
+			continue
+		}
+
+		realLibrary := filepath.Join(filepath.Dir(path), "libpcsclite_real.so.1")
+		if _, err := os.Stat(realLibrary); err == nil {
+			return realLibrary
+		}
+	}
+
+	if err := scanner.Err(); err != nil {
+		return ""
+	}
+
+	return ""
+}
+
 func LandlockRulesFromConfig(conf *config.Config) {
+	roFiles := []string{
+		"/sys/kernel/security/tpm0/binary_bios_measurements",
+		// Go timezone reads /etc/localtime.
+		"/etc/localtime",
+	}
+
+	// YubiKeys require access to pcsclite lib
+	if path := pcscRealLibraryPath(); path != "" {
+		roFiles = append(roFiles, path)
+	}
+
 	rules = append(rules,
 		landlock.RODirs(
 			"/sys/devices/virtual/dmi/id/",
@@ -32,17 +82,11 @@ func LandlockRulesFromConfig(conf *config.Config) {
 			// TODO: Lock this down to individual files?
 			"/sys/firmware/efi/efivars/",
 		).IgnoreIfMissing(),
-		landlock.ROFiles(
-			"/sys/kernel/security/tpm0/binary_bios_measurements",
-			// Go timezone reads /etc/localtime
-			"/etc/localtime",
-		).IgnoreIfMissing(),
+		landlock.ROFiles(roFiles...).IgnoreIfMissing(),
 		landlock.RWFiles(
 			conf.GUID,
 			conf.FilesDb,
 			conf.BundlesDb,
-			//TODO will this be different for others for yubikeys?
-			"/usr/lib/libpcsclite_real.so.1",
 			// Enable the TPM devices by default if they exist
 			"/dev/tpm0", "/dev/tpmrm0",
 		).IgnoreIfMissing(),
