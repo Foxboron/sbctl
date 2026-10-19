@@ -56,10 +56,7 @@ func VerifyOneFile(state *config.State, f string) error {
 		return fmt.Errorf("%s: %w", f, ErrInvalidHeader)
 	}
 
-	kh, err := backend.GetKeyHierarchy(state.Fs, state)
-	if err != nil {
-		return err
-	}
+	kh := backend.NewKeyHierarchy(state)
 
 	ok, err = sbctl.VerifyFile(state, kh, hierarchy.Db, f)
 	if err != nil {

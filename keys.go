@@ -136,7 +136,16 @@ var SecureBootKeys = []struct {
 	// },
 }
 
-// Check if we have already intialized keys in the given output directory
+// CheckIfKeyInitialized checks if the key of given hierarchy is existing in the given output directory
+func CheckIfKeyInitialized(vfs afero.Fs, output string, hier hierarchy.Hierarchy) bool {
+	path := filepath.Join(output, hier.String())
+	if _, err := vfs.Stat(path); errors.Is(err, os.ErrNotExist) {
+		return false
+	}
+	return true
+}
+
+// CheckIfKeysInitialized checks if all keys are existing in the given output directory
 func CheckIfKeysInitialized(vfs afero.Fs, output string) bool {
 	for _, key := range SecureBootKeys {
 		path := filepath.Join(output, key.Key)
