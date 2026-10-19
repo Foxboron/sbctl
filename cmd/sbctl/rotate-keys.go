@@ -156,6 +156,12 @@ func RunRotateKeys(cmd *cobra.Command, args []string) error {
 func rotateAllKeys(state *config.State, backupDir, newKeysDir string) error {
 	oldKeys := backend.NewKeyHierarchy(state)
 
+	// Ensure all keys are present and loaded to memory before any modifications
+	err := oldKeys.ReadKeys()
+	if err != nil {
+		return fmt.Errorf("can't read current keys: %v", err)
+	}
+
 	efistate, err := sbctl.SystemEFIVariables(state.Efivarfs)
 	if err != nil {
 		return fmt.Errorf("can't read efivariables: %v", err)
