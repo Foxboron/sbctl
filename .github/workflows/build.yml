@@ -13,9 +13,9 @@ jobs:
     strategy:
       matrix:
         include:
-          - {GOOS: linux, GOARCH: amd64}
-          - {GOOS: linux, GOARCH: arm, GOARM: 6, CC=aarch64-linux-gnu-gcc}
-          - {GOOS: linux, GOARCH: arm64, CC=aarch64-linux-gnu-gcc}
+          - {GOOS: linux, GOARCH: amd64, CC: gcc, PKG_CONFIG_PATH: /usr/lib/x86_64-linux-gnu/pkgconfig}
+          - {GOOS: linux, GOARCH: arm, GOARM: 6, CC: arm-linux-gnueabihf-gcc, PKG_CONFIG_PATH: /usr/lib/arm-linux-gnueabihf/pkgconfig}
+          - {GOOS: linux, GOARCH: arm64, CC: aarch64-linux-gnu-gcc, PKG_CONFIG_PATH: /usr/lib/aarch64-linux-gnu/pkgconfig}
     steps:
       - name: Install Go
         uses: actions/setup-go@v2
@@ -25,9 +25,40 @@ jobs:
         uses: actions/checkout@v2
         with:
           fetch-depth: 0
+      - name: Install C cross toolchain and arch-dependent PC/SC dev libraries
+        run: |
+          set -eux
+          . /etc/os-release  # to populate $VERSION_CODENAME
+          case "${GOARCH}" in
+            amd64)
+              sudo apt-get update
+              sudo apt-get install -y gcc libpcsclite-dev pkg-config
+              ;;
+
+            arm|arm64)
+              case "${GOARCH}" in
+                arm)   DEB_ARCH=armhf; DEB_CC=gcc-arm-linux-gnueabihf ;;
+                arm64) DEB_ARCH=arm64; DEB_CC=gcc-aarch64-linux-gnu ;;
+              esac
+
+              # Pin host sources to amd64
+              if [ -f /etc/apt/sources.list.d/ubuntu.sources ]; then
+                sudo sed -i '/^Types:/a Architectures: amd64' /etc/apt/sources.list.d/ubuntu.sources
+              fi
+
+              # Ubuntu has different architectures at another domain: ports.ubuntu.com; add it
+              for suite in "$VERSION_CODENAME" "$VERSION_CODENAME-updates" "$VERSION_CODENAME-security"; do
+                echo "deb [arch=${DEB_ARCH} signed-by=/usr/share/keyrings/ubuntu-archive-keyring.gpg] https://ports.ubuntu.com/ubuntu-ports/ $suite main universe restricted multiverse" | sudo tee -a /etc/apt/sources.list.d/ports.list >/dev/null
+              done
+              sudo dpkg --add-architecture "${DEB_ARCH}"
+              sudo apt-get update
+              sudo apt-get install -y "${DEB_CC}" "libpcsclite-dev:${DEB_ARCH}" pkg-config
+              ;;
+          esac
+        env:
+          GOARCH: ${{ matrix.GOARCH }}
       - name: Build binary
         run: |
-          sudo apt install libpcsclite-dev
           cp LICENSE "$RUNNER_TEMP/LICENSE"
           echo -e "\n---\n" >> "$RUNNER_TEMP/LICENSE"
           curl -L "https://go.dev/LICENSE?m=text" >> "$RUNNER_TEMP/LICENSE"
@@ -36,12 +67,14 @@ jobs:
           mkdir "$DIR/sbctl"
           cp "$RUNNER_TEMP/LICENSE" "$DIR/sbctl"
           go build -o "$DIR/sbctl" -trimpath ./cmd/...
-          tar -cvzf "sbctl-$VERSION-$GOOS-$GOARCH.tar.gz" -C "$DIR" sbctl 
+          tar -cvzf "sbctl-$VERSION-$GOOS-$GOARCH.tar.gz" -C "$DIR" sbctl
         env:
           CGO_ENABLED: 1
           GOOS: ${{ matrix.GOOS }}
           GOARCH: ${{ matrix.GOARCH }}
           GOARM: ${{ matrix.GOARM }}
+          CC: ${{ matrix.CC }}
+          PKG_CONFIG_PATH: ${{ matrix.PKG_CONFIG_PATH }}
       - name: Upload workflow artifacts
         uses: actions/upload-artifact@v4
         with:
