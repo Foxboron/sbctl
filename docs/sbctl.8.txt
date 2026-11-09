@@ -25,6 +25,14 @@ EFI signing commands
         currently booted in UEFI with Secure Boot, and whether Setup Mode
         has been enabled.
 
+        With --json the setup_mode and secure_boot fields are strings, one of
+        "unknown", "disabled" or "enabled". "unknown" means sbctl could not
+        establish the state from the available EFI variables (for example on
+        firmware that reports Secure Boot through the "Secure Boot
+        Configuration" variable instead of the standard variables). Note that
+        these fields are strings rather than booleans; earlier versions
+        reported them as booleans.
+
 **create-keys**::
         Creates a set of signing keys used to sign EFI binaries. Currently, it
         will create the following keys:

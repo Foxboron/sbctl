@@ -1,6 +1,8 @@
 package main
 
 import (
+	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	"os"
@@ -23,21 +25,122 @@ var statusCmd = &cobra.Command{
 	RunE:  RunStatus,
 }
 
+// SetupModeState reflects what sbctl could establish about the UEFI Setup Mode,
+// mirroring the Linux kernel's efi_secureboot_mode states. Firmware that does not
+// expose the standalone SetupMode variable leaves it unknown rather than being
+// reported as disabled.
+type SetupModeState int32
+
+const (
+	// SetupModeUnknown means the SetupMode variable was absent or unreadable.
+	SetupModeUnknown SetupModeState = iota
+	// SetupModeDisabled means the SetupMode variable read as 0 (user mode).
+	SetupModeDisabled
+	// SetupModeEnabled means the SetupMode variable read as 1 (setup mode).
+	SetupModeEnabled
+)
+
+// String renders the state for --json output as a stable, self-documenting
+// value ("unknown", "disabled", "enabled") rather than a bare integer.
+func (s SetupModeState) String() string {
+	switch s {
+	case SetupModeDisabled:
+		return "disabled"
+	case SetupModeEnabled:
+		return "enabled"
+	default:
+		return "unknown"
+	}
+}
+
+func (s SetupModeState) MarshalJSON() ([]byte, error) {
+	return json.Marshal(s.String())
+}
+
+func (s *SetupModeState) UnmarshalJSON(data []byte) error {
+	var v string
+	if err := json.Unmarshal(data, &v); err != nil {
+		return err
+	}
+	switch v {
+	case "disabled":
+		*s = SetupModeDisabled
+	case "enabled":
+		*s = SetupModeEnabled
+	default:
+		*s = SetupModeUnknown
+	}
+	return nil
+}
+
+// SecureBootState reflects what sbctl could establish about Secure Boot. The
+// classification is inspired by the Linux kernel's efi_secureboot_mode, but is
+// not an exact replica: where the kernel treats a missing SecureBoot variable as
+// disabled, sbctl reports unknown, since that is more honest when no readable
+// variable can establish the state. Firmware that reports its Secure Boot state
+// through the "SecureBootData" variable exposes no readable SecureBoot
+// variable, so its on/off state is left unknown rather than being reported as
+// disabled.
+type SecureBootState int32
+
+const (
+	// SecureBootUnknown means the Secure Boot state could not be established
+	// from a readable EFI variable.
+	SecureBootUnknown SecureBootState = iota
+	// SecureBootDisabled means Secure Boot was read as disabled.
+	SecureBootDisabled
+	// SecureBootEnabled means Secure Boot was read as enabled.
+	SecureBootEnabled
+)
+
+// String renders the state for --json output as a stable, self-documenting
+// value ("unknown", "disabled", "enabled") rather than a bare integer.
+func (s SecureBootState) String() string {
+	switch s {
+	case SecureBootDisabled:
+		return "disabled"
+	case SecureBootEnabled:
+		return "enabled"
+	default:
+		return "unknown"
+	}
+}
+
+func (s SecureBootState) MarshalJSON() ([]byte, error) {
+	return json.Marshal(s.String())
+}
+
+func (s *SecureBootState) UnmarshalJSON(data []byte) error {
+	var v string
+	if err := json.Unmarshal(data, &v); err != nil {
+		return err
+	}
+	switch v {
+	case "disabled":
+		*s = SecureBootDisabled
+	case "enabled":
+		*s = SecureBootEnabled
+	default:
+		*s = SecureBootUnknown
+	}
+	return nil
+}
+
 type Status struct {
-	Installed      bool           `json:"installed"`
-	GUID           string         `json:"guid"`
-	SetupMode      bool           `json:"setup_mode"`
-	SecureBoot     bool           `json:"secure_boot"`
-	Vendors        []string       `json:"vendors"`
-	FirmwareQuirks []quirks.Quirk `json:"firmware_quirks"`
+	Installed      bool            `json:"installed"`
+	GUID           string          `json:"guid"`
+	SetupMode      SetupModeState  `json:"setup_mode"`
+	SecureBoot     SecureBootState `json:"secure_boot"`
+	Vendors        []string        `json:"vendors"`
+	FirmwareQuirks []quirks.Quirk  `json:"firmware_quirks"`
 }
 
 func NewStatus() *Status {
 	return &Status{
 		Installed:      false,
 		GUID:           "",
-		SetupMode:      false,
-		SecureBoot:     false,
+		SetupMode:      SetupModeUnknown,
+		SecureBoot:     SecureBootUnknown,
 		Vendors:        []string{},
 		FirmwareQuirks: []quirks.Quirk{},
 	}
@@ -55,16 +158,25 @@ func PrintStatus(s *Status) {
 		logging.NotOk("sbctl is not installed")
 	}
 	logging.Print("Setup Mode:\t")
-	if s.SetupMode {
+	switch s.SetupMode {
+	case SetupModeEnabled:
 		logging.NotOk("Enabled")
-	} else {
+	case SetupModeDisabled:
 		logging.Ok("Disabled")
+	default:
+		logging.Unknown("Unknown")
 	}
 	logging.Print("Secure Boot:\t")
-	if s.SecureBoot {
+	switch s.SecureBoot {
+	case SecureBootEnabled:
 		logging.Ok("Enabled")
-	} else {
+	case SecureBootDisabled:
 		logging.NotOk("Disabled")
+	default:
+		logging.Unknown("Unknown")
+	}
+	if s.SecureBoot == SecureBootUnknown {
+		logging.Println("\t\t(Secure Boot state cannot be determined from the available EFI variables)")
 	}
 	// TODO: We only have microsoft keys
 	// this needs to be extended for more keys in the future
@@ -128,7 +240,22 @@ func RunStatus(cmd *cobra.Command, args []string) error {
 	}
 
 	stat := NewStatus()
-	if _, err := state.Fs.Stat("/sys/firmware/efi/efivars/SetupMode-8be4df61-93ca-11d2-aa0d-00e098032b8c"); os.IsNotExist(err) {
+
+	// Establish which EFI secure-boot interface this firmware exposes. Presence
+	// of any of the standard SecureBoot, SetupMode or SecureBootData variables
+	// proves the system is UEFI-booted, independently of whether the variable's
+	// contents can be read: a variable that exists but is unreadable (wrong
+	// attributes, malformed data, permissions, I/O errors) still counts as
+	// present. A system exposing none of them is not booted with UEFI.
+	secureBootPresent := efivarPresent(state, "SecureBoot", efiStandardVariableGUID)
+	setupModePresent := efivarPresent(state, "SetupMode", efiStandardVariableGUID)
+	secureBootConfig := secureBootConfigPresent(state)
+
+	switch {
+	case secureBootPresent:
+	case setupModePresent:
+	case secureBootConfig:
+	default:
 		return fmt.Errorf("system is not booted with UEFI")
 	}
 
@@ -139,11 +266,55 @@ func RunStatus(cmd *cobra.Command, args []string) error {
 			stat.GUID = u.Format()
 		}
 	}
-	if ok, _ := state.Efivarfs.GetSetupMode(); ok {
-		stat.SetupMode = true
+
+	// A missing variable yields os.ErrNotExist; any other failure is a genuine
+	// read error that must not be mistaken for a zero value.
+	secureBootValue, secureBootErr := state.Efivarfs.GetSecureBoot()
+	setupModeValue, setupModeErr := state.Efivarfs.GetSetupMode()
+	setupModeMissing := setupModeErr != nil && errors.Is(setupModeErr, os.ErrNotExist)
+	setupModeUnreadable := setupModeErr != nil && !setupModeMissing
+
+	// Setup Mode: report only what we can establish. An absent variable leaves
+	// its state unknown rather than disabled; so does any other read error.
+	switch {
+	case setupModeErr != nil:
+		stat.SetupMode = SetupModeUnknown
+	case setupModeValue:
+		stat.SetupMode = SetupModeEnabled
+	default:
+		stat.SetupMode = SetupModeDisabled
 	}
-	if ok, _ := state.Efivarfs.GetSecureBoot(); ok {
-		stat.SecureBoot = true
+
+	// Secure Boot: report the on/off state. Precedence:
+	//  1. If SecureBoot is readable, use it. When enabled, a missing SetupMode
+	//     is treated as user mode (enabled); an explicit Setup Mode means
+	//     disabled; a genuine SetupMode read error leaves the state unknown.
+	//  2. If SecureBootData is present, the state is unknown.
+	//  3. Unknown.
+	switch {
+	case secureBootErr == nil:
+		if secureBootValue {
+			switch {
+			case setupModeMissing:
+				// Kernel treats a missing SetupMode as user mode (0).
+				stat.SecureBoot = SecureBootEnabled
+			case setupModeUnreadable:
+				// A genuine read error on SetupMode is not evidence of user mode.
+				stat.SecureBoot = SecureBootUnknown
+			case setupModeValue:
+				// Secure Boot=1 while in Setup Mode => disabled.
+				stat.SecureBoot = SecureBootDisabled
+			default:
+				stat.SecureBoot = SecureBootEnabled
+			}
+		} else {
+			stat.SecureBoot = SecureBootDisabled
+		}
+	case secureBootConfig:
+		// Firmware exposing SecureBootData: state not exposed through the
+		// standard variables.
+	default:
+		// SecureBoot variable absent/unreadable and no SecureBootData: unknown.
 	}
 	if keys := sbctl.GetEnrolledVendorCerts(); len(keys) > 0 {
 		stat.Vendors = keys
