@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"errors"
 	"fmt"
 	"os"
@@ -82,7 +83,26 @@ var (
 		},
 	}
 	ErrSetupModeDisabled = errors.New("setup mode is disabled")
+	ErrSetupModeMissing = errors.New("setup mode cannot be determined")
 )
+
+const setupModeMissingPrompt = "Could not determine the Setup Mode of your system. Some firmwares accept key enrollment without it. Attempt enrollment anyway? [y/N] "
+
+// When stdin is not a terminal (piped input, CI, tests)
+// it returns false so the behavior stays non-blocking.
+func promptYesNo(prompt string) bool {
+	fi, err := os.Stdin.Stat()
+	if err != nil || (fi.Mode()&os.ModeCharDevice) == 0 {
+		return false
+	}
+	fmt.Fprint(os.Stderr, prompt)
+	answer, err := bufio.NewReader(os.Stdin).ReadString('\n')
+	if err != nil {
+		return false
+	}
+	answer = strings.ToLower(strings.TrimSpace(answer))
+	return answer == "y" || answer == "yes"
+}
 
 func SignSiglist(k *backend.KeyHierarchy, e efivar.Efivar, sigdb efivar.Marshallable) ([]byte, error) {
 	var signer backend.KeyBackend
@@ -273,9 +293,28 @@ func KeySync(state *config.State, oems []string) error {
 
 func RunEnrollKeys(state *config.State) error {
 	ok, err := state.Efivarfs.GetSetupMode()
-	// EFI variables are missing in some CI / build environments and setup mode is not needed for exporting keys
-	if err != nil && enrollKeysCmdOptions.Export.Value == "" {
-		return err
+	// EFI variables may be missing in CI/build environments. Exporting keys
+	// never needs Setup Mode, so allow that through. Otherwise enrollment with an
+	// unreadable SetupMode is rejected rather than guessed: secure-boot enabled
+	// does not imply the firmware accepts a PK update.
+	if err != nil {
+		if enrollKeysCmdOptions.Export.Value != "" {
+			ok = true
+		} else if errors.Is(err, os.ErrNotExist) {
+			// An absent SetupMode is undeterminable, not disabled. Partial
+			// enrollments stay refused, but a full enrollment may proceed: some
+			// firmware accepts key enrollment without a standalone SetupMode.
+			if enrollKeysCmdOptions.Partial.Value != "" {
+				return ErrSetupModeMissing
+			}
+			if enrollKeysCmdOptions.Force || promptYesNo(setupModeMissingPrompt) {
+				ok = true
+			} else {
+				return ErrSetupModeMissing
+			}
+		} else {
+			return fmt.Errorf("could not read SetupMode: %w", err)
+		}
 	}
 	// SetupMode is not necessarily required for a partial enrollment and not needed for exporting keys
 	if !ok && enrollKeysCmdOptions.Partial.Value == "" && enrollKeysCmdOptions.Export.Value == "" {

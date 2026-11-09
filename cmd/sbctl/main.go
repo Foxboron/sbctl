@@ -55,6 +55,7 @@ Please read the FAQ for more information: https://github.com/Foxboron/sbctl/wiki
 	opromErrorMsg      = `Found OptionROM in the bootchain. This means we should not enroll keys into UEFI without some precautions.` + baseErrorMsg
 	noEventlogErrorMsg = `Could not find any TPM Eventlog in the system. This means we do not know if there is any OptionROM present on the system.` + baseErrorMsg
 	setupModeDisabled  = `Your system is not in Setup Mode! Please reboot your machine and reset secure boot keys before attempting to enroll the keys.`
+	setupModeMissing   = `Could not determine the Setup Mode of your system. Reboot into the UEFI setup and check the Secure Boot configuration before attempting to enroll the keys.`
 )
 
 func baseFlags(cmd *cobra.Command) {
@@ -202,6 +203,8 @@ func main() {
 			logging.Error(errors.New(noEventlogErrorMsg))
 		} else if errors.Is(err, ErrSetupModeDisabled) {
 			logging.Error(errors.New(setupModeDisabled))
+		} else if errors.Is(err, ErrSetupModeMissing) {
+			logging.Error(errors.New(setupModeMissing))
 		} else if !errors.Is(err, ErrSilent) {
 			logging.Error(err)
 		}
