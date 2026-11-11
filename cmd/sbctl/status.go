@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/foxboron/go-uefi/efi/signature"
+	"github.com/foxboron/go-uefi/efivar"
 	"github.com/foxboron/sbctl"
 	"github.com/foxboron/sbctl/backend"
 	"github.com/foxboron/sbctl/certs"
@@ -84,10 +85,7 @@ func PrintStatus(s *Status) {
 }
 
 func RunDebug(state *config.State) error {
-	kh, err := backend.GetKeyHierarchy(state.Fs, state)
-	if err != nil {
-		return err
-	}
+	kh := backend.NewKeyHierarchy(state)
 
 	efistate, err := sbctl.SystemEFIVariables(state.Efivarfs)
 	if err != nil {
@@ -99,15 +97,30 @@ func RunDebug(state *config.State) error {
 		return err
 	}
 
-	if efistate.PK.SigDataExists(signature.CERT_X509_GUID, &signature.SignatureData{Owner: *guid, Data: kh.PK.Certificate().Raw}) {
+	kb, err := kh.GetKeyBackend(efivar.PK)
+	if err != nil {
+		return err
+	}
+
+	if efistate.PK.SigDataExists(signature.CERT_X509_GUID, &signature.SignatureData{Owner: *guid, Data: kb.Certificate().Raw}) {
 		slog.Debug("PK is fine")
 	}
 
-	if efistate.KEK.SigDataExists(signature.CERT_X509_GUID, &signature.SignatureData{Owner: *guid, Data: kh.KEK.Certificate().Raw}) {
+	kb, err = kh.GetKeyBackend(efivar.KEK)
+	if err != nil {
+		return err
+	}
+
+	if efistate.KEK.SigDataExists(signature.CERT_X509_GUID, &signature.SignatureData{Owner: *guid, Data: kb.Certificate().Raw}) {
 		slog.Debug("KEK is fine")
 	}
 
-	if efistate.Db.SigDataExists(signature.CERT_X509_GUID, &signature.SignatureData{Owner: *guid, Data: kh.Db.Certificate().Raw}) {
+	kb, err = kh.GetKeyBackend(efivar.Db)
+	if err != nil {
+		return err
+	}
+
+	if efistate.Db.SigDataExists(signature.CERT_X509_GUID, &signature.SignatureData{Owner: *guid, Data: kb.Certificate().Raw}) {
 		slog.Debug("db is fine")
 	}
 

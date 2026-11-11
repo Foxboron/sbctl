@@ -141,10 +141,7 @@ func Sign(state *config.State, keys *backend.KeyHierarchy, file, output string, 
 		}
 	}
 
-	kh, err := backend.GetKeyHierarchy(state.Fs, state)
-	if err != nil {
-		return err
-	}
+	kh := backend.NewKeyHierarchy(state)
 
 	files, err := ReadFileDatabase(state.Fs, state.Config.FilesDb)
 	if err != nil {

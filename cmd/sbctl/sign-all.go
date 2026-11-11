@@ -59,10 +59,7 @@ func SignAll(state *config.State) error {
 	}
 	for _, entry := range files {
 
-		kh, err := backend.GetKeyHierarchy(state.Fs, state)
-		if err != nil {
-			return err
-		}
+		kh := backend.NewKeyHierarchy(state)
 
 		err = sbctl.SignFile(state, kh, hierarchy.Db, entry.File, entry.OutputFile)
 		if errors.Is(err, sbctl.ErrAlreadySigned) {

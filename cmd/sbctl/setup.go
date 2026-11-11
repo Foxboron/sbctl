@@ -50,7 +50,8 @@ func PrintConfig(state *config.State) error {
 			return err
 		}
 	} else {
-		kh, err := backend.GetKeyHierarchy(state.Fs, state)
+		kh := backend.NewKeyHierarchy(state)
+		err := kh.ReadKeys()
 		if err != nil {
 			return err
 		}
